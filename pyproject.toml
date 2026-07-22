@@ -1,0 +1,38 @@
+[project]
+name = "validator"
+version = "0.1.0"
+description = "Parallel LIBERO / LIBERO-Pro evaluation for openpi-format VLA checkpoints"
+requires-python = ">=3.11"
+dependencies = [
+    # The orchestrator itself is stdlib-only except for HF model/asset downloads.
+    # The heavyweight environments (openpi policy server, Python 3.8 LIBERO
+    # client) are separate venvs inside third_party/openpi, built by setup.sh —
+    # they cannot share one interpreter with this project.
+    "huggingface_hub>=0.30",
+]
+
+[tool.uv]
+# Plain scripts (libero_eval/run_eval.py), nothing to build or install.
+package = false
+
+[tool.ruff]
+line-length = 120
+format.preview = true
+lint.preview = false
+target-version = "py38"
+lint.select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "UP",   # pyupgrade
+    "NPY",  # numpy-specific rules
+]
+lint.ignore = [
+    "E266",  # allow multiple leading # in comments
+    "E402",  # allow imports not at the top of the file
+    "E722",  # allow bare except
+    "F403",  # allow `from module import *`
+    "NPY002",  # allow legacy `numpy.random` functions
+]
+extend-exclude = [
+    "third_party",
+]

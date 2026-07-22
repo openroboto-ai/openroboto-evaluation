@@ -1,0 +1,37 @@
+# Python
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets and local configuration
+*.yaml
+!*.example.yaml
+!**/*.example.yaml
+!.pre-commit-config.yaml
+.env
+.env.*
+
+# Runtime data
+*.db
+*.sqlite
+*.sqlite3
+state/
+.pids/
+logs/
+*.pid
+benchmark_worker_state.json*
+
+# Evaluation and downloaded assets
+eval_runs/
+hf_models/
+third_party/
+.cache/
+*.pt
+*.pth
+*.ckpt
+
+# Local tooling
+.claude/
+.DS_Store
+
