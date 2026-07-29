@@ -9,6 +9,7 @@ key 配置问题,必须保持可重试,不能丢结果。
 
 import datetime
 import json
+import os
 import pathlib
 import queue
 import sys
@@ -18,7 +19,11 @@ from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from benchmark_worker.backend_client import BackendClient, BackendError  # noqa: E402
+from benchmark_worker.backend_client import (  # noqa: E402
+    DEFAULT_QUEUE_PATH,
+    BackendClient,
+    BackendError,
+)
 from benchmark_worker.state import StateStore  # noqa: E402
 from benchmark_worker import worker  # noqa: E402
 from benchmark_worker.worker import submit_retry_due, try_submit  # noqa: E402
@@ -41,58 +46,125 @@ class TestBackendErrorPermanent(unittest.TestCase):
 
 class TestFetchQueue(unittest.TestCase):
     def test_sends_explicit_user_agent(self):
-        client = BackendClient("http://x", "k")
+        client = BackendClient("http://x", "public", "admin")
         response = mock.MagicMock()
         response.read.return_value = b"{}"
         context = mock.MagicMock()
         context.__enter__.return_value = response
         with mock.patch("urllib.request.urlopen", return_value=context) as urlopen:
-            client._request("GET", "/probe")
+            client._request("GET", "/probe", api_key="public")
 
         request = urlopen.call_args.args[0]
         self.assertEqual(request.get_header("User-agent"), "validator-benchmark-worker/0.1")
+        self.assertEqual(request.get_header("X-api-key"), "public")
 
     def test_bare_timeout_is_wrapped_as_retryable_backend_error(self):
-        client = BackendClient("http://x", "k")
+        client = BackendClient("http://x", "public", "admin")
         with mock.patch("urllib.request.urlopen", side_effect=TimeoutError("timed out")):
             with self.assertRaises(BackendError) as ctx:
-                client._request("GET", "/probe")
+                client._request("GET", "/probe", api_key="public")
 
         self.assertIsNone(ctx.exception.status)
         self.assertFalse(ctx.exception.permanent)
         self.assertIn("timed out", str(ctx.exception))
 
     def test_submit_uses_extended_timeout(self):
-        client = BackendClient("http://x", "k", timeout_s=3, submit_timeout_s=123)
+        client = BackendClient("http://x", "public", "admin", timeout_s=3, submit_timeout_s=123)
         with mock.patch.object(client, "_request", return_value={"ok": True}) as request:
             client.submit_score("t1", {"success": True})
 
         request.assert_called_once_with(
             "POST",
             "/api/v1/benchmark/task/t1/score",
+            api_key="admin",
             body={"success": True},
             timeout_s=123,
         )
 
-    def test_fetch_submission_uses_task_detail_endpoint(self):
-        client = BackendClient("http://x", "k")
+    def test_fetch_submission_uses_public_key(self):
+        client = BackendClient("http://x", "public", "admin")
         with mock.patch.object(client, "_request", return_value={"task_id": "t1"}) as request:
             self.assertEqual(client.fetch_submission("t1"), {"task_id": "t1"})
 
-        request.assert_called_once_with("GET", "/api/submission/t1")
+        request.assert_called_once_with("GET", "/api/submission/t1", api_key="public")
 
-    def test_unwraps_tasks_envelope(self):
-        # /api/pending-tasks 的响应是 {"queue_size": N, "tasks": [...]} 信封。
-        client = BackendClient("http://x", "k")
+    def test_benchmark_queue_uses_public_key_and_unwraps_envelope(self):
+        client = BackendClient("http://x", "public", "admin")
         envelope = {"queue_size": 1, "tasks": [{"task_id": "t1"}]}
         with mock.patch.object(client, "_request", return_value=envelope) as req:
             self.assertEqual(client.fetch_queue(), [{"task_id": "t1"}])
-            req.assert_called_once_with("GET", "/api/pending-tasks")
+            req.assert_called_once_with("GET", DEFAULT_QUEUE_PATH, api_key="public")
+
+    def test_queue_error_propagates(self):
+        client = BackendClient("http://x", "public", "admin")
+        with mock.patch.object(
+            client,
+            "_request",
+            side_effect=BackendError("unauthorized", status=401),
+        ) as req:
+            with self.assertRaises(BackendError):
+                client.fetch_queue()
+
+        req.assert_called_once_with("GET", DEFAULT_QUEUE_PATH, api_key="public")
 
     def test_bare_list_response_tolerated(self):
-        client = BackendClient("http://x", "k")
+        client = BackendClient("http://x", "public", "admin")
         with mock.patch.object(client, "_request", return_value=[{"task_id": "t1"}]):
             self.assertEqual(client.fetch_queue(), [{"task_id": "t1"}])
+
+    def test_one_key_constructor_remains_compatible(self):
+        client = BackendClient("http://x", "legacy")
+        self.assertEqual(client.public_api_key, "legacy")
+        self.assertEqual(client.admin_api_key, "legacy")
+
+
+class TestWorkerApiKeyArgs(unittest.TestCase):
+    def _parse(self, *extra: str):
+        argv = [
+            "worker.py",
+            "--backend-url",
+            "https://backend.example",
+            "--benchmark",
+            "libero_pro_custom_1",
+            "--num-trials",
+            "50",
+            *extra,
+        ]
+        with mock.patch.object(sys, "argv", argv):
+            return worker.parse_args()
+
+    def test_accepts_split_cli_keys(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            args = self._parse("--public-api-key", "public", "--admin-api-key", "admin")
+
+        self.assertEqual(args.public_api_key, "public")
+        self.assertEqual(args.admin_api_key, "admin")
+        self.assertEqual(args.queue_path, "/api/v1/benchmark/queue")
+
+    def test_accepts_split_environment_keys(self):
+        env = {
+            "BACKEND_PUBLIC_API_KEY": "public",
+            "BACKEND_ADMIN_API_KEY": "admin",
+        }
+        with mock.patch.dict(os.environ, env, clear=True):
+            args = self._parse()
+
+        self.assertEqual(args.public_api_key, "public")
+        self.assertEqual(args.admin_api_key, "admin")
+
+    def test_legacy_key_populates_both_roles(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            args = self._parse("--api-key", "legacy")
+
+        self.assertEqual(args.public_api_key, "legacy")
+        self.assertEqual(args.admin_api_key, "legacy")
+
+    def test_missing_either_key_fails_fast(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(SystemExit):
+                self._parse("--public-api-key", "public")
+            with self.assertRaises(SystemExit):
+                self._parse("--admin-api-key", "admin")
 
 
 class _FailingClient:

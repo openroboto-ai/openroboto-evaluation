@@ -8,8 +8,8 @@ CLI 参数 + `summary.json`。
 ```
 backend(评测队列 / 评分接口,HTTP + X-API-Key)
    ▲  ▲
-   │  └── POST /api/v1/benchmark/task/{id}/score   ← 评分回传(失败持续重试)
-   └───── GET  /api/v1/benchmark/queue             ← 周期轮询
+   │  └── POST /api/v1/benchmark/task/{id}/score   ← admin key,评分回传
+   └───── GET  /api/v1/benchmark/queue             ← public key,周期轮询
    │
 benchmark_worker/worker.py(常驻主进程,本仓库 uv 环境)
    ├── 本地持久化队列 benchmark_worker_state.json(跨重启去重)
@@ -25,13 +25,17 @@ benchmark_worker/worker.py(常驻主进程,本仓库 uv 环境)
 在仓库根目录:
 
 ```bash
-BACKEND_API_KEY=<worker-api-key> \
+BACKEND_PUBLIC_API_KEY=<control.json 的 public_key> \
+BACKEND_ADMIN_API_KEY=<后端 backend.yaml 的 admin_key> \
     uv run benchmark_worker/worker.py --backend-url http://localhost:8001 \
     --benchmark libero_pro_custom_1 --num-trials 50
 ```
 
-鉴权：队列轮询和评分提交使用运行时提供的 worker API key，并放在
-`X-API-Key` 头中。未提供或不匹配时，服务应拒绝请求。本地无鉴权测试环境可不配。
+鉴权按最小权限拆分:`GET /api/v1/benchmark/queue` 和任务详情使用 `public_key`
+(`control.json` → `public_key`),评分 POST 使用 `admin_key`
+(`backend.yaml` → `admin_key`)。两个值都通过 `X-API-Key` 发送且启动时必填。
+旧 `--api-key` / `BACKEND_API_KEY` 仍可临时把同一个 key 用于读写,但新部署应使用
+两个独立参数或环境变量。
 
 调试:`--once`(轮询一次、处理完即退出)配合 `--num-trials 2 --task-ids 0
 --gpus 0` 可做单卡冒烟;`--allow-local-model` 允许 `hf_repo_id` 直接是本地
@@ -81,7 +85,10 @@ micro-average。非官方或未完整跑完的 LIBERO-Plus summary 不会上报�
 | 参数 | 默认 | 说明 |
 |------|------|------|
 | `--backend-url` | `$BACKEND_URL` / `http://localhost:8001` | 后端地址 |
-| `--api-key` | `$BACKEND_API_KEY` | 运行时提供的 worker API key；本地无鉴权测试环境可不设 |
+| `--public-api-key` | `$BACKEND_PUBLIC_API_KEY` | 只读 public key(`control.json` → `public_key`) |
+| `--admin-api-key` | `$BACKEND_ADMIN_API_KEY` | 写入 admin key(`backend.yaml` → `admin_key`) |
+| `--api-key` | `$BACKEND_API_KEY` | 旧版兼容:同一个 key 用于读写 |
+| `--queue-path` | `/api/v1/benchmark/queue` | 上游公开任务队列路径 |
 | `--benchmark` | 必填 | `libero` / `libero_pro` / `libero_pro_custom_1` / `libero_plus` |
 | `--poll-interval` | 60 | 队列轮询间隔(秒) |
 | `--num-trials` | 必填 | 每 task 试验数;LIBERO-Plus 必须为 1,其他 LIBERO 官方口径为 50 |

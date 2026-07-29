@@ -57,7 +57,7 @@ def expand_env_suites(env_list: list[str]) -> list[str]:
 def parse_env_list(raw) -> list[str]:
     """队列条目的 env_list 字段 → list[str]。
 
-    /api/pending-tasks 给数组;旧端点 /api/pending-tasks 给 JSON 字符串
+    /api/v1/benchmark/queue 给数组;旧端点 /api/pending-tasks 可能给 JSON 字符串
     (老 state 账本里存的任务也可能是这种形状),两种都接受。直接迭代字符串
     会拆成单字符,曾把任务错报成 "invalid env names",必须先解码。
     其余形状一律 ValueError,由调用方如实上报。
@@ -129,11 +129,7 @@ def _collapse_custom_1_scores(env_scores: list[dict]) -> list[dict]:
         for entry in env_scores
         if isinstance(entry, dict) and isinstance(entry.get("env_name"), str)
     }
-    expected = {
-        f"{base}_{dimension}"
-        for _, base in _CUSTOM_1_GROUPS
-        for dimension in _CUSTOM_1_DIMENSIONS
-    }
+    expected = {f"{base}_{dimension}" for _, base in _CUSTOM_1_GROUPS for dimension in _CUSTOM_1_DIMENSIONS}
     if len(by_name) != len(env_scores) or set(by_name) != expected:
         return env_scores
 

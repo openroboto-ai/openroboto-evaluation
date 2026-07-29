@@ -4,11 +4,11 @@ Orchestration layer bridging the backend benchmark API and this repo's
 evaluation pipeline.
 
 职责(与评测执行严格隔离,本进程不运行任何评测逻辑):
-  1. 轮询 GET /api/pending-tasks 获取待评测任务
+  1. 用 public key 轮询 GET /api/v1/benchmark/queue 获取待评测任务
   2. 维护本地持久化任务队列(state.json:跨轮询、跨重启去重)
   3. 逐个派发:下载模型(锁定 hf_commit)→ 起 libero_eval/run_eval.py
      子进程 → 解析 summary.json
-  4. POST /api/v1/benchmark/task/{task_id}/score 回传分数,失败持续重试
+  4. 用 admin key POST /api/v1/benchmark/task/{task_id}/score 回传分数,失败持续重试
 
 GPU、policy server、MuJoCo 等评测细节全部在 run_eval.py 子进程内;
 本进程只做 HTTP I/O 与进程管理(模型下载复用 huggingface_hub)。
@@ -286,9 +286,7 @@ def run_evaluation(task: dict, model_dir: pathlib.Path, out_dir: pathlib.Path, a
         protocol = summary.get("evaluation_protocol") or {}
         if not protocol.get("official_result"):
             deviations = "; ".join(protocol.get("deviations") or ["missing official protocol metadata"])
-            raise EvalInfrastructureError(
-                f"refusing to score non-official LIBERO-Plus result: {deviations}"
-            )
+            raise EvalInfrastructureError(f"refusing to score non-official LIBERO-Plus result: {deviations}")
     if proc.returncode == 2:
         failed = sorted(n for n, r in summary.get("tasks", {}).items() if r.get("status") != "ok")
         # run_eval writes summary.json before exiting 2. Inspect the individual
@@ -501,7 +499,7 @@ def try_submit(client: BackendClient, store: StateStore, task_id: str, payload: 
             delay, next_at = _schedule_submit_retry(store, task_id, str(e))
             logger.error(
                 f"{task_id} ({label}): backend rejected our API key ({e}); "
-                f"check --api-key / BACKEND_API_KEY matches the worker API key; "
+                f"check --admin-api-key / BACKEND_ADMIN_API_KEY matches the backend admin_key; "
                 f"retry in {delay}s (at {next_at})"
             )
             return False
@@ -691,7 +689,26 @@ def _handle_signal(_signum, _frame):
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--backend-url", required=True)
-    p.add_argument("--api-key", default=os.environ.get("BACKEND_API_KEY", ""))
+    p.add_argument(
+        "--public-api-key",
+        default=os.environ.get("BACKEND_PUBLIC_API_KEY", ""),
+        help="读取任务队列/任务详情的 public key(默认 BACKEND_PUBLIC_API_KEY)",
+    )
+    p.add_argument(
+        "--admin-api-key",
+        default=os.environ.get("BACKEND_ADMIN_API_KEY", ""),
+        help="提交评分的 admin key(默认 BACKEND_ADMIN_API_KEY)",
+    )
+    p.add_argument(
+        "--api-key",
+        default=os.environ.get("BACKEND_API_KEY", ""),
+        help="兼容旧部署:同一个 key 同时用于读写(优先级低于两个新参数)",
+    )
+    p.add_argument(
+        "--queue-path",
+        default="/api/v1/benchmark/queue",
+        help="任务队列路径(默认 /api/v1/benchmark/queue)",
+    )
     p.add_argument("--poll-interval", type=float, default=60.0, help="quiry interval")
 
     p.add_argument("--once", action="store_true", help="只轮询一次,处理完即退出(调试用)")
@@ -759,6 +776,13 @@ def parse_args():
     args.output_root = pathlib.Path(args.output_root).expanduser().resolve()
     args.download_dir = pathlib.Path(args.download_dir).expanduser().resolve()
     args.download_strategies = parse_strategies(args.download_strategies)  # 启动即 fail fast
+    if args.api_key:
+        args.public_api_key = args.public_api_key or args.api_key
+        args.admin_api_key = args.admin_api_key or args.api_key
+    if not args.public_api_key:
+        p.error("--public-api-key or BACKEND_PUBLIC_API_KEY is required")
+    if not args.admin_api_key:
+        p.error("--admin-api-key or BACKEND_ADMIN_API_KEY is required")
     if args.benchmark == "libero_plus":
         if args.num_trials != 1:
             p.error("libero_plus official protocol requires --num-trials 1")
@@ -772,10 +796,6 @@ def parse_args():
 def main():
     _setup_logger()
     args = parse_args()
-    if not args.api_key:
-        # 与后端行为对齐:BACKEND_API_KEY 未设置时后端鉴权整体关闭,
-        # 同机/内网部署可以不配;对外暴露的后端务必两边配同一个串。
-        logger.warning("BACKEND_API_KEY 未设置,将不带鉴权访问后端(仅适用于本机/内网部署)")
 
     # 预检评测环境,避免每个任务都失败后才发现 setup.sh 没跑过。
     from libero_eval.paths import CLIENT_VENV_PY, SERVER_VENV_PY  # 只含路径常量
@@ -784,7 +804,12 @@ def main():
         if not py.exists():
             sys.exit(f"[benchmark_worker] Missing {py} — install the {what} first (bash setup.sh; see README).")
 
-    client = BackendClient(args.backend_url, args.api_key)
+    client = BackendClient(
+        args.backend_url,
+        public_api_key=args.public_api_key,
+        admin_api_key=args.admin_api_key,
+        queue_path=args.queue_path,
+    )
     store = StateStore(pathlib.Path(args.state_file))
     local_q: queue.Queue = queue.Queue()
 

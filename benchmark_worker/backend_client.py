@@ -1,12 +1,13 @@
 """
 后端 Benchmark API 的最小 HTTP 客户端 | Minimal HTTP client for the backend benchmark API.
 
-只覆盖 worker 需要的三个接口。队列与结果提交使用运行时提供的 worker API
-key，并放在 X-API-Key 头中：
+只覆盖 worker 需要的三个接口(prototype 仓库 docs/api_reference_zh.md):
 
-    GET  /api/pending-tasks               -> 待评测任务队列
-    GET  /api/submission/{id}             -> 核对评分是否已经落库
+    GET  /api/v1/benchmark/queue          -> 待评测任务队列(public key)
+    GET  /api/submission/{id}             -> 核对评分是否已经落库(public key)
     POST /api/v1/benchmark/task/{id}/score     -> 提交评测结果
+
+读接口和写接口使用不同的 key。不再使用旧 `/api/pending-tasks`。
 
 仅用标准库(urllib),保持通信层零第三方依赖。
 """
@@ -16,6 +17,7 @@ import urllib.error
 import urllib.request
 
 USER_AGENT = "validator-benchmark-worker/0.1"
+DEFAULT_QUEUE_PATH = "/api/v1/benchmark/queue"
 
 
 class BackendError(Exception):
@@ -37,18 +39,37 @@ class BackendError(Exception):
 
 
 class BackendClient:
-    def __init__(self, base_url: str, api_key: str, timeout_s: float = 30.0, submit_timeout_s: float = 300.0):
+    def __init__(
+        self,
+        base_url: str,
+        public_api_key: str,
+        admin_api_key: str | None = None,
+        timeout_s: float = 30.0,
+        submit_timeout_s: float = 300.0,
+        queue_path: str = DEFAULT_QUEUE_PATH,
+    ):
         self.base_url = base_url.rstrip("/")
-        self.api_key = api_key
+        self.public_api_key = public_api_key
+        # Compatibility for callers written before keys were split. New
+        # production callers pass both values explicitly.
+        self.admin_api_key = public_api_key if admin_api_key is None else admin_api_key
         self.timeout_s = timeout_s
         self.submit_timeout_s = submit_timeout_s
+        self.queue_path = "/" + queue_path.lstrip("/")
 
-    def _request(self, method: str, path: str, body: dict | None = None, timeout_s: float | None = None) -> dict:
-        # 后端未设 BACKEND_API_KEY 时鉴权整体关闭(本机/内网部署),此时不带头。
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        api_key: str,
+        body: dict | None = None,
+        timeout_s: float | None = None,
+    ) -> dict:
         # 显式标识客户端；Cloudflare 会以 1010 拒绝 Python-urllib 默认 UA。
         headers = {"User-Agent": USER_AGENT}
-        if self.api_key:
-            headers["X-API-Key"] = self.api_key
+        if api_key:
+            headers["X-API-Key"] = api_key
         data = None
         if body is not None:
             data = json.dumps(body).encode()
@@ -76,18 +97,19 @@ class BackendClient:
         响应体是 {"queue_size": N, "tasks": [...]} 信封(api_reference_zh.md 3.1),
         这里解开只返回任务列表。
         """
-        data = self._request("GET", "/api/pending-tasks")
+        data = self._request("GET", self.queue_path, api_key=self.public_api_key)
         return data.get("tasks", []) if isinstance(data, dict) else data
 
     def fetch_submission(self, task_id: str) -> dict:
         """读取任务详情,用于确认超时/5xx 的评分 POST 是否实际已经落库。"""
-        return self._request("GET", f"/api/submission/{task_id}")
+        return self._request("GET", f"/api/submission/{task_id}", api_key=self.public_api_key)
 
     def submit_score(self, task_id: str, payload: dict) -> dict:
         # 后端同步落库耗时可能明显长于普通 GET,单独留出充足超时。
         return self._request(
             "POST",
             f"/api/v1/benchmark/task/{task_id}/score",
+            api_key=self.admin_api_key,
             body=payload,
             timeout_s=self.submit_timeout_s,
         )
