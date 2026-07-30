@@ -9,7 +9,7 @@
 ![model](https://img.shields.io/badge/model-pi0.5%20(openpi)-success)
 ![parallel](https://img.shields.io/badge/parallel-8%C3%97%20GPU-orange)
 
-[Website](https://www.openroboto.ai) · [Leaderboard](https://www.openroboto.ai/#/benchmark) · [Queue](https://www.openroboto.ai/#/queue) · [How the subnet works](https://github.com/openroboto-ai/openroboto-subnet/blob/main/docs/SUBNET_OVERVIEW.md) · [中文文档](./README_zh.md)
+[Website](https://www.openroboto.ai) · [Leaderboard](https://www.openroboto.ai/#/benchmark) · [Queue](https://www.openroboto.ai/#/queue) · [How the subnet works](https://github.com/openroboto-ai/openroboto-subnet/blob/main/docs/SUBNET_OVERVIEW.md)
 
 </div>
 
@@ -17,7 +17,7 @@
 
 Point it at a model — a local checkpoint directory, a Hugging Face repo id, or an HF URL — and it evaluates the model on LIBERO task suites in MuJoCo, fanned out across 8 GPUs (one policy server per GPU, tasks dispatched dynamically). This is the code the subnet's benchmark worker runs: submissions picked up from the public evaluation queue are scored here.
 
-Supported checkpoint formats, detected automatically: **openpi JAX** (`params/`, orbax OCDBT), **openpi PyTorch** (`model.safetensors`), and native **OpenVLA-OFT** sharded checkpoints (served by a dedicated policy server, never force-converted into an incompatible architecture).
+Supported checkpoint formats, detected automatically: **openpi JAX** (`params/`, orbax OCDBT) and **openpi PyTorch** (`model.safetensors`).
 
 ## Verified against the official numbers
 
@@ -107,7 +107,5 @@ Each run writes `eval_runs/<run>/` with `summary.json` (total + per-suite succes
 | `libero_plus` | LIBERO-plus robustness variants | 10,030 tasks | 1 (official protocol) |
 
 ## Digging deeper
-
-The [Chinese README](./README_zh.md) is the full engineering log and goes well beyond this page: JAX→PyTorch conversion, the download strategy chain, batched policy serving, GPU driver deadlock recovery, and per-benchmark implementation notes. If you work on the harness itself, read that one.
 
 Related repositories: [openroboto-ai/openroboto-subnet](https://github.com/openroboto-ai/openroboto-subnet) (miner CLI, protocol, subnet docs) · [openpi](https://github.com/Physical-Intelligence/openpi) · [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO)
