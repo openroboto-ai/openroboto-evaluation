@@ -23,7 +23,9 @@ import os
 import pathlib
 import queue
 import re
+import shutil
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -33,11 +35,12 @@ VALIDATOR_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(VALIDATOR_ROOT))
 
 from benchmark_worker.backend_client import BackendClient, BackendError
+from benchmark_worker.profiles import PROFILES, get_profile
 from benchmark_worker.scoring import (
     build_score_payload,
     prepare_submit_payload,
+    successful_payload_incomplete_reason,
 )
-from benchmark_worker.profiles import PROFILES, get_profile
 from benchmark_worker.state import StateStore
 from libero_eval.download import COMMIT_HASH_RE, DownloadError, download_model, parse_strategies
 
@@ -96,6 +99,97 @@ class EvalInfrastructureError(Exception):
     """本机评测基础设施暂时不可用,任务应重新排队且不上报失败。"""
 
 
+def _remove_cache_dir(path: pathlib.Path, root: pathlib.Path, label: str) -> None:
+    """只删除 worker 在指定根目录下直接创建的单个缓存目录。
+
+    清缓存属于破坏性操作，因此不接受根目录本身、嵌套路径、符号链接或
+    根目录之外的路径。调用方若清理失败会保留 pending 状态，绝不带着
+    可能污染的缓存继续评测。
+    """
+    path = pathlib.Path(path)
+    root = pathlib.Path(root).resolve()
+    if path.is_symlink():
+        raise RuntimeError(f"refusing to delete symlinked {label}: {path}")
+    resolved = path.resolve()
+    if resolved == root or resolved.parent != root:
+        raise RuntimeError(f"refusing to delete {label} outside its cache root {root}: {resolved}")
+    if not resolved.exists():
+        return
+    if not resolved.is_dir():
+        raise RuntimeError(f"refusing to delete non-directory {label}: {resolved}")
+    shutil.rmtree(resolved)
+    logger.info(f"Deleted {label} before clean retry: {resolved}")
+
+
+def _schedule_clean_retry(
+    store: StateStore,
+    task_id: str,
+    args,
+    reason: str,
+    *,
+    download_cache: pathlib.Path | None = None,
+    evaluation_cache: pathlib.Path | None = None,
+) -> None:
+    """删除本次失败阶段的缓存，并把任务恢复为可重试状态。"""
+    cleanup_errors = []
+    pending_download = None
+    pending_evaluation = None
+    for path, root, label, pending_name in (
+        (download_cache, args.download_dir, "download cache", "download"),
+        (evaluation_cache, args.output_root, "evaluation cache", "evaluation"),
+    ):
+        if path is None:
+            continue
+        try:
+            _remove_cache_dir(path, root, label)
+        except Exception as e:
+            cleanup_errors.append(f"{label}: {e}")
+            if pending_name == "download":
+                pending_download = str(path)
+            else:
+                pending_evaluation = str(path)
+
+    note = f"{reason}; caches cleared; queued for a full retry"
+    if cleanup_errors:
+        note = f"{reason}; cache cleanup pending ({'; '.join(cleanup_errors)}); retry is blocked until clean"
+    store.update(
+        task_id,
+        status="pending",
+        payload=None,
+        out_dir=None,
+        resume_evaluation=False,
+        cleanup_download_dir=pending_download,
+        cleanup_evaluation_dir=pending_evaluation,
+        note=note,
+    )
+
+
+def _finish_pending_cleanup(task_id: str, store: StateStore, args, previous: dict) -> bool:
+    """重试任务开跑前完成上一次遗留清理；失败时不允许进入流水线。"""
+    download_cache = previous.get("cleanup_download_dir")
+    evaluation_cache = previous.get("cleanup_evaluation_dir")
+    # 兼容旧版本或进程崩溃留下的部分输出。新协议要求整轮重跑，因此
+    # pending/running 任务只要还引用旧输出目录，首次领取时就先清掉；
+    # resume_evaluation 是旧账本可能留下的额外标记。
+    if previous.get("out_dir") and (
+        previous.get("status") in ("pending", "running") or previous.get("resume_evaluation")
+    ):
+        evaluation_cache = previous["out_dir"]
+    if not download_cache and not evaluation_cache:
+        return True
+
+    _schedule_clean_retry(
+        store,
+        task_id,
+        args,
+        "finishing cleanup from the previous failed attempt",
+        download_cache=pathlib.Path(download_cache) if download_cache else None,
+        evaluation_cache=pathlib.Path(evaluation_cache) if evaluation_cache else None,
+    )
+    entry = store.get(task_id) or {}
+    return not entry.get("cleanup_download_dir") and not entry.get("cleanup_evaluation_dir")
+
+
 # ----------------------------------------------------------------------------
 # 模型解析
 # ----------------------------------------------------------------------------
@@ -134,15 +228,17 @@ def resolve_model(
 def download_with_retry(ref: str, revision: str | None, model_dir: pathlib.Path, args) -> None:
     """下载模型,对失败做有上限的原地重试。
 
-    下载失败是网络/镜像侧的暂时性故障(代理上游抖动时三种策略会同时 SSL
-    失败),不构成对模型的评测结论;这里重试若干次,耗尽后抛 DownloadError
-    由调用方把任务重新排队——绝不能走"失败报告"路径。
+    网络/镜像故障重试若干次,耗尽后由调用方清缓存并重新排队。仓库缺文件、
+    官方完整性校验失败等 permanent 错误不在本轮原地重试，但同样不生成
+    评测结论；调用方清理整个下载目录后把任务放回队尾。
     """
     for attempt in range(args.download_retries):
         try:
             download_model(ref, model_dir, revision=revision, strategies=args.download_strategies, log=logger.info)
             return
         except DownloadError as e:
+            if e.permanent:
+                raise
             if attempt + 1 >= args.download_retries:
                 raise
             wait = min(300, 30 * 2**attempt)
@@ -200,7 +296,58 @@ def _failed_task_infrastructure_detail(out_dir: pathlib.Path, failed_tasks: list
     return "\n\n".join(matches)
 
 
-def run_evaluation(task: dict, model_dir: pathlib.Path, out_dir: pathlib.Path, args, init_seed: int | None = None):
+def _report_progress(client: BackendClient, task_id: str, stage: str, detail: dict, worker_id: str) -> bool:
+    """Best-effort progress reporting; observability failures must not corrupt evaluation."""
+    try:
+        client.report_progress(task_id, stage, detail, worker_id)
+    except BackendError as e:
+        logger.warning(f"{task_id}: progress update failed (stage={stage} worker={worker_id}): {e}")
+        return False
+    logger.info(f"{task_id}: progress stage={stage} detail={detail} worker={worker_id}")
+    return True
+
+
+def _forward_progress_events(
+    progress_path: pathlib.Path,
+    offset: int,
+    callback,
+) -> int:
+    """Forward complete JSONL events written by run_eval.py and return the new byte offset."""
+    try:
+        with progress_path.open("r", encoding="utf-8") as progress_file:
+            progress_file.seek(offset)
+            while True:
+                line_start = progress_file.tell()
+                line = progress_file.readline()
+                if not line:
+                    return progress_file.tell()
+                if not line.endswith("\n"):
+                    return line_start  # writer has not completed this event yet
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Ignoring malformed progress event in {progress_path}: {e}")
+                    continue
+                if not isinstance(event, dict) or event.get("stage") != "evaluating":
+                    logger.warning(f"Ignoring invalid progress event in {progress_path}: {event!r}")
+                    continue
+                detail = event.get("detail")
+                if not isinstance(detail, dict):
+                    logger.warning(f"Ignoring progress event without detail object in {progress_path}: {event!r}")
+                    continue
+                callback("evaluating", detail)
+    except FileNotFoundError:
+        return offset
+
+
+def run_evaluation(
+    task: dict,
+    model_dir: pathlib.Path,
+    out_dir: pathlib.Path,
+    args,
+    init_seed: int | None = None,
+    progress_callback=None,
+):
     """运行一次 run_eval.py,返回 (summary | None, error_str)。
 
     init_seed 非空时启用 init states 混合随机化(run_eval --init-seed:
@@ -244,6 +391,10 @@ def run_evaluation(task: dict, model_dir: pathlib.Path, out_dir: pathlib.Path, a
     if init_seed is not None and benchmark != "libero_plus":
         cmd += ["--init-seed", str(init_seed)]
 
+    progress_path = out_dir / "progress.jsonl"
+    progress_path.write_text("")
+    cmd += ["--progress-file", str(progress_path)]
+
     log_path = out_dir / "run_eval.log"
     logger.info(
         f"Evaluation starts with command `{' '.join(cmd)}`, "
@@ -255,14 +406,19 @@ def run_evaluation(task: dict, model_dir: pathlib.Path, out_dir: pathlib.Path, a
         env["PYTHONUNBUFFERED"] = "1"
         proc = subprocess.Popen(cmd, stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True, env=env)
         deadline = time.time() + args.eval_timeout
+        progress_offset = 0
         while proc.poll() is None:
+            if progress_callback is not None:
+                progress_offset = _forward_progress_events(progress_path, progress_offset, progress_callback)
             if stop_event.is_set():
                 _terminate(proc)
                 raise EvalInterrupted()
             if time.time() > deadline:
                 _terminate(proc)
-                return None, f"evaluation timed out after {args.eval_timeout:.0f}s"
+                raise EvalInfrastructureError(f"evaluation timed out after {args.eval_timeout:.0f}s")
             time.sleep(5)
+        if progress_callback is not None:
+            _forward_progress_events(progress_path, progress_offset, progress_callback)
 
     # SIGTERM 与子进程自行退出可能发生在同一个轮询间隔内。停机意图必须
     # 优先于刚结束的子进程结果,否则会把中断/OOM 当成最终模型结论提交。
@@ -280,27 +436,41 @@ def run_evaluation(task: dict, model_dir: pathlib.Path, out_dir: pathlib.Path, a
         if _has_retryable_infrastructure_error(log_text):
             tail = "\n".join(log_text.splitlines()[-15:])
             raise EvalInfrastructureError(f"evaluation infrastructure failed:\n{tail}")
-        return None, f"run_eval exited {proc.returncode} without summary.json (see {log_path})"
+        raise EvalInfrastructureError(f"run_eval exited {proc.returncode} without a complete summary (see {log_path})")
     summary = json.loads(summary_path.read_text())
     if selected_benchmark == "libero_plus":
         protocol = summary.get("evaluation_protocol") or {}
         if not protocol.get("official_result"):
             deviations = "; ".join(protocol.get("deviations") or ["missing official protocol metadata"])
             raise EvalInfrastructureError(f"refusing to score non-official LIBERO-Plus result: {deviations}")
-    if proc.returncode == 2:
-        failed = sorted(n for n, r in summary.get("tasks", {}).items() if r.get("status") != "ok")
-        # run_eval writes summary.json before exiting 2. Inspect the individual
-        # task logs as well: infrastructure failures must requeue the benchmark,
-        # never turn a validator-side EGL/CUDA problem into a partial model score.
+    tasks = summary.get("tasks")
+    if not isinstance(tasks, dict):
+        raise EvalInfrastructureError("evaluation summary has no task results; refusing to score it")
+    expected_tasks = profile.expected_task_count
+    failed = sorted(n for n, r in tasks.items() if not isinstance(r, dict) or r.get("status") != "ok")
+    wrong_trials = sorted(
+        n
+        for n, r in tasks.items()
+        if isinstance(r, dict) and r.get("status") == "ok" and r.get("num_trials") != args.num_trials
+    )
+    if len(tasks) != expected_tasks or failed or wrong_trials:
+        details = []
+        if len(tasks) != expected_tasks:
+            details.append(f"summary contains {len(tasks)}/{expected_tasks} required tasks")
+        if failed:
+            details.append(f"{len(failed)} task(s) did not complete: {', '.join(failed[:10])}")
+        if wrong_trials:
+            details.append(f"{len(wrong_trials)} task(s) have incomplete trial counts: {', '.join(wrong_trials[:10])}")
         infra_detail = _failed_task_infrastructure_detail(out_dir, failed)
         if infra_detail:
-            raise EvalInfrastructureError(
-                f"{len(failed)} evaluation task(s) failed because infrastructure was unavailable:\n{infra_detail}"
-            )
-        # Non-infrastructure task errors remain visible as partial results.
-        return summary, f"{len(failed)} task(s) failed after retries: {', '.join(failed[:10])}"
+            details.append(infra_detail)
+        raise EvalInfrastructureError(
+            "incomplete evaluation; refusing to publish a partial score:\n" + "\n".join(details)
+        )
     if proc.returncode != 0:
-        return summary, f"run_eval exited {proc.returncode} (see {log_path})"
+        raise EvalInfrastructureError(
+            f"run_eval exited {proc.returncode} despite a complete-looking summary; refusing to score it"
+        )
     return summary, ""
 
 
@@ -472,6 +642,24 @@ def reconcile_persisted_score(
 
 def try_submit(client: BackendClient, store: StateStore, task_id: str, payload: dict) -> bool:
     """提交一次评分。返回 True 表示已到终态(成功或永久拒绝),False 表示可重试。"""
+    incomplete_reason = successful_payload_incomplete_reason(payload)
+    if incomplete_reason:
+        entry = store.get(task_id) or {}
+        store.update(
+            task_id,
+            status="pending",
+            payload=None,
+            out_dir=None,
+            resume_evaluation=False,
+            cleanup_evaluation_dir=entry.get("out_dir"),
+            submit_error=None,
+            next_submit_at=None,
+            note=f"blocked incomplete success payload: {incomplete_reason}",
+        )
+        logger.error(
+            f"{task_id} ({_model_label(payload)}): refusing to submit success=true because {incomplete_reason}"
+        )
+        return False
     payload = prepare_submit_payload(payload)
     label = _model_label(payload)
     # 记录真正交给 HTTP client 的请求体，而不是含本地 task 明细的原始 payload。
@@ -565,9 +753,6 @@ def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, 
         try:
             logger.info(f"processing task {task_id} ({_model_label(item)})")
             process_task(item, client, store, args)
-            entry = store.get(task_id)
-            if entry is not None and entry.get("status") == "pending" and not stop_event.is_set():
-                local_q.put(item)  # 暂时性失败(如下载重试耗尽):排到队尾稍后再试
         except Exception:
             logger.exception(f"{task_id} ({_model_label(item)}): unexpected worker error")
             entry = store.get(task_id)
@@ -578,6 +763,11 @@ def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, 
             else:
                 store.update(task_id, status="pending", note="worker crashed; will retry on next start")
         finally:
+            entry = store.get(task_id)
+            if entry is not None and entry.get("status") == "pending" and not stop_event.is_set():
+                # 所有非终态失败统一回到本地 FIFO 队尾；即使 process_task
+                # 冒出未预期异常，也不能丢到只能靠重启恢复。
+                local_q.put(item)
             with _inflight_lock:
                 _inflight.discard(task_id)
 
@@ -585,9 +775,15 @@ def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, 
 def process_task(task: dict, client: BackendClient, store: StateStore, args) -> None:
     task_id = task["task_id"]
     t0 = time.time()
+    previous = store.get(task_id) or {}
+    if not _finish_pending_cleanup(task_id, store, args, previous):
+        logger.error(f"{task_id} ({_model_label(task)}): cache cleanup incomplete; task moved to queue tail")
+        return
+
     out_dir = args.output_root / f"{time.strftime('%Y%m%d_%H%M%S')}_{task_id}"
     out_dir.mkdir(parents=True, exist_ok=True)
     selected_benchmark = getattr(args, "benchmark", "libero")
+    worker_id = getattr(args, "worker_id", "") or socket.gethostname()
     store.update(
         task_id,
         status="running",
@@ -599,6 +795,9 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
         submit_attempts=0,
         submit_error=None,
         next_submit_at=None,
+        resume_evaluation=False,
+        cleanup_download_dir=None,
+        cleanup_evaluation_dir=None,
         note=None,
     )
 
@@ -608,44 +807,132 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
         init_seed = select_init_seed(task)
 
     summary, error = None, ""
+    ref = None
+    revision = None
+    model_dir = None
+    stage = "resolving"
     try:
+        _report_progress(client, task_id, "downloading", {}, worker_id)
         ref, revision, model_dir = resolve_model(task, args.download_dir, args.allow_local_model)
         if ref:
+            stage = "downloading"
             logger.info(f"Downloading model {ref} at {revision or 'main'} to {model_dir}")
             download_with_retry(ref, revision, model_dir, args)
+        stage = "evaluating"
+        _report_progress(client, task_id, "prechecking", {}, worker_id)
         logger.info(f"Evaluating model {ref} at {revision}")
-        summary, error = run_evaluation(task, model_dir, out_dir, args, init_seed=init_seed)
+        summary, error = run_evaluation(
+            task,
+            model_dir,
+            out_dir,
+            args,
+            init_seed=init_seed,
+            progress_callback=lambda stage, detail: _report_progress(client, task_id, stage, detail, worker_id),
+        )
     except EvalInterrupted:
-        store.update(task_id, status="pending", note="interrupted; will re-run on next start")
-        logger.warning(f"{task_id} ({_model_label(task)}): evaluation interrupted; task requeued")
+        _schedule_clean_retry(
+            store,
+            task_id,
+            args,
+            "attempt interrupted",
+            download_cache=model_dir if stage == "downloading" and ref else None,
+            evaluation_cache=out_dir,
+        )
+        logger.warning(f"{task_id} ({_model_label(task)}): attempt interrupted; caches cleared and task requeued")
         return
     except DownloadError as e:
-        store.update(task_id, status="pending", note=f"download failed after retries: {e}")
-        logger.error(f"{task_id} ({_model_label(task)}): download failed after retries; task requeued, no report sent")
+        _schedule_clean_retry(
+            store,
+            task_id,
+            args,
+            f"download failed ({'permanent' if e.permanent else 'retryable'}): {e}",
+            download_cache=model_dir if ref else None,
+            evaluation_cache=out_dir,
+        )
+        logger.error(
+            f"{task_id} ({_model_label(task)}): download failed; download cache cleared, "
+            "task requeued, no score submitted"
+        )
         return
     except EvalInfrastructureError as e:
-        store.update(task_id, status="pending", note=f"evaluation infrastructure unavailable: {e}")
+        _schedule_clean_retry(
+            store,
+            task_id,
+            args,
+            f"evaluation incomplete: {e}",
+            evaluation_cache=out_dir,
+        )
         logger.error(
-            f"{task_id} ({_model_label(task)}): evaluation infrastructure unavailable; task requeued, no report sent"
+            f"{task_id} ({_model_label(task)}): evaluation incomplete; all partial task caches cleared, "
+            "task requeued for a full run, no score submitted"
         )
         return
     except Exception as e:
-        error = f"{type(e).__name__}: {e}"
-        logger.error(f"{task_id} ({_model_label(task)}): evaluation failed: {error}")
+        # ValueError 来自队列边界校验（非法 repo/commit），属于明确的输入拒绝，
+        # 可以作为终态结论返回；执行/基础设施异常则一律清缓存后重试。
+        if stage == "resolving" and isinstance(e, ValueError):
+            error = f"invalid benchmark task: {e}"
+            logger.error(f"{task_id} ({_model_label(task)}): {error}; reporting task rejected")
+        else:
+            _schedule_clean_retry(
+                store,
+                task_id,
+                args,
+                f"unexpected {stage} failure: {type(e).__name__}: {e}",
+                download_cache=model_dir if stage == "downloading" and ref else None,
+                evaluation_cache=out_dir,
+            )
+            logger.exception(
+                f"{task_id} ({_model_label(task)}): unexpected {stage} failure; "
+                "affected caches cleared and task requeued, no score submitted"
+            )
+            return
 
-    payload = build_score_payload(
-        task,
-        summary,
-        time.time() - t0,
-        error,
-        init_seed=init_seed,
-        benchmark=selected_benchmark,
-    )
-    (out_dir / "score_payload.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    try:
+        payload = build_score_payload(
+            task,
+            summary,
+            time.time() - t0,
+            error,
+            init_seed=init_seed,
+            benchmark=selected_benchmark,
+        )
+        incomplete_reason = successful_payload_incomplete_reason(payload)
+        if incomplete_reason:
+            _schedule_clean_retry(
+                store,
+                task_id,
+                args,
+                f"score payload failed completeness gate: {incomplete_reason}",
+                evaluation_cache=out_dir,
+            )
+            logger.error(
+                f"{task_id} ({_model_label(task)}): score payload is incomplete ({incomplete_reason}); "
+                "evaluation cache cleared and task requeued, no score submitted"
+            )
+            return
+        (out_dir / "score_payload.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    except Exception as e:
+        _schedule_clean_retry(
+            store,
+            task_id,
+            args,
+            f"score construction failed: {type(e).__name__}: {e}",
+            evaluation_cache=out_dir,
+        )
+        logger.exception(
+            f"{task_id} ({_model_label(task)}): score construction failed; "
+            "evaluation cache cleared and task requeued, no score submitted"
+        )
+        return
     store.update(task_id, status="done_pending_submit", payload=payload)
 
     if not try_submit(client, store, task_id, payload):
-        logger.warning(f"{task_id} ({_model_label(task)}): completed score retained; ledger backoff controls retry")
+        entry = store.get(task_id) or {}
+        if entry.get("status") == "pending":
+            logger.warning(f"{task_id} ({_model_label(task)}): incomplete score blocked; task will be re-evaluated")
+        else:
+            logger.warning(f"{task_id} ({_model_label(task)}): completed score retained; ledger backoff controls retry")
 
 
 # ----------------------------------------------------------------------------
@@ -658,9 +945,8 @@ def classify_queued_task(entry: dict | None, task: dict, benchmark: str | None =
       "evaluate"  没见过的任务,或同 task_id 换了 repo/commit(miner 重新
                   提交)—— 入队评测。换 commit 时若旧结果尚未提交,直接作废:
                   后端只关心当前提交。
-      "resubmit"  同一提交已评完、后端也确认收过分,但队列里又出现了 ——
-                  后端可能丢了结果,重发已存 payload。对面在等,不能沉默。
-      "skip"      本地正在排队/评测(等它出结果),或后端已永久拒绝(abandoned)。
+      "skip"      本地正在排队/评测，或同一提交已获后端确认。评分 POST
+                  会创建 challenge attempt，并非幂等；已确认结果绝不自动重发。
     """
     if entry is None:
         return "evaluate"
@@ -675,7 +961,9 @@ def classify_queued_task(entry: dict | None, task: dict, benchmark: str | None =
     if (task.get("hf_repo_id"), task.get("hf_commit")) != (prev.get("hf_repo_id"), prev.get("hf_commit")):
         return "evaluate"
     if entry.get("status") == "submitted" and entry.get("payload"):
-        return "resubmit"
+        if successful_payload_incomplete_reason(entry["payload"]):
+            return "evaluate"
+        return "skip"
     return "skip"  # done_pending_submit 走补交路径;abandoned 不再纠缠
 
 
@@ -689,6 +977,11 @@ def _handle_signal(_signum, _frame):
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--backend-url", required=True)
+    p.add_argument(
+        "--worker-id",
+        default=os.environ.get("BENCHMARK_WORKER_ID", socket.gethostname()),
+        help="进度上报中的 worker 标识(默认 BENCHMARK_WORKER_ID 或 hostname)",
+    )
     p.add_argument(
         "--public-api-key",
         default=os.environ.get("BACKEND_PUBLIC_API_KEY", ""),
@@ -720,7 +1013,9 @@ def parse_args():
     p.add_argument("--output-root", default=str(VALIDATOR_ROOT / "eval_runs"), help="评测产物根目录")
     p.add_argument("--download-dir", default=str(VALIDATOR_ROOT / "hf_models"), help="HF 模型下载目录")
     p.add_argument(
-        "--download-strategies", default="hfd", help="模型下载策略顺序(逗号分隔):hfd-mirror,hfd,hub-mirror,hub"
+        "--download-strategies",
+        required=True,
+        help='模型下载策略顺序:hfd-mirror,hfd,hub-mirror,hub。建议在中国大陆使用"hfd-mirror,hub-mirror";在国外使用"hfd,hub"',
     )
 
     ## Params below will be passed thourgh to run_eval.py
@@ -845,6 +1140,12 @@ def main():
                         note="benchmark profile or protocol changed; old score will not be submitted",
                     )
                     continue
+                incomplete_reason = successful_payload_incomplete_reason(entry["payload"])
+                if incomplete_reason:
+                    try_submit(client, store, task_id, entry["payload"])
+                    if entry.get("task"):
+                        local_q.put(entry["task"])
+                    continue
                 if reconcile_persisted_score(
                     client,
                     store,
@@ -881,15 +1182,6 @@ def main():
                 store.update(tid, status="pending", task=t, benchmark=args.benchmark, payload=None)
                 local_q.put(t)
                 new += 1
-            elif verdict == "resubmit" and entry is not None:
-                # 同一提交的结果早已交过,但后端仍把任务挂在队列里 ——
-                # 重发已存结果,保证对面等得到回音,且不重复评测。
-                if not submit_retry_due(entry):
-                    continue
-                logger.info(
-                    f"{tid} ({_model_label(t)}): already evaluated (result on file); re-submitting stored score"
-                )
-                try_submit(client, store, tid, entry["payload"])
         if new:
             logger.info(f"picked up {new} new task(s) from backend queue")
         elif first_poll and tasks is not None:
@@ -897,7 +1189,7 @@ def main():
             if tasks:
                 logger.info(
                     f"queue has {len(tasks)} task(s), all already evaluated in the local "
-                    f"ledger ({args.state_file}); stored results were re-sent where applicable"
+                    f"ledger ({args.state_file}); confirmed results were not re-submitted"
                 )
             else:
                 logger.info(f"queue empty; polling every {args.poll_interval:.0f}s")

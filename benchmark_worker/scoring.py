@@ -162,6 +162,64 @@ def _mean_scored_entries(env_scores: list[dict]) -> float:
     return round(sum(scores) / len(scores), 6) if scores else 0.0
 
 
+def successful_payload_incomplete_reason(payload: dict) -> str:
+    """Return why a purportedly successful score is not protocol-complete.
+
+    This is intentionally usable both before the first POST and when an old
+    ledger entry is considered for re-submission.  A zero success rate is a
+    valid completed evaluation; missing task executions, missing trials and
+    evaluator errors are not.
+    """
+    if not payload.get("success"):
+        return ""
+
+    benchmark = payload.get("benchmark")
+    # Compatibility for low-level callers and legacy unit fixtures. Every
+    # production payload built by build_score_payload carries a benchmark.
+    if benchmark is None:
+        return ""
+    try:
+        profile = get_profile(benchmark)
+    except ValueError as exc:
+        return str(exc)
+
+    if payload.get("error"):
+        return f"top-level evaluation error: {payload['error']}"
+
+    per_task = payload.get("per_task_scores")
+    if not isinstance(per_task, list):
+        return "per_task_scores is missing"
+    if len(per_task) != profile.expected_task_count:
+        return f"completed {len(per_task)}/{profile.expected_task_count} required tasks"
+
+    task_ids = []
+    expected_trials = payload.get("expected_trials_per_task")
+    for entry in per_task:
+        if not isinstance(entry, dict) or not isinstance(entry.get("task_id"), str):
+            return "per_task_scores contains a malformed task record"
+        task_ids.append(entry["task_id"])
+        trials = entry.get("trials")
+        if isinstance(trials, bool) or not isinstance(trials, int) or trials <= 0:
+            return f"task {entry['task_id']} has invalid trial count {trials!r}"
+        if expected_trials is not None and trials != expected_trials:
+            return f"task {entry['task_id']} completed {trials}/{expected_trials} required trials"
+    if len(set(task_ids)) != len(task_ids):
+        return "per_task_scores contains duplicate task ids"
+
+    env_scores = payload.get("env_scores")
+    if not isinstance(env_scores, list) or not env_scores:
+        return "env_scores is missing"
+    for entry in env_scores:
+        if not isinstance(entry, dict):
+            return "env_scores contains a malformed record"
+        if entry.get("error"):
+            return f"environment {entry.get('env_name', '<unknown>')} is incomplete: {entry['error']}"
+        samples = entry.get("samples")
+        if isinstance(samples, bool) or not isinstance(samples, int) or samples <= 0:
+            return f"environment {entry.get('env_name', '<unknown>')} has no completed samples"
+    return ""
+
+
 def build_score_payload(
     task: dict,
     summary: dict | None,
@@ -182,8 +240,9 @@ def build_score_payload(
                   验证 seed 本身,再用 gen_init_states.py --seed 逐 task 复现
                   评测所用的初始状态。
 
-    `success` 的语义是「产出了可用分数」:个别 task 重试后仍失败的运行
-    依然算成功,损失记录在顶层 error 和对应 env_scores[].error 里。
+    `success` 的语义是「完整执行了 benchmark 协议」。行为成功率为零仍是
+    有效分数；但缺 task、缺 trial 或评测器错误只能留在本地重试，绝不能
+    作为成功结果发布。
     """
     payload = {
         "success": False,
@@ -195,6 +254,7 @@ def build_score_payload(
         "hf_commit": task.get("hf_commit", ""),
         "round_num": task.get("round_num", 0),
         "init_seed": init_seed,
+        "expected_trials_per_task": None,
         "env_scores": [],
         "total_score": 0.0,
         "duration_sec": round(duration_sec, 1),
@@ -203,6 +263,8 @@ def build_score_payload(
     }
     if summary is None:
         return payload
+
+    payload["expected_trials_per_task"] = summary.get("num_trials_per_task")
 
     # 每个 suite 的耗时 = 该 suite 各 task 用时之和(task 在多卡上并行,
     # suite 维度的墙钟时间没有意义,计算耗时才可比)。
@@ -243,6 +305,8 @@ def build_score_payload(
             if entry["samples"] > 0
         ]
     payload.update({
+        # Set tentatively so the protocol-completeness validator can inspect
+        # the fully constructed payload below.
         "success": bool(weighted),
         "env_scores": env_scores,
         "total_score": (
@@ -252,7 +316,12 @@ def build_score_payload(
         ),
         "per_task_scores": per_task,
     })
-    if not weighted and not error:
+    incomplete_reason = successful_payload_incomplete_reason(payload)
+    if incomplete_reason:
+        payload["success"] = False
+        payload["total_score"] = 0.0
+        payload["error"] = f"incomplete evaluation: {incomplete_reason}"
+    elif not weighted and not error:
         payload["error"] = "evaluation produced no scored episodes"
     return payload
 

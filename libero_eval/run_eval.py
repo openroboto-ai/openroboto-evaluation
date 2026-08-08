@@ -59,6 +59,15 @@ from paths import (
 EVAL_TASK_SCRIPT = pathlib.Path(__file__).resolve().parent / "eval_task.py"
 
 
+def emit_progress_event(progress_file: pathlib.Path | None, detail: dict) -> None:
+    """Append one complete progress event for the parent benchmark worker."""
+    if progress_file is None:
+        return
+    progress_file.parent.mkdir(parents=True, exist_ok=True)
+    with progress_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({"stage": "evaluating", "detail": detail}, sort_keys=True) + "\n")
+
+
 def acquire_gpu_locks(gpus: list[int]) -> list:
     """Hold advisory per-GPU locks for the lifetime of an evaluation process."""
     if not gpus:
@@ -607,9 +616,11 @@ def worker_loop(
         with lock:
             progress["done"] += 1
             done, total = progress["done"], progress["total"]
+            progress["suite_done"][spec.suite] += 1
             if status == "ok":
                 task_result = json.loads(result_json.read_text())
                 results[spec.name] = {"status": "ok", "gpu": server.gpu, "attempts": attempts, **task_result}
+                progress["episodes_done"] += task_result.get("num_trials", 0)
                 print(
                     f"[run_eval] [{done}/{total}] {spec.name}: "
                     f"{task_result['num_successes']}/{task_result['num_trials']} "
@@ -624,6 +635,19 @@ def worker_loop(
                     "task_id": spec.task_id,
                 }
                 print(f"[run_eval] [{done}/{total}] {spec.name}: FAILED (see {log_path})")
+
+            if progress["suite_done"][spec.suite] == progress["suite_total"][spec.suite]:
+                progress["suites_done"] += 1
+                emit_progress_event(
+                    progress["progress_file"],
+                    {
+                        "suites_done": progress["suites_done"],
+                        "suites_total": progress["suites_total"],
+                        "last_completed_suite": spec.suite,
+                        "episodes_done": progress["episodes_done"],
+                        "episodes_total": progress["episodes_total"],
+                    },
+                )
 
 
 # ----------------------------------------------------------------------------
@@ -821,6 +845,11 @@ def main():
     parser.add_argument("--server-timeout", type=float, default=900, help="Seconds to wait for servers")
     parser.add_argument("--mem-fraction", type=float, default=0.7, help="XLA GPU memory fraction per server")
     parser.add_argument("--output-dir", default=None, help="Default: validator/eval_runs/<timestamp>_<model-name>")
+    parser.add_argument(
+        "--progress-file",
+        default=None,
+        help="Append JSONL evaluation progress events for benchmark_worker (optional)",
+    )
     parser.add_argument(
         "--resume",
         action="store_true",
@@ -1062,10 +1091,13 @@ def main():
     # while every other worker sits idle.
     specs.sort(key=lambda sp: sp.max_steps, reverse=True)
 
+    progress_file = pathlib.Path(args.progress_file).resolve() if args.progress_file else None
+
     results: dict = {}
     if args.resume:
         specs, results = split_resumable(specs, out_dir)
         print(f"[run_eval] resume: {len(results)} tasks already have results in {out_dir}, {len(specs)} to run")
+    suite_task_totals = {suite: sum(spec.suite == suite for spec in specs) for suite in suites}
 
     task_q: queue.Queue[TaskSpec] = queue.Queue()
     for spec in specs:
@@ -1096,7 +1128,26 @@ def main():
         wait_for_servers(servers, args.server_timeout)
 
         lock = threading.Lock()
-        progress = {"done": 0, "total": len(specs)}
+        progress = {
+            "done": 0,
+            "total": len(specs),
+            "suite_done": {suite: 0 for suite in suites},
+            "suite_total": suite_task_totals,
+            "suites_done": 0,
+            "suites_total": len(suites),
+            "episodes_done": 0,
+            "episodes_total": len(specs) * args.num_trials,
+            "progress_file": progress_file,
+        }
+        emit_progress_event(
+            progress_file,
+            {
+                "suites_done": 0,
+                "suites_total": len(suites),
+                "episodes_done": 0,
+                "episodes_total": len(specs) * args.num_trials,
+            },
+        )
         threads = [
             threading.Thread(
                 target=worker_loop, args=(s, task_q, args, bench, out_dir, results, lock, progress), daemon=True

@@ -4,8 +4,9 @@ The isolation layer between the backend Benchmark API and this repository's eval
 
 ```
 backend (evaluation queue / scoring API, HTTP + X-API-Key)
-   ▲  ▲
+   ▲  ▲  ▲
    │  └── POST /api/v1/benchmark/task/{id}/score   ← admin key, score submission
+   │  └── POST /api/v1/benchmark/task/{id}/progress← admin key, stage/progress
    └───── GET  /api/v1/benchmark/queue             ← public key, periodic polling
    │
 benchmark_worker/worker.py (resident main process, this repo's uv environment)
@@ -30,6 +31,8 @@ BACKEND_ADMIN_API_KEY=<admin_key from the backend's backend.yaml> \
 ```
 
 Authentication is split by least privilege: `GET /api/v1/benchmark/queue` and task details use the `public_key` (`control.json` → `public_key`); the score POST uses the `admin_key` (`backend.yaml` → `admin_key`). Both values are sent via `X-API-Key` and are required at startup. The legacy `--api-key` / `BACKEND_API_KEY` still lets one key do both reads and writes temporarily, but new deployments should use the two separate arguments or environment variables.
+
+While executing a task, the worker reports three stages: `downloading → prechecking → evaluating`. When `evaluating` starts it reports `0/N`, then reports again each time all tasks of a suite complete; `detail` carries `suites_done`, `suites_total`, `last_completed_suite`, `episodes_done`, and `episodes_total`. An unavailable progress endpoint only logs a warning — it never changes evaluation or scoring results. `worker_id` defaults to the hostname and can be set explicitly with `--worker-id` or `BENCHMARK_WORKER_ID`.
 
 Debugging: `--once` (poll once, process everything, exit) combined with `--num-trials 2 --task-ids 0 --gpus 0` gives a single-GPU smoke test; `--allow-local-model` lets `hf_repo_id` be a local checkpoint path directly (testing only).
 
@@ -71,6 +74,7 @@ When the same task's local-ledger benchmark doesn't match, the old result is nev
 | `--admin-api-key` | `$BACKEND_ADMIN_API_KEY` | Write admin key (`backend.yaml` → `admin_key`) |
 | `--api-key` | `$BACKEND_API_KEY` | Legacy compatibility: one key for both reads and writes |
 | `--queue-path` | `/api/v1/benchmark/queue` | Upstream public task-queue path |
+| `--worker-id` | hostname | Worker identity in progress reports; `$BENCHMARK_WORKER_ID` also works |
 | `--benchmark` | required | `libero` / `libero_pro` / `libero_pro_custom_1` / `libero_plus` |
 | `--poll-interval` | 60 | Queue polling interval (seconds) |
 | `--num-trials` | required | Trials per task; LIBERO-Plus must be 1, other LIBERO official protocol is 50 |

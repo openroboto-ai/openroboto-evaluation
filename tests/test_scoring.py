@@ -80,12 +80,34 @@ def _suite_agg(sr, episodes, tasks, failed=0):
     return {"success_rate": sr, "episodes": episodes, "tasks": tasks, "failed_tasks": failed}
 
 
+def _complete_tasks(suite_counts: dict[str, int], trials: int) -> dict:
+    return {
+        f"{suite}_task{task_id:04d}": {
+            "status": "ok",
+            "task_suite_name": suite,
+            "task_id": task_id,
+            "num_trials": trials,
+            "num_successes": 0,
+            "success_rate": 0.0,
+        }
+        for suite, count in suite_counts.items()
+        for task_id in range(count)
+    }
+
+
 class TestBuildScorePayloadProfiles(unittest.TestCase):
     """评测 profile 是内容和结构化 score identity 的唯一来源。"""
 
     def _summary(self):
+        suite_counts = {
+            "libero_spatial": 10,
+            "libero_object": 10,
+            "libero_goal": 10,
+            "libero_10": 10,
+        }
         return {
-            "tasks": {},
+            "tasks": _complete_tasks(suite_counts, 10),
+            "num_trials_per_task": 10,
             "suites": {
                 "libero_spatial": _suite_agg(0.8, 100, 10),
                 "libero_object": _suite_agg(0.6, 100, 10),
@@ -113,7 +135,9 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
         entry = by_name["libero_10"]
         self.assertEqual((entry["score"], entry["samples"]), (0.0, 0))
         self.assertEqual(entry["error"], "no results for this env")
-        self.assertTrue(payload["success"])  # 其余 env 有分,整体仍算产出了结果
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["total_score"], 0.0)
+        self.assertIn("incomplete evaluation", payload["error"])
 
     def test_libero_plus_total_is_micro_average_over_10030_tasks(self):
         rates = {
@@ -129,10 +153,9 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
             "libero_10": 2519,
         }
         summary = {
-            "tasks": {},
-            "suites": {
-                suite: _suite_agg(rates[suite], counts[suite], counts[suite]) for suite in counts
-            },
+            "tasks": _complete_tasks(counts, 1),
+            "num_trials_per_task": 1,
+            "suites": {suite: _suite_agg(rates[suite], counts[suite], counts[suite]) for suite in counts},
         }
         payload = build_score_payload({}, summary, 10.0, benchmark="libero_plus")
         expected = sum(rates[suite] * counts[suite] for suite in counts) / 10030
@@ -153,7 +176,8 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
             "libero_10": (0.9, 0.7, 0.5, 0.3),
         }
         summary = {
-            "tasks": {},
+            "tasks": _complete_tasks({name: 10 for name in suite_names}, 50),
+            "num_trials_per_task": 50,
             "suites": {
                 f"{base}_{dimension}": _suite_agg(score, 500, 10)
                 for base, scores in rates.items()
@@ -191,7 +215,11 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
             for base in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
             for dimension in ("object", "swap", "lan", "task")
         ]
-        summary = {"tasks": {}, "suites": {name: _suite_agg(0.5, 500, 10) for name in suite_names}}
+        summary = {
+            "tasks": _complete_tasks({name: 10 for name in suite_names}, 50),
+            "num_trials_per_task": 50,
+            "suites": {name: _suite_agg(0.5, 500, 10) for name in suite_names},
+        }
 
         payload = build_score_payload({}, summary, 10.0, benchmark="libero_pro")
 
@@ -199,10 +227,28 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
         self.assertTrue(all("base_suite" in entry and "perturbation" in entry for entry in payload["env_scores"]))
 
     def test_queue_env_list_is_ignored(self):
-        payload = build_score_payload(
-            {"env_list": ["wrong", "libero_100"]}, self._summary(), 10.0, benchmark="libero"
-        )
+        payload = build_score_payload({"env_list": ["wrong", "libero_100"]}, self._summary(), 10.0, benchmark="libero")
         self.assertEqual([e["env_name"] for e in payload["env_scores"]][-1], "libero_10")
+
+    def test_97_of_160_tasks_can_never_be_published_as_success(self):
+        suite_names = [
+            f"{base}_{dimension}"
+            for base in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
+            for dimension in ("object", "swap", "lan", "task")
+        ]
+        tasks = _complete_tasks({name: 10 for name in suite_names}, 50)
+        tasks = dict(list(tasks.items())[:97])
+        summary = {
+            "tasks": tasks,
+            "num_trials_per_task": 50,
+            "suites": {name: _suite_agg(0.5, 500, 10) for name in suite_names},
+        }
+
+        payload = build_score_payload({}, summary, 10.0, benchmark="libero_pro_custom_1")
+
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["total_score"], 0.0)
+        self.assertIn("completed 97/160 required tasks", payload["error"])
 
     def test_legacy_queue_hotkey_is_normalized_for_submission(self):
         payload = build_score_payload({"hotkey": "legacy-hotkey"}, None, 10.0, "failed")

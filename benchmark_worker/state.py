@@ -13,8 +13,12 @@ task_id -> entry,entry 的 status 状态机:
 
 该文件是去重的唯一依据,粒度是"提交"而非 task_id:同一
 (task_id, hf_repo_id, hf_commit) 绝不重复评测,跨轮询、跨重启均如此;
-但 miner 换 commit 重新提交(task_id 不变)会重新评测,已 submitted 的
-任务若仍出现在后端队列,则重发已存结果(见 worker.classify_queued_task)。
+但 miner 换 commit 重新提交(task_id 不变)会重新评测。已获后端确认的
+submitted 结果绝不自动重发（评分 POST 非幂等）；缺 task、缺 trial 或带
+执行错误的历史 payload 会重新评测(见 worker.classify_queued_task)。
+下载失败会删除该提交的完整下载缓存；评测失败会删除本轮完整输出目录，
+包括已经完成的 task 缓存。两者都会回到 pending 并排到队尾，从头重试，
+不允许用 --resume 复用部分评测结果。
 带 protocol_revision 的 benchmark 在协议升级后会使旧结果失效并重新评测,
 避免把旧评测口径的缓存 payload 补交到新轮次。
 

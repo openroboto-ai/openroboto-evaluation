@@ -33,10 +33,22 @@ class TestClassifyQueuedTask(unittest.TestCase):
             self.assertEqual(classify_queued_task(_entry(status), TASK), "skip")
             self.assertEqual(classify_queued_task(_entry(status), NEW_COMMIT), "skip")
 
-    def test_submitted_same_commit_resubmits_stored_result(self):
-        # 已评完、后端也确认过,但队列里又出现 = 后端丢了结果 → 重发,不重评。
+    def test_submitted_same_commit_is_not_resubmitted(self):
+        # 评分 POST 会新建 challenge attempt，并非幂等；已确认结果不能重发。
         entry = _entry("submitted", payload={"success": False})
-        self.assertEqual(classify_queued_task(entry, TASK), "resubmit")
+        self.assertEqual(classify_queued_task(entry, TASK), "skip")
+
+    def test_submitted_partial_success_is_reevaluated_instead_of_resubmitted(self):
+        payload = {
+            "benchmark": "libero_pro_custom_1",
+            "success": True,
+            "error": "63 task(s) failed after retries",
+            "per_task_scores": [{"task_id": f"task-{i}", "success_rate": 0.5, "trials": 50} for i in range(97)],
+            "env_scores": [{"env_name": "libero_spatial", "score": 0.5, "samples": 500}],
+        }
+        entry = _entry("submitted", payload=payload)
+
+        self.assertEqual(classify_queued_task(entry, TASK), "evaluate")
 
     def test_submitted_without_payload_is_skipped(self):
         self.assertEqual(classify_queued_task(_entry("submitted"), TASK), "skip")
@@ -76,7 +88,7 @@ class TestClassifyQueuedTask(unittest.TestCase):
         self.assertEqual(classify_queued_task(entry, TASK, "libero_plus"), "evaluate")
 
         entry["protocol_revision"] = "libero_plus_official_v1"
-        self.assertEqual(classify_queued_task(entry, TASK, "libero_plus"), "resubmit")
+        self.assertEqual(classify_queued_task(entry, TASK, "libero_plus"), "skip")
 
 
 class TestModelLabel(unittest.TestCase):

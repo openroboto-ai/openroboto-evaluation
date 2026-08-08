@@ -21,9 +21,11 @@ state/
 logs/
 *.pid
 benchmark_worker_state.json*
+benchmark_worker_state.dev.json*
 
 # Evaluation and downloaded assets
 eval_runs/
+eval_runs_dev/
 hf_models/
 third_party/
 .cache/

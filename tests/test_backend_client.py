@@ -81,6 +81,32 @@ class TestFetchQueue(unittest.TestCase):
             timeout_s=123,
         )
 
+    def test_progress_uses_admin_key_and_maps_evaluating_to_running(self):
+        client = BackendClient("http://x", "public", "admin")
+        detail = {"suites_done": 5, "suites_total": 16}
+        with mock.patch.object(client, "_request", return_value={"success": True}) as request:
+            actual = client.report_progress("task_1", "evaluating", detail, "validator-01")
+
+        self.assertEqual(actual, {"success": True})
+        request.assert_called_once_with(
+            "POST",
+            "/api/benchmark-progress",
+            api_key="admin",
+            body={
+                "task_id": "task_1",
+                "stage": "running",
+                "detail": detail,
+                "worker_id": "validator-01",
+            },
+        )
+
+    def test_progress_rejects_unknown_stage_before_request(self):
+        client = BackendClient("http://x", "public", "admin")
+        with mock.patch.object(client, "_request") as request:
+            with self.assertRaisesRegex(ValueError, "invalid benchmark progress stage"):
+                client.report_progress("task_1", "unknown", {}, "validator-01")
+        request.assert_not_called()
+
     def test_fetch_submission_uses_public_key(self):
         client = BackendClient("http://x", "public", "admin")
         with mock.patch.object(client, "_request", return_value={"task_id": "t1"}) as request:
@@ -128,6 +154,8 @@ class TestWorkerApiKeyArgs(unittest.TestCase):
             "libero_pro_custom_1",
             "--num-trials",
             "50",
+            "--download-strategies",
+            "hfd-mirror",
             *extra,
         ]
         with mock.patch.object(sys, "argv", argv):
@@ -206,6 +234,8 @@ def _score_payload(total_score=0.8085):
             },
         ],
         "error": "",
+        "expected_trials_per_task": 50,
+        "per_task_scores": [{"task_id": f"task-{i}", "success_rate": 0.5, "trials": 50} for i in range(160)],
     }
 
 

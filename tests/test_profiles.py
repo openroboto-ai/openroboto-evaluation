@@ -18,6 +18,22 @@ from benchmark_worker.profiles import (  # noqa: E402
 from benchmark_worker import worker  # noqa: E402
 
 
+def _complete_summary(task_count: int, trials: int, official_result: bool | None = None) -> str:
+    tasks = {
+        f"suite_task{i:05d}": {
+            "status": "ok",
+            "task_suite_name": "suite",
+            "task_id": i,
+            "num_trials": trials,
+        }
+        for i in range(task_count)
+    }
+    summary = {"tasks": tasks, "suites": {}, "num_trials_per_task": trials}
+    if official_result is not None:
+        summary["evaluation_protocol"] = {"official_result": official_result, "deviations": []}
+    return __import__("json").dumps(summary)
+
+
 class TestProfiles(unittest.TestCase):
     def test_standard_and_custom_run_the_same_sixteen_suites(self):
         standard = get_profile("libero_pro")
@@ -50,7 +66,7 @@ class TestProfiles(unittest.TestCase):
     def test_worker_translates_custom_profile_to_pro_runtime(self):
         with tempfile.TemporaryDirectory() as tmp_str:
             out_dir = pathlib.Path(tmp_str)
-            (out_dir / "summary.json").write_text('{"tasks":{},"suites":{}}')
+            (out_dir / "summary.json").write_text(_complete_summary(160, 50))
             args = types.SimpleNamespace(
                 benchmark="libero_pro_custom_1",
                 eval_config=None,
@@ -92,9 +108,7 @@ class TestProfiles(unittest.TestCase):
         worker.stop_event.clear()
         with tempfile.TemporaryDirectory() as tmp_str:
             out_dir = pathlib.Path(tmp_str)
-            (out_dir / "summary.json").write_text(
-                '{"tasks":{},"suites":{},"evaluation_protocol":{"official_result":true}}'
-            )
+            (out_dir / "summary.json").write_text(_complete_summary(10030, 1, official_result=True))
             with mock.patch.object(worker.subprocess, "Popen", return_value=proc) as popen:
                 worker.run_evaluation(
                     {"hf_commit": "a" * 40},
@@ -131,12 +145,16 @@ class TestProfiles(unittest.TestCase):
             "libero_plus",
             "--num-trials",
             "1",
+            "--download-strategies",
+            "hfd-mirror",
         ]
         with mock.patch.object(sys, "argv", base_argv):
             args = worker.parse_args()
         self.assertTrue(args.no_init_randomization)
 
-        with mock.patch.object(sys, "argv", [*base_argv[:-1], "2"]):
+        invalid_trials_argv = list(base_argv)
+        invalid_trials_argv[invalid_trials_argv.index("--num-trials") + 1] = "2"
+        with mock.patch.object(sys, "argv", invalid_trials_argv):
             with self.assertRaises(SystemExit):
                 worker.parse_args()
         with mock.patch.object(sys, "argv", [*base_argv, "--task-ids", "0,1"]):

@@ -9,6 +9,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 import httpx
@@ -20,10 +21,13 @@ from download import (  # noqa: E402
     DEFAULT_STRATEGIES,
     OFFICIAL_ENDPOINT,
     DownloadError,
+    SnapshotIntegrityError,
     _build_hfd_cmd,
     _dir_size,
+    _is_integrity_mismatch,
     _is_permanent,
     _is_resumable,
+    _verify_local_snapshot,
     download_model,
     parse_strategies,
 )
@@ -273,6 +277,24 @@ class TestIsPermanent(unittest.TestCase):
         exc = OSError(errno.ENOSPC, "no space left on device")
         self.assertTrue(_is_permanent(exc, official=True))
         self.assertTrue(_is_permanent(exc, official=False))
+        # ENOSPC 应停止当前下载链，但属于 validator 基础设施故障，不能将
+        # miner 的提交报告为永久失败。
+        self.assertFalse(download._is_task_permanent(exc, official=True))
+
+    def test_official_consistency_failure_is_permanent(self):
+        exc = OSError("Consistency check failed: expected 212074496 bytes but got 891289600")
+        self.assertTrue(_is_permanent(exc, official=True))
+        self.assertFalse(_is_permanent(exc, official=False))
+        self.assertTrue(download._is_task_permanent(exc, official=False))
+
+    def test_hf_xet_file_size_mismatch_is_integrity_failure(self):
+        exc = RuntimeError("Task error: File size mismatch: expected 212074496 bytes but downloaded 891289600 bytes")
+        self.assertTrue(_is_integrity_mismatch(exc))
+        self.assertTrue(_is_permanent(exc, official=True))
+        # 镜像 mismatch 不阻止后续官方交叉验证，但策略链耗尽后仍报告
+        # commit 永久失败，不能伪装成 network unreachable 无限重试。
+        self.assertFalse(_is_permanent(exc, official=False))
+        self.assertTrue(download._is_task_permanent(exc, official=False))
 
     def test_local_entry_not_found_not_permanent(self):
         # LocalEntryNotFoundError 表示离线且本地无缓存(临时故障),
@@ -301,7 +323,7 @@ class TestDownloadModelChain(unittest.TestCase):
         self.calls: list[tuple[str, str]] = []  # (step, endpoint)
         self.dir = pathlib.Path("/tmp/x")
 
-    def _patch(self, hfd=None, snapshot=None):
+    def _patch(self, hfd=None, snapshot=None, verify=None):
         def fake_hfd(repo_id, revision, local_dir, endpoint, repo_type, log):
             self.calls.append(("hfd", endpoint))
             if hfd:
@@ -312,22 +334,31 @@ class TestDownloadModelChain(unittest.TestCase):
             if snapshot:
                 snapshot(endpoint)
 
-        def fake_preflight(repo_id, revision, repo_type, log):
+        def fake_verify(repo_id, revision, local_dir, endpoint, use_mirror, repo_type, **kwargs):
+            self.calls.append(("verify", endpoint))
+            if verify:
+                verify(endpoint)
+
+        def fake_preflight(repo_id, revision, repo_type, log, **kwargs):
             pass  # 预检行为由 TestPreflightRepoCheck 单独覆盖
 
         return mock.patch.multiple(
-            download, _run_hfd=fake_hfd, _snapshot=fake_snapshot, _preflight_repo_check=fake_preflight
+            download,
+            _run_hfd=fake_hfd,
+            _snapshot=fake_snapshot,
+            _verify_local_snapshot=fake_verify,
+            _preflight_repo_check=fake_preflight,
         )
 
     def test_first_strategy_success_short_circuits(self):
         with self._patch():
             result = download_model("u/r", self.dir, strategies=["hfd-mirror", "hub"], log=lambda *_: None)
         self.assertEqual(result, self.dir.resolve())
-        # hfd-mirror 成功 = hfd 预取(镜像)+ snapshot 收尾(固定官方端点,
-        # 镜像的 resolve 重定向缺元数据头无法哈希校验),不再尝试 hub。
+        # hfd-mirror 成功 = hfd 预取(镜像)+镜像清单驱动的本地哈希验全，
+        # 全程不请求官方端点，也不再尝试 hub。
         self.assertEqual(
             self.calls,
-            [("hfd", download._mirror_endpoint()), ("snapshot", OFFICIAL_ENDPOINT)],
+            [("hfd", download._mirror_endpoint()), ("verify", download._mirror_endpoint())],
         )
 
     def test_fallback_in_order(self):
@@ -357,6 +388,47 @@ class TestDownloadModelChain(unittest.TestCase):
         self.assertEqual(self.calls, [("snapshot", OFFICIAL_ENDPOINT)])
         self.assertIn("hub", str(ctx.exception))
         self.assertNotIn("hfd:", str(ctx.exception))
+        self.assertTrue(ctx.exception.permanent)
+
+    def test_official_consistency_failure_marks_download_permanent(self):
+        def inconsistent_snapshot(endpoint):
+            raise OSError("Consistency check failed: expected 212074496 bytes but got 891289600")
+
+        with self._patch(snapshot=inconsistent_snapshot):
+            with self.assertRaises(DownloadError) as ctx:
+                download_model("u/r", self.dir, strategies=["hub", "hfd"], log=lambda *_: None)
+        self.assertEqual(self.calls, [("snapshot", OFFICIAL_ENDPOINT)])
+        self.assertTrue(ctx.exception.permanent)
+
+    def test_mirror_size_mismatch_falls_back_then_reports_detailed_permanent_failure(self):
+        def inconsistent_snapshot(endpoint):
+            if endpoint != OFFICIAL_ENDPOINT:
+                raise RuntimeError(
+                    "Task error: File size mismatch for params/weights.bin: "
+                    "expected 212074496 bytes but downloaded 891289600 bytes"
+                )
+            raise ConnectionError("official endpoint unavailable")
+
+        with self._patch(snapshot=inconsistent_snapshot):
+            with self.assertRaises(DownloadError) as ctx:
+                download_model(
+                    "u/r",
+                    self.dir,
+                    revision="a" * 40,
+                    strategies=["hub-mirror", "hub"],
+                    log=lambda *_: None,
+                )
+
+        self.assertEqual(
+            self.calls,
+            [("snapshot", download._mirror_endpoint()), ("snapshot", OFFICIAL_ENDPOINT)],
+        )
+        self.assertTrue(ctx.exception.permanent)
+        message = str(ctx.exception)
+        self.assertIn(f"model artifact integrity mismatch for u/r@{'a' * 40}", message)
+        self.assertIn("params/weights.bin", message)
+        self.assertIn("expected 212074496 bytes", message)
+        self.assertIn("downloaded 891289600 bytes", message)
 
     def test_permanent_error_on_mirror_does_not_abort(self):
         from huggingface_hub.errors import RepositoryNotFoundError
@@ -368,6 +440,12 @@ class TestDownloadModelChain(unittest.TestCase):
         with self._patch(snapshot=snapshot_404_on_mirror):
             download_model("u/r", self.dir, strategies=["hub-mirror", "hub"], log=lambda *_: None)
         self.assertEqual(self.calls[-1], ("snapshot", OFFICIAL_ENDPOINT))
+
+    def test_hub_mirror_success_is_verified_locally(self):
+        with self._patch():
+            download_model("u/r", self.dir, strategies=["hub-mirror"], log=lambda *_: None)
+        mirror = download._mirror_endpoint()
+        self.assertEqual(self.calls, [("snapshot", mirror), ("verify", mirror)])
 
     def test_all_failed_message_lists_every_strategy(self):
         def failing_hfd(endpoint):
@@ -401,6 +479,106 @@ class TestDownloadModelChain(unittest.TestCase):
             with self.assertRaises(ValueError):
                 download_model("u/r", self.dir, log=lambda *_: None)
 
+    def test_allow_patterns_bypasses_hfd_and_reaches_snapshot(self):
+        seen = []
+
+        def fake_snapshot(
+            repo_id,
+            revision,
+            local_dir,
+            endpoint,
+            use_mirror,
+            repo_type,
+            allow_patterns=None,
+            ignore_patterns=None,
+        ):
+            seen.append((endpoint, allow_patterns, ignore_patterns))
+
+        with mock.patch.multiple(
+            download,
+            _run_hfd=mock.Mock(side_effect=AssertionError("hfd must not run for a selective request")),
+            _snapshot=fake_snapshot,
+            _preflight_repo_check=mock.Mock(),
+        ):
+            download_model(
+                "u/r",
+                self.dir,
+                strategies=["hfd", "hub"],
+                allow_patterns=["ckpt/Pi_05/seed0/**"],
+                log=lambda *_: None,
+            )
+        self.assertEqual(seen, [(OFFICIAL_ENDPOINT, ["ckpt/Pi_05/seed0/**"], None)])
+
+    def test_ignore_patterns_also_bypasses_hfd(self):
+        seen = []
+
+        def fake_snapshot(
+            repo_id,
+            revision,
+            local_dir,
+            endpoint,
+            use_mirror,
+            repo_type,
+            allow_patterns=None,
+            ignore_patterns=None,
+        ):
+            seen.append((allow_patterns, ignore_patterns))
+
+        with mock.patch.multiple(
+            download,
+            _run_hfd=mock.Mock(side_effect=AssertionError("hfd must not run for a selective request")),
+            _snapshot=fake_snapshot,
+            _preflight_repo_check=mock.Mock(),
+        ):
+            download_model(
+                "u/r",
+                self.dir,
+                strategies=["hfd", "hub"],
+                ignore_patterns=["train_state/**"],
+                log=lambda *_: None,
+            )
+        self.assertEqual(seen, [(None, ["train_state/**"])])
+
+
+class TestSnapshotIntegrityContext(unittest.TestCase):
+    def test_hf_xet_size_mismatch_is_enriched_with_commit_and_file(self):
+        revision = "a" * 40
+        info = SimpleNamespace(
+            sha=revision,
+            siblings=[
+                SimpleNamespace(rfilename="config.json", size=10),
+                SimpleNamespace(rfilename="params/weights.bin", size=212074496),
+            ],
+        )
+        api = mock.MagicMock()
+        api.repo_info.return_value = info
+        mismatch = RuntimeError(
+            "Task error: File size mismatch: expected 212074496 bytes but downloaded 891289600 bytes"
+        )
+        with mock.patch("huggingface_hub.HfApi", return_value=api):
+            with mock.patch("huggingface_hub.snapshot_download", side_effect=mismatch):
+                with self.assertRaises(SnapshotIntegrityError) as ctx:
+                    download._snapshot(
+                        "u/r",
+                        revision,
+                        pathlib.Path("/tmp/model"),
+                        OFFICIAL_ENDPOINT,
+                        False,
+                        "model",
+                    )
+
+        api.repo_info.assert_called_once_with(
+            repo_id="u/r",
+            repo_type="model",
+            revision=revision,
+            files_metadata=True,
+        )
+        message = str(ctx.exception)
+        self.assertIn(f"u/r@{revision}", message)
+        self.assertIn("file=params/weights.bin", message)
+        self.assertIn("expected=212074496 bytes", message)
+        self.assertIn("actual=891289600 bytes", message)
+
 
 class TestPreflightRepoCheck(unittest.TestCase):
     """预检:官方端点 repo 不存在 → 一个策略都不试直接永久失败;临时故障 → 放行。"""
@@ -414,6 +592,7 @@ class TestPreflightRepoCheck(unittest.TestCase):
             download,
             _run_hfd=lambda *a, **k: self.calls.append("hfd"),
             _snapshot=lambda *a, **k: self.calls.append("snapshot"),
+            _verify_local_snapshot=lambda *a, **k: self.calls.append("verify"),
         )
 
     def _patch_hfapi(self, exc=None):
@@ -427,9 +606,10 @@ class TestPreflightRepoCheck(unittest.TestCase):
 
         patcher, _ = self._patch_hfapi(_hub_error(RepositoryNotFoundError, "404"))
         with patcher, self._patch_strategies():
-            with self.assertRaisesRegex(DownloadError, "not found on"):
-                download_model("u/r", self.dir, strategies=["hfd-mirror", "hub"], log=lambda *_: None)
+            with self.assertRaisesRegex(DownloadError, "not found on") as ctx:
+                download_model("u/r", self.dir, strategies=["hub", "hfd-mirror"], log=lambda *_: None)
         self.assertEqual(self.calls, [])
+        self.assertTrue(ctx.exception.permanent)
 
     def test_transient_preflight_failure_does_not_block_chain(self):
         patcher, _ = self._patch_hfapi(ConnectionError("boom"))
@@ -442,8 +622,113 @@ class TestPreflightRepoCheck(unittest.TestCase):
         patcher, api = self._patch_hfapi()
         with patcher as hfapi_cls:
             download._preflight_repo_check("u/r", None, "model", lambda *_: None)
-        hfapi_cls.assert_called_once_with(endpoint=OFFICIAL_ENDPOINT)
+        hfapi_cls.assert_called_once_with(endpoint=OFFICIAL_ENDPOINT, token=None)
         api.repo_info.assert_called_once_with(repo_id="u/r", repo_type="model", revision="main")
+
+    def test_mirror_first_strategy_preflights_mirror_without_official(self):
+        patcher, _ = self._patch_hfapi()
+        with patcher as hfapi_cls, self._patch_strategies():
+            download_model("u/r", self.dir, strategies=["hfd-mirror"], log=lambda *_: None)
+        hfapi_cls.assert_called_once_with(endpoint=download._mirror_endpoint(), token=False)
+
+    def test_mirror_not_found_does_not_abort_strategy(self):
+        from huggingface_hub.errors import RepositoryNotFoundError
+
+        patcher, _ = self._patch_hfapi(_hub_error(RepositoryNotFoundError, "mirror 404"))
+        with patcher, self._patch_strategies():
+            result = download_model("u/r", self.dir, strategies=["hfd-mirror"], log=lambda *_: None)
+        self.assertEqual(result, self.dir.resolve())
+        self.assertEqual(self.calls, ["hfd", "verify"])
+
+
+class TestVerifyLocalSnapshot(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+        self.revision = "a" * 40
+
+    def _info(self, siblings):
+        return SimpleNamespace(sha=self.revision, siblings=siblings)
+
+    def _item(self, name, content, *, lfs=False):
+        path = self.root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        if lfs:
+            import hashlib
+
+            return SimpleNamespace(
+                rfilename=name,
+                size=len(content),
+                blob_id="pointer-is-not-used-for-lfs",
+                lfs=SimpleNamespace(sha256=hashlib.sha256(content).hexdigest()),
+            )
+        import hashlib
+
+        digest = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
+        return SimpleNamespace(rfilename=name, size=len(content), blob_id=digest, lfs=None)
+
+    def _verify(self, info):
+        api = mock.MagicMock()
+        api.repo_info.return_value = info
+        with mock.patch("huggingface_hub.HfApi", return_value=api):
+            _verify_local_snapshot(
+                "u/r",
+                self.revision,
+                self.root,
+                "https://mirror.invalid",
+                True,
+                "model",
+                log=lambda *_: None,
+            )
+        return api
+
+    def test_verifies_lfs_sha256_and_git_blob_sha1(self):
+        items = [self._item("weights.bin", b"weights", lfs=True), self._item("config.json", b"{}")]
+        api = self._verify(self._info(items))
+        api.repo_info.assert_called_once_with(
+            repo_id="u/r", repo_type="model", revision=self.revision, files_metadata=True
+        )
+
+    def test_size_mismatch_fails_before_hashing(self):
+        item = self._item("weights.bin", b"wrong", lfs=True)
+        item.size = 3
+        with self.assertRaisesRegex(SnapshotIntegrityError, "expected 3, got 5"):
+            self._verify(self._info([item]))
+
+    def test_hash_mismatch_fails(self):
+        item = self._item("weights.bin", b"wrong", lfs=True)
+        item.lfs.sha256 = "0" * 64
+        with self.assertRaisesRegex(SnapshotIntegrityError, "LFS sha256"):
+            self._verify(self._info([item]))
+
+    def test_missing_file_fails(self):
+        item = SimpleNamespace(rfilename="missing.bin", size=10, blob_id="0" * 40, lfs=None)
+        with self.assertRaisesRegex(SnapshotIntegrityError, "missing missing.bin"):
+            self._verify(self._info([item]))
+
+    def test_unexpected_file_fails_but_tool_metadata_is_ignored(self):
+        item = self._item("config.json", b"{}")
+        (self.root / "extra.bin").write_bytes(b"extra")
+        (self.root / ".hfd").mkdir()
+        (self.root / ".hfd" / "manifest").write_text("metadata")
+        (self.root / ".cache").mkdir()
+        (self.root / ".cache" / "hub.lock").write_text("metadata")
+        with self.assertRaisesRegex(SnapshotIntegrityError, "unexpected extra.bin"):
+            self._verify(self._info([item]))
+
+    def test_commit_mismatch_fails(self):
+        item = self._item("config.json", b"{}")
+        info = self._info([item])
+        info.sha = "b" * 40
+        with self.assertRaisesRegex(SnapshotIntegrityError, "expected pinned commit"):
+            self._verify(info)
+
+    def test_unsafe_manifest_path_fails(self):
+        item = SimpleNamespace(rfilename="../escape", size=1, blob_id="0" * 40, lfs=None)
+        with self.assertRaisesRegex(SnapshotIntegrityError, "unsafe path"):
+            self._verify(self._info([item]))
 
 
 if __name__ == "__main__":

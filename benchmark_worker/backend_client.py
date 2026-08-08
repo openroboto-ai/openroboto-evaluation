@@ -1,11 +1,12 @@
 """
 后端 Benchmark API 的最小 HTTP 客户端 | Minimal HTTP client for the backend benchmark API.
 
-只覆盖 worker 需要的三个接口(prototype 仓库 docs/api_reference_zh.md):
+只覆盖 worker 需要的四个接口(prototype backend 协议):
 
     GET  /api/v1/benchmark/queue          -> 待评测任务队列(public key)
     GET  /api/submission/{id}             -> 核对评分是否已经落库(public key)
     POST /api/v1/benchmark/task/{id}/score     -> 提交评测结果
+    POST /api/benchmark-progress           -> 上报非终态评测进度
 
 读接口和写接口使用不同的 key。不再使用旧 `/api/pending-tasks`。
 
@@ -18,6 +19,17 @@ import urllib.request
 
 USER_AGENT = "validator-benchmark-worker/0.1"
 DEFAULT_QUEUE_PATH = "/api/v1/benchmark/queue"
+
+# validator 内部沿用与运行产物一致的 ``evaluating``；prototype progress
+# API 对应的 wire value 是 ``running``。其余合法值保持同名。
+_PROGRESS_STAGE_MAP = {
+    "downloading": "downloading",
+    "prechecking": "prechecking",
+    "evaluating": "running",
+    "running": "running",
+    "done": "done",
+    "failed": "failed",
+}
 
 
 class BackendError(Exception):
@@ -112,4 +124,22 @@ class BackendClient:
             api_key=self.admin_api_key,
             body=payload,
             timeout_s=self.submit_timeout_s,
+        )
+
+    def report_progress(self, task_id: str, stage: str, detail: dict, worker_id: str) -> dict:
+        """Report the current non-terminal worker stage for a benchmark task."""
+        try:
+            wire_stage = _PROGRESS_STAGE_MAP[stage]
+        except KeyError:
+            raise ValueError(f"invalid benchmark progress stage: {stage!r}") from None
+        return self._request(
+            "POST",
+            "/api/benchmark-progress",
+            api_key=self.admin_api_key,
+            body={
+                "task_id": task_id,
+                "stage": wire_stage,
+                "detail": detail,
+                "worker_id": worker_id,
+            },
         )
