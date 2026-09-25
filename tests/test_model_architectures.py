@@ -30,6 +30,13 @@ class TestParseModelArchitectures(unittest.TestCase):
 
 
 class TestModelConfigSelection(unittest.TestCase):
+    def test_axis_config_pins_native_joint_contract(self):
+        spec = check_model.CONFIG_SPECS["pi05_axis_joint"]
+        self.assertTrue(spec.pi05)
+        self.assertEqual(spec.state_dim, 9)
+        self.assertEqual(spec.norm_dims, {"state": 9, "actions": 9})
+        self.assertEqual(spec.asset_id, "axis-v0.1-task501-runtime-v1")
+
     def test_auto_selects_pi0_when_both_are_accepted(self):
         def fake_check(_path, config):
             if config == "pi0_libero":
@@ -37,9 +44,7 @@ class TestModelConfigSelection(unittest.TestCase):
             return _result(config, "wrong architecture")
 
         with mock.patch.object(check_model, "check_model", side_effect=fake_check):
-            selected = check_model.check_model_for_architectures(
-                "/checkpoint", ("pi0.5", "pi0")
-            )
+            selected = check_model.check_model_for_architectures("/checkpoint", ("pi0.5", "pi0"))
 
         self.assertTrue(selected.result.ok)
         self.assertEqual(selected.architecture, "pi0")
@@ -64,9 +69,7 @@ class TestModelConfigSelection(unittest.TestCase):
 
     def test_explicit_config_must_be_in_allow_list(self):
         with mock.patch.object(check_model, "check_model") as validate:
-            selected = check_model.check_model_for_architectures(
-                "/checkpoint", ("pi0.5",), config="pi0_libero"
-            )
+            selected = check_model.check_model_for_architectures("/checkpoint", ("pi0.5",), config="pi0_libero")
 
         validate.assert_not_called()
         self.assertFalse(selected.result.ok)

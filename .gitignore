@@ -1,39 +1,113 @@
-# Python
-**/__pycache__/
-*.py[cod]
-.venv/
-venv/
-
-# Secrets and local configuration
-*.yaml
-!*.example.yaml
-!**/*.example.yaml
-!.pre-commit-config.yaml
-.env
-.env.*
-
-# Runtime data
-*.db
-*.sqlite
-*.sqlite3
-state/
-.pids/
-logs/
-*.pid
-benchmark_worker_state.json*
-benchmark_worker_state.dev.json*
-
-# Evaluation and downloaded assets
+# 评测输出(结果 JSON、日志、rollout 视频)
 eval_runs/
 eval_runs_dev/
+eval_runs_axis/
+
+# 从 HF 下载的模型(可达几十 GB)
 hf_models/
-third_party/
-.cache/
+hf_models*/
+/checkpoints/
+/datasets/
+*.safetensors
+*.ckpt
 *.pt
 *.pth
-*.ckpt
 
-# Local tooling
+# 外部依赖 checkout(openpi、LIBERO-PRO,由 setup.sh 克隆或手动符号链接)
+third_party/
+
+# benchmark_worker 运行时状态与日志
+benchmark_worker_state.json*
+benchmark_worker_state.dev.json*
+logs/
+
+.venv/
+__pycache__/
+*.pyc
+
+# JAX 持久编译缓存(run_eval.py 自动创建)
+.cache/
+
+# Claude Code worktrees 与本地配置
 .claude/
-.DS_Store
 
+# Credentials and developer-local configuration. Keep only empty examples.
+.env
+.env.*
+*.env
+*.pem
+*.key
+!*.env.example
+.pytest_cache/
+.ruff_cache/
+
+# Internal experiments and production-host records are not part of the evaluator release.
+/deploy/evidence/
+/deploy/systemd/openroboto-validator.service
+/deploy/systemd/openroboto-validator-dev.service
+/deploy/systemd/openroboto-gpu-monitor.service
+/configs/axis-positive-controls-v1/
+/configs/axis-training-controls-v1/
+/configs/training/
+/configs/axis-catalog-v1/
+/configs/axis-expansion-40-v1/
+/configs/benchmarks/axis-demo/
+
+# Publish reviewed user documentation, not the internal research/operations archive.
+/docs/*
+!/docs/axis.md
+!/docs/init_state_randomization.md
+!/docs/robodojo.md
+!/docs/robotwin.md
+
+# Internal dataset generation, model training, and experiment delivery tools.
+/tools/analyze_axis_benchmark.py
+/tools/analyze_axis_extension.py
+/tools/archive_axis_condition_demo.py
+/tools/audit_axis_expansion_resources.py
+/tools/augment_axis_vla_dataset.py
+/tools/average_axis_checkpoints.py
+/tools/axis_demo_submission.py
+/tools/axis_training_normalization.py
+/tools/axis_training_sampling.py
+/tools/check_axis_training_target.py
+/tools/classify_axis_catalog.py
+/tools/collect_axis_control_training.py
+/tools/export_axis_vla_dataset.py
+/tools/merge_axis_vla_datasets.py
+/tools/plan_axis_extension.py
+/tools/prepare_axis_condition_demo.py
+/tools/qualify_axis_task_controls.py
+/tools/reclaim_axis_checkpoint.py
+/tools/run_axis_extension_demo.py
+/tools/stop_axis_owned_training.py
+/tools/summarize_axis_task_set.py
+/tools/train_axis_canary.py
+/tools/train_axis_vla.py
+/tools/verify_axis_checkpoint_delivery.py
+/tools/verify_real_world_evidence.py
+
+# Tests for the excluded private artifacts and tools stay with those artifacts.
+/tests/test_axis_benchmark_statistics.py
+/tests/test_axis_canary.py
+/tests/test_axis_catalog_classification.py
+/tests/test_axis_checkpoint_average.py
+/tests/test_axis_checkpoint_delivery.py
+/tests/test_axis_checkpoint_reclamation.py
+/tests/test_axis_control_inputs.py
+/tests/test_axis_control_training.py
+/tests/test_axis_dataset_merge.py
+/tests/test_axis_demo_runner.py
+/tests/test_axis_expansion_resources.py
+/tests/test_axis_extension_demo.py
+/tests/test_axis_extension_planning.py
+/tests/test_axis_installation_evidence.py
+/tests/test_axis_task_set_statistics.py
+/tests/test_axis_training_augmentation.py
+/tests/test_axis_training_cli.py
+/tests/test_axis_training_normalization.py
+/tests/test_axis_training_sampling.py
+/tests/test_axis_training_stop.py
+/tests/test_axis_training_target.py
+/tests/test_axis_upstream_evidence.py
+/tests/test_real_world_evidence.py

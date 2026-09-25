@@ -1,0 +1,35 @@
+states:
+  - observation.state.end.position:
+      origin_keys:
+        - observation.state:
+            start: 0
+            end: 6
+  - observation.state.effector.position:
+      origin_keys:
+        - observation.state:
+            start: 6
+            end: 8
+
+actions:
+  - action.end.position:
+      origin_keys:
+        - action:
+            start: 0
+            end: 6
+      subtract_state: false
+  - action.effector.position:
+      origin_keys:
+        - action:
+            start: 6
+            end: 7
+      subtract_state: false
+
+images:
+  - observation.images.camera_top:
+      origin_keys: observation.image
+  - observation.images.camera_wrist:
+      origin_keys: observation.wrist_image
+
+# The evaluator always supplies its pinned file explicitly.  FeatureTransform
+# requires this key to exist even when an override is passed.
+norm_stats: REPLACED_BY_EVALUATOR

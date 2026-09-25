@@ -10,20 +10,24 @@ task_id -> entry,entry 的 status 状态机:
                          会持续重试提交
     submitted            后端已确认收到评分(终态)
     abandoned            后端永久拒绝该提交(终态)
+    superseded           矿工已有更新提交，当前提交已作废(终态、不提交分数)
+    rejected             后端已拒绝当前提交(终态、不提交分数)
 
 该文件是去重的唯一依据,粒度是"提交"而非 task_id:同一
 (task_id, hf_repo_id, hf_commit) 绝不重复评测,跨轮询、跨重启均如此;
 但 miner 换 commit 重新提交(task_id 不变)会重新评测。已获后端确认的
 submitted 结果绝不自动重发（评分 POST 非幂等）；缺 task、缺 trial 或带
 执行错误的历史 payload 会重新评测(见 worker.classify_queued_task)。
-下载失败会删除该提交的完整下载缓存；评测失败会删除本轮完整输出目录，
-包括已经完成的 task 缓存。两者都会回到 pending 并排到队尾，从头重试，
-不允许用 --resume 复用部分评测结果。
+下载失败会删除该提交的不可复用下载缓存；评测失败会完整保留本轮输出目录
+（run_eval.log、子任务日志、结果和 failure.json），并在 state 的
+failed_out_dirs 中记录。任务会回到 pending 并排到队尾，用新的输出目录从头
+重试，不允许用 --resume 复用部分评测结果。
 带 protocol_revision 的 benchmark 在协议升级后会使旧结果失效并重新评测,
-避免把旧评测口径的缓存 payload 补交到新轮次。
+避免把旧评测口径的缓存 payload 补交到新协议。
 
-(历史版本曾在顶层存 rounds:每轮本地生成的 init_seed;现 init seed 直接
-取队列条目的 seed 字段,旧 state 文件里遗留的 rounds 键会被原样忽略。)
+(历史版本曾在顶层存 rounds 和 payload.round_num;现 init seed 直接取队列
+条目的 seed 字段,旧 state 文件里的 rounds 键会被忽略,旧 payload 的
+round_num 会在 HTTP 提交前移除。)
 """
 
 import datetime

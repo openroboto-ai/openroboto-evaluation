@@ -15,6 +15,7 @@ GPU、policy server、MuJoCo 等评测细节全部在 run_eval.py 子进程内;
 """
 
 import argparse
+import copy
 import datetime
 import json
 import logging
@@ -30,38 +31,227 @@ import subprocess
 import sys
 import threading
 import time
+from urllib.parse import urlsplit
 
 VALIDATOR_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(VALIDATOR_ROOT))
 
-from benchmark_worker.backend_client import BackendClient, BackendError
-from benchmark_worker.profiles import PROFILES, get_profile
+from benchmark_worker.backend_client import BackendClient, BackendError, TaskInvalidatedError
+from benchmark_worker.axis_rotation import AxisRotation, default_rotation_directory
+from benchmark_worker.profiles import (
+    BenchmarkNotReadyError,
+    configure_axis_profiles,
+    get_profile,
+    is_axis_benchmark,
+    refresh_axis_profiles,
+)
+from libero_eval.axis_runtime import AXIS_V1_NAME
 from benchmark_worker.scoring import (
     build_score_payload,
     prepare_submit_payload,
     successful_payload_incomplete_reason,
 )
 from benchmark_worker.state import StateStore
-from libero_eval.download import COMMIT_HASH_RE, DownloadError, download_model, parse_strategies
+from libero_eval.download import COMMIT_HASH_RE, DownloadError, DownloadInterrupted, download_model, parse_strategies
+from libero_eval.gpu_health import GPU_CHECK_INTERVAL, check_gpu_health
 
 RUN_EVAL = VALIDATOR_ROOT / "libero_eval" / "run_eval.py"
 
 _REPO_ID_RE = re.compile(r"^[\w][\w.-]*/[\w][\w.-]*$")
 _SUITE_RE = re.compile(r"^[a-z0-9_]+$")
+BASE_MODELS = ("pi0.5", "lingbot-vla-2.0")
+# Editors occasionally leave backup files in a submitted HF repo. They are not
+# model inputs; accepting their absence is safe only because download_model
+# still verifies every non-matching artifact against the pinned commit.
+MODEL_OPTIONAL_ARTIFACT_PATTERNS = ["*.bak"]
 
 stop_event = threading.Event()
+_shutdown_requested = False
+_poll_wakeup_event = threading.Event()
 _inflight_lock = threading.Lock()
 _inflight: set[str] = set()  # task_id 正被 worker 线程处理(评测或提交中)
 
 _BENCHMARK_PROTOCOL_REVISIONS = {
     "libero_plus": "libero_plus_official_v1",
+    "robotwin": "robotwin_lingbot_v2_clean_official_v1",
 }
 
 logger = logging.getLogger("benchmark_worker")
 
 
+def _stopping() -> bool:
+    return _shutdown_requested or stop_event.is_set()
+
+
+def _wait_for_event(event: threading.Event, timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while not _stopping():
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return event.is_set()
+        if event.wait(min(remaining, 0.2)):
+            return True
+    return False
+
+
+class _StderrLogWriter:
+    """Route process stderr lines through the configured worker logger.
+
+    The logger's console handler keeps writing to the original stderr stream,
+    while its file handler persists the same line. This captures uncaught
+    tracebacks, warnings, and direct ``print(..., file=sys.stderr)`` output
+    without changing the subprocess-specific run_eval.log redirection.
+    """
+
+    def __init__(self, target_logger: logging.Logger, original_stream):
+        self.target_logger = target_logger
+        self.original_stream = original_stream
+        self._buffer = ""
+        self._lock = threading.RLock()
+
+    @property
+    def encoding(self):
+        return getattr(self.original_stream, "encoding", "utf-8")
+
+    @property
+    def errors(self):
+        return getattr(self.original_stream, "errors", "replace")
+
+    def isatty(self) -> bool:
+        return bool(getattr(self.original_stream, "isatty", lambda: False)())
+
+    def fileno(self) -> int:
+        return self.original_stream.fileno()
+
+    def writable(self) -> bool:
+        return True
+
+    def write(self, text: str) -> int:
+        if not text:
+            return 0
+        if not isinstance(text, str):
+            text = str(text)
+        with self._lock:
+            self._buffer += text
+            while "\n" in self._buffer:
+                line, self._buffer = self._buffer.split("\n", 1)
+                self._emit_line(line)
+        return len(text)
+
+    def flush(self) -> None:
+        with self._lock:
+            if self._buffer:
+                self._emit_line(self._buffer)
+                self._buffer = ""
+            for handler in self.target_logger.handlers:
+                handler.flush()
+
+    def _emit_line(self, line: str) -> None:
+        line = line.rstrip("\r")
+        if line:
+            self.target_logger.error("stderr: %s", line)
+
+
+class _DatedDailyFileHandler(logging.FileHandler):
+    """Write directly to a dated file and switch files at local midnight."""
+
+    def __init__(self, log_dir: pathlib.Path, retention_days: int = 30, date_provider=None):
+        if retention_days < 1:
+            raise ValueError("retention_days must be positive")
+        self.log_dir = pathlib.Path(log_dir)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.retention_days = retention_days
+        self._date_provider = date_provider or datetime.date.today
+        self.current_date = self._date_provider()
+        super().__init__(self._path_for(self.current_date), encoding="utf-8")
+        self._delete_expired_files()
+
+    def _path_for(self, day: datetime.date) -> pathlib.Path:
+        return self.log_dir / f"benchmark_worker-{day.isoformat()}.log"
+
+    @property
+    def current_log_path(self) -> pathlib.Path:
+        return self._path_for(self.current_date)
+
+    def _delete_expired_files(self) -> None:
+        oldest_kept = self.current_date - datetime.timedelta(days=self.retention_days - 1)
+        for path in self.log_dir.glob("benchmark_worker-????-??-??.log"):
+            try:
+                file_date = datetime.date.fromisoformat(path.stem.removeprefix("benchmark_worker-"))
+            except ValueError:
+                continue
+            if file_date < oldest_kept:
+                try:
+                    path.unlink()
+                except OSError:
+                    pass  # Retention cleanup must not prevent current logs from being written.
+
+    def _switch_date_if_needed(self) -> None:
+        today = self._date_provider()
+        if today == self.current_date:
+            return
+        if self.stream is not None:
+            self.stream.flush()
+            self.stream.close()
+        self.current_date = today
+        self.baseFilename = os.path.abspath(self._path_for(today))
+        self.stream = self._open()
+        self._delete_expired_files()
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            self._switch_date_if_needed()
+            super().emit(record)
+        except Exception:
+            self.handleError(record)
+
+
 def _protocol_revision(benchmark: str | None) -> str | None:
+    if is_axis_benchmark(benchmark):
+        return get_profile(benchmark).protocol_revision or _BENCHMARK_PROTOCOL_REVISIONS.get(benchmark)
     return _BENCHMARK_PROTOCOL_REVISIONS.get(benchmark or "")
+
+
+def select_benchmark(task: dict, override: str | None = None) -> str:
+    """CLI overrides queue routing; otherwise require a supported queue benchmark."""
+    benchmark = override if override is not None else task.get("benchmark")
+    if not isinstance(benchmark, str) or not benchmark:
+        raise ValueError("queue task must include benchmark when --benchmark is omitted")
+    get_profile(benchmark)
+    expected_revision = _protocol_revision(benchmark)
+    task_revision = task.get("protocol_revision")
+    if override is None and task_revision is not None and task_revision != expected_revision:
+        raise ValueError(
+            f"queue protocol_revision {task_revision!r} does not match {benchmark} ({expected_revision!r})"
+        )
+    return benchmark
+
+
+def task_matches_filter(task: dict, args) -> bool:
+    """Restrict queue ownership without overriding the backend's benchmark version."""
+    if not getattr(args, "axis_only", False):
+        return True
+    name = task.get("benchmark")
+    return is_axis_benchmark(name)
+
+
+def task_evaluation_args(task: dict, args):
+    """Resolve on a copy so mixed queue tasks cannot change each other's defaults."""
+    if not task_matches_filter(task, args):
+        raise ValueError("--axis-only skips tasks whose queue benchmark is not AXIS")
+    resolved = copy.copy(args)
+    resolved.benchmark = select_benchmark(task, getattr(args, "benchmark", None))
+    _apply_benchmark_options(resolved)
+    return resolved
+
+
+def pending_score_matches_profile(entry: dict, override: str | None) -> bool:
+    try:
+        benchmark = select_benchmark(entry.get("task") or {}, override)
+    except ValueError:
+        return False
+    revision = _protocol_revision(benchmark)
+    return entry.get("benchmark") == benchmark and (revision is None or entry.get("protocol_revision") == revision)
 
 
 def _model_label(d: dict | None) -> str:
@@ -76,19 +266,56 @@ def _model_label(d: dict | None) -> str:
     return f"{repo}@{commit}"
 
 
-def _setup_logger() -> None:
-    """控制台 + 按天滚动的文件日志(logs/,gitignore)。"""
+def _backend_log_namespace(backend_url: str) -> str:
+    """Return a filesystem-safe namespace derived from the backend authority."""
+    parsed = urlsplit(backend_url)
+    if not parsed.hostname:
+        parsed = urlsplit(f"//{backend_url}")
+    if not parsed.hostname:
+        raise ValueError(f"backend URL has no hostname: {backend_url!r}")
+
+    authority = parsed.hostname.lower()
+    if parsed.port is not None:
+        authority = f"{authority}_{parsed.port}"
+    namespace = re.sub(r"[^a-z0-9._-]+", "_", authority).strip("._-")
+    if not namespace:
+        raise ValueError(f"backend URL has no usable hostname: {backend_url!r}")
+    return namespace
+
+
+def _setup_logger(backend_url: str, log_root: pathlib.Path | None = None, date_provider=None) -> pathlib.Path:
+    """Configure console logging and a backend-isolated dated daily file."""
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+        handler.close()
+
     logger.setLevel(logging.INFO)
+    logger.propagate = False
     fmt = logging.Formatter("[%(asctime)s] %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-    console = logging.StreamHandler()
+    # _setup_logger may be called again in the same process (notably by
+    # tests). Always bypass our stderr adapter so logger output cannot feed
+    # recursively back into itself.
+    console_stream = sys.stderr.original_stream if isinstance(sys.stderr, _StderrLogWriter) else sys.stderr
+    console = logging.StreamHandler(console_stream)
     console.setFormatter(fmt)
     logger.addHandler(console)
-    log_dir = VALIDATOR_ROOT / "logs"
-    log_dir.mkdir(exist_ok=True)
-    date_str = datetime.date.today().isoformat()
-    file_handler = logging.FileHandler(log_dir / f"benchmark_worker-{date_str}.log", encoding="utf-8")
+
+    root = pathlib.Path(log_root) if log_root is not None else VALIDATOR_ROOT / "logs"
+    log_dir = root / _backend_log_namespace(backend_url)
+    file_handler = _DatedDailyFileHandler(log_dir, retention_days=30, date_provider=date_provider)
+    log_path = file_handler.current_log_path
     file_handler.setFormatter(fmt)
     logger.addHandler(file_handler)
+    return log_path
+
+
+def _install_stderr_logging() -> _StderrLogWriter:
+    """Persist subsequent process-level stderr output in the worker log."""
+    if isinstance(sys.stderr, _StderrLogWriter):
+        return sys.stderr
+    redirected = _StderrLogWriter(logger, sys.stderr)
+    sys.stderr = redirected
+    return redirected
 
 
 class EvalInterrupted(Exception):
@@ -121,6 +348,60 @@ def _remove_cache_dir(path: pathlib.Path, root: pathlib.Path, label: str) -> Non
     logger.info(f"Deleted {label} before clean retry: {resolved}")
 
 
+def _failed_output_history(entry: dict, output_dir: pathlib.Path | str | None) -> list[str]:
+    """Return the append-only list of failed attempt directories for a task."""
+    history = entry.get("failed_out_dirs")
+    history = [path for path in history if isinstance(path, str) and path] if isinstance(history, list) else []
+    legacy = entry.get("last_failed_out_dir")
+    if isinstance(legacy, str) and legacy and legacy not in history:
+        history.append(legacy)
+    if output_dir is not None:
+        current = str(output_dir)
+        if current not in history:
+            history.append(current)
+    return history
+
+
+def _preserve_failure_artifacts(
+    task_id: str,
+    args,
+    reason: str,
+    output_dir: pathlib.Path,
+    *,
+    download_cache: pathlib.Path | None = None,
+) -> list[str]:
+    """Persist failure metadata and download logs without modifying arbitrary paths."""
+    output_dir = pathlib.Path(output_dir)
+    output_root = pathlib.Path(args.output_root).resolve()
+    resolved = output_dir.resolve()
+    if output_dir.is_symlink() or resolved.parent != output_root:
+        return [f"refusing to write failure metadata outside output root {output_root}: {resolved}"]
+    if not resolved.is_dir():
+        return [f"failed output directory is unavailable: {resolved}"]
+
+    errors = []
+    failure_path = resolved / "failure.json"
+    if not failure_path.exists():
+        failure = {
+            "task_id": task_id,
+            "failed_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+            "reason": reason,
+        }
+        try:
+            failure_path.write_text(json.dumps(failure, indent=2, ensure_ascii=False))
+        except OSError as e:
+            errors.append(f"could not write {failure_path}: {e}")
+
+    if download_cache is not None:
+        download_log = pathlib.Path(download_cache) / ".hfd" / "console.log"
+        if download_log.is_file():
+            try:
+                shutil.copy2(download_log, resolved / "download.log")
+            except OSError as e:
+                errors.append(f"could not preserve {download_log}: {e}")
+    return errors
+
+
 def _schedule_clean_retry(
     store: StateStore,
     task_id: str,
@@ -130,47 +411,56 @@ def _schedule_clean_retry(
     download_cache: pathlib.Path | None = None,
     evaluation_cache: pathlib.Path | None = None,
 ) -> None:
-    """删除本次失败阶段的缓存，并把任务恢复为可重试状态。"""
+    """清理不可复用的下载缓存，保留评测诊断产物并重新排队。"""
+    previous = store.get(task_id) or {}
+    artifact_errors = []
+    failed_out_dir = str(evaluation_cache) if evaluation_cache is not None else None
+    if evaluation_cache is not None:
+        artifact_errors = _preserve_failure_artifacts(
+            task_id,
+            args,
+            reason,
+            pathlib.Path(evaluation_cache),
+            download_cache=download_cache,
+        )
+
     cleanup_errors = []
     pending_download = None
-    pending_evaluation = None
-    for path, root, label, pending_name in (
-        (download_cache, args.download_dir, "download cache", "download"),
-        (evaluation_cache, args.output_root, "evaluation cache", "evaluation"),
-    ):
-        if path is None:
-            continue
+    if download_cache is not None:
         try:
-            _remove_cache_dir(path, root, label)
+            _remove_cache_dir(download_cache, args.download_dir, "download cache")
         except Exception as e:
-            cleanup_errors.append(f"{label}: {e}")
-            if pending_name == "download":
-                pending_download = str(path)
-            else:
-                pending_evaluation = str(path)
+            cleanup_errors.append(f"download cache: {e}")
+            pending_download = str(download_cache)
 
-    note = f"{reason}; caches cleared; queued for a full retry"
+    preserved = f"; evaluation artifacts preserved at {failed_out_dir}" if failed_out_dir else ""
+    note = f"{reason}{preserved}; queued for a full retry"
+    if artifact_errors:
+        note += f"; artifact preservation warning ({'; '.join(artifact_errors)})"
     if cleanup_errors:
-        note = f"{reason}; cache cleanup pending ({'; '.join(cleanup_errors)}); retry is blocked until clean"
+        note += f"; cache cleanup pending ({'; '.join(cleanup_errors)}); retry is blocked until clean"
     store.update(
         task_id,
         status="pending",
         payload=None,
         out_dir=None,
+        last_failed_out_dir=failed_out_dir or previous.get("last_failed_out_dir"),
+        failed_out_dirs=_failed_output_history(previous, evaluation_cache),
         resume_evaluation=False,
         cleanup_download_dir=pending_download,
-        cleanup_evaluation_dir=pending_evaluation,
+        # Old versions used this field to delete failed evaluation directories.
+        # Keep it cleared: output directories are diagnostic artifacts, not caches.
+        cleanup_evaluation_dir=None,
         note=note,
     )
 
 
 def _finish_pending_cleanup(task_id: str, store: StateStore, args, previous: dict) -> bool:
-    """重试任务开跑前完成上一次遗留清理；失败时不允许进入流水线。"""
+    """清理上次遗留的下载缓存，并迁移旧账本中的评测产物引用。"""
     download_cache = previous.get("cleanup_download_dir")
     evaluation_cache = previous.get("cleanup_evaluation_dir")
-    # 兼容旧版本或进程崩溃留下的部分输出。新协议要求整轮重跑，因此
-    # pending/running 任务只要还引用旧输出目录，首次领取时就先清掉；
-    # resume_evaluation 是旧账本可能留下的额外标记。
+    # 兼容旧版本或进程崩溃留下的部分输出。整轮仍然从头重跑，但旧目录
+    # 只作为诊断产物保留，不参与 resume，也绝不在自动重试中删除。
     if previous.get("out_dir") and (
         previous.get("status") in ("pending", "running") or previous.get("resume_evaluation")
     ):
@@ -187,7 +477,23 @@ def _finish_pending_cleanup(task_id: str, store: StateStore, args, previous: dic
         evaluation_cache=pathlib.Path(evaluation_cache) if evaluation_cache else None,
     )
     entry = store.get(task_id) or {}
-    return not entry.get("cleanup_download_dir") and not entry.get("cleanup_evaluation_dir")
+    return not entry.get("cleanup_download_dir")
+
+
+def _create_output_dir(output_root: pathlib.Path, task_id: str) -> pathlib.Path:
+    """Atomically allocate a unique directory for one evaluation attempt."""
+    output_root = pathlib.Path(output_root)
+    output_root.mkdir(parents=True, exist_ok=True)
+    safe_task_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", task_id).strip("._-") or "task"
+    base = output_root / f"{time.strftime('%Y%m%d_%H%M%S')}_{safe_task_id}"
+    for attempt in range(1, 10_000):
+        candidate = base if attempt == 1 else base.with_name(f"{base.name}_attempt{attempt}")
+        try:
+            candidate.mkdir()
+        except FileExistsError:
+            continue
+        return candidate
+    raise RuntimeError(f"could not allocate a unique evaluation output directory below {output_root}")
 
 
 # ----------------------------------------------------------------------------
@@ -225,6 +531,79 @@ def resolve_model(
     return ref, revision, (download_dir / tag).resolve()
 
 
+def select_base_model(task: dict, benchmark: str | None = None) -> str:
+    """Validate and return the queue-owned base-model selection.
+
+    The backend queue is the production source of truth for model identity.
+    Keep its wire values stable and pass them directly to ``run_eval.py``;
+    that CLI owns alias normalization for the evaluator runtime.
+    """
+    raw = task.get("base_model")
+    base_model = raw if isinstance(raw, str) else ""
+    if base_model not in BASE_MODELS:
+        raise ValueError(f"invalid base_model {raw!r}: queue task must provide one of {', '.join(BASE_MODELS)}")
+    if benchmark == "robotwin" and base_model != "lingbot-vla-2.0":
+        raise ValueError("robotwin tasks require base_model 'lingbot-vla-2.0'")
+    if is_axis_benchmark(benchmark) and base_model != "pi0.5":
+        raise ValueError(f"{benchmark} tasks require base_model 'pi0.5'")
+    return base_model
+
+
+def resolve_evaluator_source_commit(explicit: str | None = None) -> str:
+    """Resolve an auditable evaluator revision for production score artifacts.
+
+    An explicit revision is used by immutable source bundles without ``.git``.
+    A normal checkout is accepted only when tracked and untracked source state
+    is clean, otherwise the HEAD hash would misrepresent the code that scored
+    a model. Documentation and archived deployment evidence are not imported
+    by the evaluator and may contain local reports without blocking startup.
+    """
+    if explicit:
+        if not COMMIT_HASH_RE.fullmatch(explicit):
+            raise ValueError("evaluator source commit must be a full 40-character lowercase Git hash")
+        return explicit
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=VALIDATOR_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        status = subprocess.run(
+            [
+                "git",
+                "status",
+                "--porcelain",
+                "--untracked-files=normal",
+                "--",
+                ".",
+                ":(exclude)docs",
+                ":(exclude)deploy/evidence",
+            ],
+            cwd=VALIDATOR_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ValueError(
+            "cannot determine evaluator source revision; deploy a clean Git checkout or pass "
+            "--evaluator-source-git-commit for an immutable source bundle"
+        ) from exc
+    if not COMMIT_HASH_RE.fullmatch(head):
+        raise ValueError(f"git rev-parse returned an invalid evaluator source commit: {head!r}")
+    if status:
+        paths = [line[3:] if len(line) > 3 else line for line in status.splitlines()]
+        preview = ", ".join(paths[:5])
+        suffix = " ..." if len(paths) > 5 else ""
+        raise ValueError(
+            f"evaluator checkout has uncommitted source files ({preview}{suffix}); "
+            "refusing to publish scores with a false revision"
+        )
+    return head
+
+
 def download_with_retry(ref: str, revision: str | None, model_dir: pathlib.Path, args) -> None:
     """下载模型,对失败做有上限的原地重试。
 
@@ -233,17 +612,32 @@ def download_with_retry(ref: str, revision: str | None, model_dir: pathlib.Path,
     评测结论；调用方清理整个下载目录后把任务放回队尾。
     """
     for attempt in range(args.download_retries):
+        if _stopping():
+            raise EvalInterrupted()
         try:
-            download_model(ref, model_dir, revision=revision, strategies=args.download_strategies, log=logger.info)
+            download_model(
+                ref,
+                model_dir,
+                revision=revision,
+                strategies=args.download_strategies,
+                optional_patterns=MODEL_OPTIONAL_ARTIFACT_PATTERNS,
+                log=logger.info,
+            )
+            if _stopping():
+                raise EvalInterrupted()
             return
+        except DownloadInterrupted as exc:
+            raise EvalInterrupted() from exc
         except DownloadError as e:
+            if _stopping():
+                raise EvalInterrupted() from e
             if e.permanent:
                 raise
             if attempt + 1 >= args.download_retries:
                 raise
             wait = min(300, 30 * 2**attempt)
             logger.warning(f"download failed (attempt {attempt + 1}/{args.download_retries}): {e}; retrying in {wait}s")
-            if stop_event.wait(wait):
+            if _wait_for_event(stop_event, wait) or _stopping():
                 raise EvalInterrupted() from None
 
 
@@ -253,12 +647,21 @@ def download_with_retry(ref: str, revision: str | None, model_dir: pathlib.Path,
 def _terminate(proc: subprocess.Popen) -> None:
     # 先礼后兵:SIGTERM 让 run_eval 自己清理 policy server,超时再杀整个会话
     # (start_new_session=True 保证 pid 即 pgid)。
-    os.killpg(proc.pid, signal.SIGTERM)
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
     try:
         proc.wait(timeout=30)
     except subprocess.TimeoutExpired:
-        os.killpg(proc.pid, signal.SIGKILL)
-        proc.wait()
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            return
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            logger.error("evaluation pid=%s did not exit after SIGKILL; GPU driver may be blocked", proc.pid)
 
 
 _RETRYABLE_EVAL_LOG_MARKERS = (
@@ -297,9 +700,12 @@ def _failed_task_infrastructure_detail(out_dir: pathlib.Path, failed_tasks: list
 
 
 def _report_progress(client: BackendClient, task_id: str, stage: str, detail: dict, worker_id: str) -> bool:
-    """Best-effort progress reporting; observability failures must not corrupt evaluation."""
+    """Best-effort progress reporting, except explicit task invalidation conflicts."""
     try:
         client.report_progress(task_id, stage, detail, worker_id)
+    except TaskInvalidatedError:
+        # 这不是可忽略的可观测性故障：后端已明确要求停止当前任务。
+        raise
     except BackendError as e:
         logger.warning(f"{task_id}: progress update failed (stage={stage} worker={worker_id}): {e}")
         return False
@@ -354,9 +760,16 @@ def run_evaluation(
     每 task 一半 trial 用官方初始状态、一半用该 seed 重采样的初始状态)。
     收到退出信号时中止子进程并抛 EvalInterrupted。
     """
-    selected_benchmark = getattr(args, "benchmark", "libero")
+    args = task_evaluation_args(task, args)
+    selected_benchmark = args.benchmark
     profile = get_profile(selected_benchmark)
     benchmark = profile.runtime_benchmark
+    base_model = select_base_model(task, selected_benchmark)
+    server_impl = (
+        getattr(args, "lingbot_server_impl", None) or args.server_impl
+        if base_model == "lingbot-vla-2.0"
+        else args.server_impl
+    )
     commit_id = (task.get("hf_commit") or "").strip() or "local"
     cmd = [
         sys.executable,
@@ -367,8 +780,8 @@ def run_evaluation(
         commit_id,
         "--benchmark",
         benchmark,
-        "--model-architectures",
-        getattr(args, "model_architectures", "pi0.5"),
+        "--backbone",
+        base_model,
         "--num-trials",
         str(args.num_trials),
         "--gpus",
@@ -378,17 +791,28 @@ def run_evaluation(
         "--init-workers-per-gpu",
         str(getattr(args, "init_workers_per_gpu", 4)),
         "--server-impl",
-        args.server_impl,
+        server_impl,
+        "--max-batch",
+        str(getattr(args, "max_batch", 4)),
         "--output-dir",
         str(out_dir),
     ]
+    evaluator_source_commit = getattr(args, "evaluator_source_git_commit", None)
+    if evaluator_source_commit:
+        cmd += ["--evaluator-source-git-commit", evaluator_source_commit]
     if args.eval_config:
         cmd += ["--config", args.eval_config]
+    if profile.runtime_benchmark == "axis":
+        cmd += ["--axis-manifest", str(profile.manifest_path)]
+    if profile.policy_seed is not None:
+        cmd += ["--seed", str(profile.policy_seed)]
+    if getattr(args, "lingbot_norm_stats", None):
+        cmd += ["--lingbot-norm-stats", args.lingbot_norm_stats]
     if args.task_ids:
         cmd += ["--task-ids", args.task_ids]
     # LIBERO-Plus variants ship perturbation-specific init states; replacing
     # them changes the benchmark definition and run_eval correctly rejects it.
-    if init_seed is not None and benchmark != "libero_plus":
+    if init_seed is not None and benchmark in ("libero", "libero_pro"):
         cmd += ["--init-seed", str(init_seed)]
 
     progress_path = out_dir / "progress.jsonl"
@@ -406,43 +830,73 @@ def run_evaluation(
         env["PYTHONUNBUFFERED"] = "1"
         proc = subprocess.Popen(cmd, stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True, env=env)
         deadline = time.time() + args.eval_timeout
+        next_gpu_check = time.monotonic() + GPU_CHECK_INTERVAL
         progress_offset = 0
-        while proc.poll() is None:
+        try:
+            while proc.poll() is None:
+                if progress_callback is not None:
+                    progress_offset = _forward_progress_events(progress_path, progress_offset, progress_callback)
+                if _stopping():
+                    _terminate(proc)
+                    raise EvalInterrupted()
+                if time.time() > deadline:
+                    _terminate(proc)
+                    raise EvalInfrastructureError(f"evaluation timed out after {args.eval_timeout:.0f}s")
+                if time.monotonic() >= next_gpu_check:
+                    health = check_gpu_health()
+                    next_gpu_check = time.monotonic() + GPU_CHECK_INTERVAL
+                    if not health.healthy:
+                        _terminate(proc)
+                        raise EvalInfrastructureError(f"GPU health check failed: {health.detail}")
+                time.sleep(5)
             if progress_callback is not None:
-                progress_offset = _forward_progress_events(progress_path, progress_offset, progress_callback)
-            if stop_event.is_set():
+                _forward_progress_events(progress_path, progress_offset, progress_callback)
+        except TaskInvalidatedError:
+            # progress callback 可以收到 SUPERSEDED/REJECTED。异常离开本层前
+            # 必须结束整个评测进程组，不能留下继续占用 GPU 的孤儿进程。
+            if proc.poll() is None:
                 _terminate(proc)
-                raise EvalInterrupted()
-            if time.time() > deadline:
-                _terminate(proc)
-                raise EvalInfrastructureError(f"evaluation timed out after {args.eval_timeout:.0f}s")
-            time.sleep(5)
-        if progress_callback is not None:
-            _forward_progress_events(progress_path, progress_offset, progress_callback)
+            raise
 
     # SIGTERM 与子进程自行退出可能发生在同一个轮询间隔内。停机意图必须
     # 优先于刚结束的子进程结果,否则会把中断/OOM 当成最终模型结论提交。
-    if stop_event.is_set():
+    if _stopping():
         raise EvalInterrupted()
 
     summary_path = out_dir / "summary.json"
     if not summary_path.exists():
         log_text = log_path.read_text(errors="replace")
+        tail = "\n".join(log_text.splitlines()[-40:]) or "<run_eval.log is empty>"
         if proc.returncode == 3:
             # 模型合法性检查未通过(libero_eval/check_model.py):把拒绝理由
             # 带回后端,miner 能直接看到原因。
-            tail = "\n".join(log_text.splitlines()[-15:])
             return None, f"model rejected by pre-eval check:\n{tail}"
         if _has_retryable_infrastructure_error(log_text):
-            tail = "\n".join(log_text.splitlines()[-15:])
             raise EvalInfrastructureError(f"evaluation infrastructure failed:\n{tail}")
-        raise EvalInfrastructureError(f"run_eval exited {proc.returncode} without a complete summary (see {log_path})")
+        raise EvalInfrastructureError(
+            f"run_eval exited {proc.returncode} without a complete summary (see {log_path}):\n{tail}"
+        )
     summary = json.loads(summary_path.read_text())
-    if selected_benchmark == "libero_plus":
+    if profile.manifest_sha256 is not None:
+        expected_metadata = {
+            "benchmark": selected_benchmark,
+            "protocol_revision": profile.protocol_revision,
+            "manifest_canonical_sha256": profile.manifest_sha256,
+            "policy_seed": profile.policy_seed,
+            "num_trials_per_task": profile.expected_trials_per_task,
+            "dry_run": False,
+        }
+        mismatched = [key for key, value in expected_metadata.items() if summary.get(key) != value]
+        if mismatched:
+            raise EvalInfrastructureError(
+                f"evaluation does not match the worker's benchmark config: {', '.join(mismatched)}; "
+                "restore the frozen version or publish a new version"
+            )
+    if selected_benchmark in ("libero_plus", "robotwin"):
         protocol = summary.get("evaluation_protocol") or {}
         if not protocol.get("official_result"):
             deviations = "; ".join(protocol.get("deviations") or ["missing official protocol metadata"])
-            raise EvalInfrastructureError(f"refusing to score non-official LIBERO-Plus result: {deviations}")
+            raise EvalInfrastructureError(f"refusing to score non-official {selected_benchmark} result: {deviations}")
     tasks = summary.get("tasks")
     if not isinstance(tasks, dict):
         raise EvalInfrastructureError("evaluation summary has no task results; refusing to score it")
@@ -467,6 +921,15 @@ def run_evaluation(
         raise EvalInfrastructureError(
             "incomplete evaluation; refusing to publish a partial score:\n" + "\n".join(details)
         )
+    if profile.expected_task_ids is not None:
+        try:
+            actual_task_ids = {int(result["task_id"]) for result in tasks.values() if isinstance(result, dict)}
+        except (KeyError, TypeError, ValueError) as exc:
+            raise EvalInfrastructureError("evaluation summary contains an invalid task id") from exc
+        if actual_task_ids != set(profile.expected_task_ids):
+            raise EvalInfrastructureError(
+                "evaluation task ids do not match the frozen benchmark manifest; refusing to score"
+            )
     if proc.returncode != 0:
         raise EvalInfrastructureError(
             f"run_eval exited {proc.returncode} despite a complete-looking summary; refusing to score it"
@@ -546,11 +1009,23 @@ def remote_score_matches(task_id: str, remote: dict, payload: dict) -> bool:
         return False
     # 旧 backend 的任务详情不保存 benchmark。缺失时不能仅凭这一点否定
     # 已落库结果，但只要远端明确返回了 benchmark，就必须与本地一致。
+    expected_benchmark = payload.get("benchmark")
     remote_benchmark = result.get("benchmark")
-    if remote_benchmark is not None and remote_benchmark != payload.get("benchmark"):
+    if is_axis_benchmark(expected_benchmark) and remote_benchmark != expected_benchmark:
+        return False
+    if remote_benchmark is not None and remote_benchmark != expected_benchmark:
+        return False
+    remote_revision = result.get("protocol_revision")
+    expected_revision = payload.get("protocol_revision")
+    if is_axis_benchmark(expected_benchmark) and remote_revision != expected_revision:
+        return False
+    if remote_revision is not None and remote_revision != expected_revision:
         return False
 
-    if remote.get("status") not in ("done", "scored", "failed"):
+    # Production task detail uses ``evaluated`` after a successful score POST;
+    # older deployments used ``done``/``scored``. All are terminal read-back
+    # states, while pending/running must never reconcile an ambiguous POST.
+    if remote.get("status") not in ("evaluated", "done", "scored", "failed"):
         return False
 
     remote_hotkey = remote.get("miner_hotkey") or remote.get("hotkey")
@@ -558,7 +1033,6 @@ def remote_score_matches(task_id: str, remote: dict, payload: dict) -> bool:
         (remote_hotkey, payload.get("miner_hotkey")),
         (remote.get("hf_repo_id"), payload.get("hf_repo_id")),
         (remote.get("hf_commit"), payload.get("hf_commit")),
-        (remote.get("round_num"), payload.get("round_num")),
     )
     if any(actual is None or expected is None or actual != expected for actual, expected in identities):
         return False
@@ -640,21 +1114,48 @@ def reconcile_persisted_score(
     return True
 
 
+def _invalidate_task(store: StateStore, task_id: str, error: TaskInvalidatedError) -> None:
+    """把后端已作废的提交置为本地终态，并唤醒主线程立即重拉队列。"""
+    status = error.code.lower()
+    request = f" request_id={error.request_id}" if error.request_id else ""
+    detail = error.detail or str(error)
+    store.update(
+        task_id,
+        status=status,
+        payload=None,
+        submit_attempts=0,
+        submit_error=None,
+        next_submit_at=None,
+        note=f"backend returned {error.code}:{request} {detail}",
+    )
+    logger.info(
+        f"{task_id}: backend returned {error.code}{request}; "
+        "stopping this task without a score and refreshing the queue"
+    )
+    _poll_wakeup_event.set()
+
+
 def try_submit(client: BackendClient, store: StateStore, task_id: str, payload: dict) -> bool:
-    """提交一次评分。返回 True 表示已到终态(成功或永久拒绝),False 表示可重试。"""
+    """提交一次评分。返回 True 表示已到终态(成功、作废或永久拒绝),False 表示可重试。"""
     incomplete_reason = successful_payload_incomplete_reason(payload)
     if incomplete_reason:
         entry = store.get(task_id) or {}
+        failed_out_dir = entry.get("out_dir")
         store.update(
             task_id,
             status="pending",
             payload=None,
             out_dir=None,
+            last_failed_out_dir=failed_out_dir or entry.get("last_failed_out_dir"),
+            failed_out_dirs=_failed_output_history(entry, failed_out_dir),
             resume_evaluation=False,
-            cleanup_evaluation_dir=entry.get("out_dir"),
+            cleanup_evaluation_dir=None,
             submit_error=None,
             next_submit_at=None,
-            note=f"blocked incomplete success payload: {incomplete_reason}",
+            note=(
+                f"blocked incomplete success payload: {incomplete_reason}; "
+                f"evaluation artifacts preserved at {failed_out_dir}"
+            ),
         )
         logger.error(
             f"{task_id} ({_model_label(payload)}): refusing to submit success=true because {incomplete_reason}"
@@ -671,6 +1172,9 @@ def try_submit(client: BackendClient, store: StateStore, task_id: str, payload: 
     )
     try:
         client.submit_score(task_id, payload)
+    except TaskInvalidatedError as e:
+        _invalidate_task(store, task_id, e)
+        return True
     except BackendError as e:
         # 只有连接中断/超时和 5xx 的结果是不确定的。明确 4xx 表示请求未被
         # 接受,绝不能被一个服务端脏 result 误判成提交成功。
@@ -710,11 +1214,11 @@ def try_submit(client: BackendClient, store: StateStore, task_id: str, payload: 
 def select_init_seed(task: dict) -> int | None:
     """该任务 init states 随机化的基准 seed = 队列条目自带的 seed 字段。
 
-    seed 由后端入队时按 sha256(block_hash:round_num:drand_random) 派生
-    (prototype 仓库 docs/SEED_GENERATION.md):miner 提交权重前不可预知,
-    评测后可独立验证,由它派生的 init states(init_mix.derive_task_seed)
-    因此同样可复现。缺失或非法时回退纯官方 init states(返回 None),
-    不本地造随机数——私自选的 seed 无法向 miner 证明来源。
+    seed 由后端入队时按当前协议派生:miner 提交权重前不可预知,评测后可独立
+    验证,由它派生的 init states(init_mix.derive_task_seed)因此同样可复现。
+    validator 将其视作不透明的 uint32,不依赖后端的具体派生字段。缺失或非法
+    时回退纯官方 init states(返回 None),不本地造随机数——私自选的 seed 无法
+    向 miner 证明来源。
     """
     raw = task.get("seed")
     if raw is None:
@@ -739,13 +1243,31 @@ def select_init_seed(task: dict) -> int | None:
 ###############################
 ## Core Loop
 ###############################
+def wait_for_gpu_health() -> bool:
+    """Keep pending work intact while the independent monitor sends notifications."""
+    paused = False
+    while not _stopping():
+        health = check_gpu_health()
+        if health.healthy:
+            if paused:
+                logger.info("GPU health restored; resuming task execution")
+            return True
+        if not paused:
+            logger.error("GPU unavailable; task execution paused: %s", health.detail)
+            paused = True
+        _wait_for_event(stop_event, GPU_CHECK_INTERVAL)
+    return False
+
+
 def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, args) -> None:
-    while not stop_event.is_set():
+    while not _stopping():
         try:
             item = local_q.get(timeout=2)
         except queue.Empty:
             continue
         if item is None:  # --once 模式的结束哨兵
+            return
+        if not wait_for_gpu_health():
             return
         task_id = item["task_id"]
         with _inflight_lock:
@@ -753,6 +1275,15 @@ def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, 
         try:
             logger.info(f"processing task {task_id} ({_model_label(item)})")
             process_task(item, client, store, args)
+        except BenchmarkNotReadyError as exc:
+            # A version can become unavailable after enqueueing. Return to backend polling,
+            # without API writes or a busy retry loop on the local FIFO.
+            store.update(task_id, status="stale", note=str(exc))
+            logger.warning("task %s waits for its benchmark: %s", task_id, exc)
+        except TaskInvalidatedError as e:
+            # 防御性兜底：未来若新增 POST 调用而未在 process_task 内单独捕获，
+            # 也不能被下面的通用异常路径改回 pending 后重新评测。
+            _invalidate_task(store, task_id, e)
         except Exception:
             logger.exception(f"{task_id} ({_model_label(item)}): unexpected worker error")
             entry = store.get(task_id)
@@ -764,7 +1295,7 @@ def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, 
                 store.update(task_id, status="pending", note="worker crashed; will retry on next start")
         finally:
             entry = store.get(task_id)
-            if entry is not None and entry.get("status") == "pending" and not stop_event.is_set():
+            if entry is not None and entry.get("status") == "pending" and not _stopping():
                 # 所有非终态失败统一回到本地 FIFO 队尾；即使 process_task
                 # 冒出未预期异常，也不能丢到只能靠重启恢复。
                 local_q.put(item)
@@ -774,15 +1305,15 @@ def worker_loop(local_q: queue.Queue, client: BackendClient, store: StateStore, 
 
 def process_task(task: dict, client: BackendClient, store: StateStore, args) -> None:
     task_id = task["task_id"]
+    args = task_evaluation_args(task, args)
     t0 = time.time()
     previous = store.get(task_id) or {}
     if not _finish_pending_cleanup(task_id, store, args, previous):
         logger.error(f"{task_id} ({_model_label(task)}): cache cleanup incomplete; task moved to queue tail")
         return
 
-    out_dir = args.output_root / f"{time.strftime('%Y%m%d_%H%M%S')}_{task_id}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    selected_benchmark = getattr(args, "benchmark", "libero")
+    out_dir = _create_output_dir(args.output_root, task_id)
+    selected_benchmark = args.benchmark
     worker_id = getattr(args, "worker_id", "") or socket.gethostname()
     store.update(
         task_id,
@@ -803,7 +1334,7 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
 
     # init states 随机化种子 = 队列条目自带的 seed(公开可验证,见 select_init_seed)。
     init_seed = None
-    if selected_benchmark != "libero_plus" and not args.no_init_randomization:
+    if selected_benchmark in ("libero", "libero_pro", "libero_pro_custom_1") and not args.no_init_randomization:
         init_seed = select_init_seed(task)
 
     summary, error = None, ""
@@ -812,6 +1343,9 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
     model_dir = None
     stage = "resolving"
     try:
+        # Validate the queue contract before downloading a potentially large
+        # checkpoint. run_evaluation validates again at its direct-call boundary.
+        select_base_model(task, selected_benchmark)
         _report_progress(client, task_id, "downloading", {}, worker_id)
         ref, revision, model_dir = resolve_model(task, args.download_dir, args.allow_local_model)
         if ref:
@@ -829,6 +1363,9 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
             init_seed=init_seed,
             progress_callback=lambda stage, detail: _report_progress(client, task_id, stage, detail, worker_id),
         )
+    except TaskInvalidatedError as e:
+        _invalidate_task(store, task_id, e)
+        return
     except EvalInterrupted:
         _schedule_clean_retry(
             store,
@@ -838,7 +1375,9 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
             download_cache=model_dir if stage == "downloading" and ref else None,
             evaluation_cache=out_dir,
         )
-        logger.warning(f"{task_id} ({_model_label(task)}): attempt interrupted; caches cleared and task requeued")
+        logger.warning(
+            f"{task_id} ({_model_label(task)}): attempt interrupted; artifacts preserved at {out_dir}, task requeued"
+        )
         return
     except DownloadError as e:
         _schedule_clean_retry(
@@ -863,13 +1402,13 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
             evaluation_cache=out_dir,
         )
         logger.error(
-            f"{task_id} ({_model_label(task)}): evaluation incomplete; all partial task caches cleared, "
-            "task requeued for a full run, no score submitted"
+            f"{task_id} ({_model_label(task)}): evaluation incomplete: {e}; "
+            f"artifacts preserved at {out_dir}, task requeued for a full run, no score submitted"
         )
         return
     except Exception as e:
         # ValueError 来自队列边界校验（非法 repo/commit），属于明确的输入拒绝，
-        # 可以作为终态结论返回；执行/基础设施异常则一律清缓存后重试。
+        # 可以作为终态结论返回；执行/基础设施异常保留诊断产物后重试。
         if stage == "resolving" and isinstance(e, ValueError):
             error = f"invalid benchmark task: {e}"
             logger.error(f"{task_id} ({_model_label(task)}): {error}; reporting task rejected")
@@ -884,13 +1423,13 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
             )
             logger.exception(
                 f"{task_id} ({_model_label(task)}): unexpected {stage} failure; "
-                "affected caches cleared and task requeued, no score submitted"
+                f"artifacts preserved at {out_dir}, affected caches cleaned and task requeued, no score submitted"
             )
             return
 
     try:
         payload = build_score_payload(
-            task,
+            {**task, "benchmark": selected_benchmark, "protocol_revision": _protocol_revision(selected_benchmark)},
             summary,
             time.time() - t0,
             error,
@@ -908,7 +1447,7 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
             )
             logger.error(
                 f"{task_id} ({_model_label(task)}): score payload is incomplete ({incomplete_reason}); "
-                "evaluation cache cleared and task requeued, no score submitted"
+                f"artifacts preserved at {out_dir}, task requeued, no score submitted"
             )
             return
         (out_dir / "score_payload.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False))
@@ -922,7 +1461,7 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
         )
         logger.exception(
             f"{task_id} ({_model_label(task)}): score construction failed; "
-            "evaluation cache cleared and task requeued, no score submitted"
+            f"artifacts preserved at {out_dir}, task requeued, no score submitted"
         )
         return
     store.update(task_id, status="done_pending_submit", payload=payload)
@@ -942,7 +1481,7 @@ def classify_queued_task(entry: dict | None, task: dict, benchmark: str | None =
     """决定后端队列任务的处置(纯函数,供单测)。
 
     返回:
-      "evaluate"  没见过的任务,或同 task_id 换了 repo/commit(miner 重新
+      "evaluate"  没见过的任务,或同 task_id 换了 repo/commit/base_model(miner 重新
                   提交)—— 入队评测。换 commit 时若旧结果尚未提交,直接作废:
                   后端只关心当前提交。
       "skip"      本地正在排队/评测，或同一提交已获后端确认。评分 POST
@@ -952,13 +1491,19 @@ def classify_queued_task(entry: dict | None, task: dict, benchmark: str | None =
         return "evaluate"
     if entry.get("status") in ("pending", "running"):
         return "skip"
+    if entry.get("status") == "stale":
+        return "evaluate"
     prev = entry.get("task") or {}
     if benchmark is not None and entry.get("benchmark") != benchmark:
         return "evaluate"
     expected_revision = _protocol_revision(benchmark)
     if expected_revision is not None and entry.get("protocol_revision") != expected_revision:
         return "evaluate"
-    if (task.get("hf_repo_id"), task.get("hf_commit")) != (prev.get("hf_repo_id"), prev.get("hf_commit")):
+    if (task.get("hf_repo_id"), task.get("hf_commit"), task.get("base_model")) != (
+        prev.get("hf_repo_id"),
+        prev.get("hf_commit"),
+        prev.get("base_model"),
+    ):
         return "evaluate"
     if entry.get("status") == "submitted" and entry.get("payload"):
         if successful_payload_incomplete_reason(entry["payload"]):
@@ -968,10 +1513,10 @@ def classify_queued_task(entry: dict | None, task: dict, benchmark: str | None =
 
 
 def _handle_signal(_signum, _frame):
-    # Python signal handlers会打断主线程任意一条字节码。此处若调用 logging,
-    # 恰好中断同一 handler 的 emit 时会触发 "reentrant call";只设置标志,
-    # 退出路径会统一记录 benchmark worker stopped。
-    stop_event.set()
+    # Event.set() also acquires a lock. Repeated SIGTERM (including uv's
+    # forwarded signal) can interrupt that same lock and deadlock shutdown.
+    global _shutdown_requested
+    _shutdown_requested = True
 
 
 def parse_args():
@@ -1003,6 +1548,22 @@ def parse_args():
         help="任务队列路径(默认 /api/v1/benchmark/queue)",
     )
     p.add_argument("--poll-interval", type=float, default=60.0, help="quiry interval")
+    p.add_argument(
+        "--worker-key",
+        default=os.environ.get("WORKER_KEY", ""),
+        help="Worker key for the read-only AXIS rotation endpoint (WORKER_KEY)",
+    )
+    p.add_argument(
+        "--axis-benchmark-dir",
+        type=pathlib.Path,
+        help="Generated AXIS releases; defaults to a separate .cache directory for each backend URL",
+    )
+    p.add_argument(
+        "--axis-selector-root",
+        type=pathlib.Path,
+        help="Pinned selector checkout; enables automatic rotation together with --axis-runtime-pool",
+    )
+    p.add_argument("--axis-runtime-pool", type=pathlib.Path, help="Frozen runtime pool with adjacent task snapshots")
 
     p.add_argument("--once", action="store_true", help="只轮询一次,处理完即退出(调试用)")
     p.add_argument(
@@ -1021,7 +1582,12 @@ def parse_args():
     ## Params below will be passed thourgh to run_eval.py
     p.add_argument("--num-trials", type=int, required=True)
     p.add_argument("--gpus", default="0,1,2,3,4,5,6,7")
-    p.add_argument("--workers-per-gpu", type=int, default=3)
+    p.add_argument(
+        "--workers-per-gpu",
+        type=int,
+        default=None,
+        help="每张 GPU 的评测客户端数（默认：LIBERO 3，RoboTwin/Axis 1）",
+    )
     p.add_argument(
         "--init-workers-per-gpu",
         type=int,
@@ -1033,10 +1599,39 @@ def parse_args():
         "--server-impl",
         choices=("upstream", "batched"),
         default="upstream",
-        help="policy server 实现(见 run_eval.py)。batched 配 --workers-per-gpu 6 再快 ~13%%,"
-        "但推理路径较新,生产默认保持 upstream",
+        help="policy server 实现(见 run_eval.py)。LingBot 在 4090 上实测 batched 配 "
+        "--max-batch 4 --workers-per-gpu 8 吞吐最高,相对 upstream workers=6 约 +143%%;"
+        "推理路径较新,生产默认保持 upstream",
     )
-    p.add_argument("--benchmark", choices=sorted(PROFILES), required=True)
+    p.add_argument(
+        "--lingbot-server-impl",
+        choices=("upstream", "batched", "static"),
+        default=None,
+        help="仅覆盖 LingBot 队列任务的 server 实现；static 使用固定 batch cohort 和严格确定性设置",
+    )
+    p.add_argument(
+        "--max-batch",
+        type=int,
+        default=4,
+        help="动态 batch 的上限，必须是 2 的幂（默认 4）",
+    )
+    benchmark_group = p.add_mutually_exclusive_group()
+    benchmark_group.add_argument(
+        "--axis-only",
+        action="store_true",
+        help="Accept only AXIS queue tasks, preserving each task's benchmark version",
+    )
+    benchmark_group.add_argument(
+        "--benchmark",
+        help="Override the queue benchmark; when omitted, use each task's benchmark",
+    )
+    benchmark_group.add_argument(
+        "--axis_v1.0",
+        dest="benchmark",
+        action="store_const",
+        const=AXIS_V1_NAME,
+        help="Shortcut for --benchmark=axis_v1.0",
+    )
     p.add_argument("--task-ids", default="", help="调试用:只评测这些 task id(逗号分隔)")
     p.add_argument(
         "--no-init-randomization",
@@ -1046,15 +1641,22 @@ def parse_args():
         "抗评测集过拟合)",
     )
     p.add_argument(
-        "--model-architectures",
-        default="pi0.5",
-        metavar="ARCH[,ARCH...]",
-        help="允许评测的模型架构(默认 pi0.5;调试可传 pi0,pi0.5)",
-    )
-    p.add_argument(
         "--eval-config",
         default=None,
         help="显式 openpi 训练配置名(默认根据 checkpoint 架构自动选择)",
+    )
+    p.add_argument(
+        "--lingbot-norm-stats",
+        default=None,
+        help="覆盖 validator 内置的 LingBot-VLA 2.0 LIBERO normalization JSON(调试用)",
+    )
+    p.add_argument(
+        "--evaluator-source-git-commit",
+        default=os.environ.get("EVALUATOR_SOURCE_GIT_COMMIT"),
+        help=(
+            "Full immutable evaluator revision. Default: require a clean Git checkout and use HEAD; "
+            "source bundles without .git must set this explicitly."
+        ),
     )
     p.add_argument("--eval-timeout", type=float, default=8 * 3600, help="单次评测超时(秒)")
     p.add_argument(
@@ -1068,6 +1670,8 @@ def parse_args():
     )
     p.add_argument("--allow-local-model", action="store_true", help="允许 hf_repo_id 为本地路径(仅测试用,生产不要开)")
     args = p.parse_args()
+    if args.max_batch < 1 or args.max_batch & (args.max_batch - 1):
+        p.error("--max-batch must be a positive power of two")
     args.output_root = pathlib.Path(args.output_root).expanduser().resolve()
     args.download_dir = pathlib.Path(args.download_dir).expanduser().resolve()
     args.download_strategies = parse_strategies(args.download_strategies)  # 启动即 fail fast
@@ -1078,32 +1682,118 @@ def parse_args():
         p.error("--public-api-key or BACKEND_PUBLIC_API_KEY is required")
     if not args.admin_api_key:
         p.error("--admin-api-key or BACKEND_ADMIN_API_KEY is required")
-    if args.benchmark == "libero_plus":
-        if args.num_trials != 1:
-            p.error("libero_plus official protocol requires --num-trials 1")
-        if args.task_ids:
-            p.error("benchmark_worker cannot score a LIBERO-Plus --task-ids subset; use run_eval.py for development")
-        # Perturbation-specific init states are part of each registered variant.
-        args.no_init_randomization = True
+    args.axis_benchmark_dir = (args.axis_benchmark_dir or default_rotation_directory(args.backend_url)).resolve()
+    if bool(args.axis_selector_root) != bool(args.axis_runtime_pool):
+        p.error("--axis-selector-root and --axis-runtime-pool must be supplied together")
+    if args.axis_selector_root:
+        if not args.worker_key:
+            p.error("automatic AXIS rotation requires --worker-key or WORKER_KEY")
+        if args.benchmark is not None:
+            p.error("automatic AXIS rotation uses queue benchmarks; remove the explicit benchmark override")
+    configure_axis_profiles(args.axis_benchmark_dir)
+    if args.benchmark is not None:
+        try:
+            get_profile(args.benchmark)
+            _apply_benchmark_options(args)
+        except ValueError as exc:
+            p.error(str(exc))
     return args
 
 
-def main():
-    _setup_logger()
-    args = parse_args()
+def _apply_benchmark_options(args) -> None:
+    if getattr(args, "workers_per_gpu", None) is None:
+        args.workers_per_gpu = 1 if (args.benchmark == "robotwin" or is_axis_benchmark(args.benchmark)) else 3
+    if args.benchmark == "libero_plus":
+        if args.num_trials != 1:
+            raise ValueError("libero_plus official protocol requires --num-trials 1")
+        if args.task_ids:
+            raise ValueError(
+                "benchmark_worker cannot score a LIBERO-Plus --task-ids subset; use run_eval.py for development"
+            )
+        # Perturbation-specific init states are part of each registered variant.
+        args.no_init_randomization = True
+    if args.benchmark == "robotwin":
+        if args.num_trials != 100:
+            raise ValueError("robotwin official protocol requires --num-trials 100")
+        if args.task_ids:
+            raise ValueError(
+                "benchmark_worker cannot score a RoboTwin --task-ids subset; use run_eval.py for development"
+            )
+        args.no_init_randomization = True
+    if is_axis_benchmark(args.benchmark):
+        trials = get_profile(args.benchmark).expected_trials_per_task or 1
+        if args.num_trials != trials:
+            raise ValueError(f"{args.benchmark} base-scene protocol requires --num-trials {trials}")
+        if args.task_ids:
+            raise ValueError(
+                f"benchmark_worker cannot score an {args.benchmark} --task-ids subset; use run_eval.py for development"
+            )
+        if args.server_impl != "upstream":
+            raise ValueError(f"{args.benchmark} currently requires --server-impl upstream")
+        if args.eval_config not in (None, "pi05_axis_joint"):
+            raise ValueError(f"{args.benchmark} requires --eval-config pi05_axis_joint")
+        args.eval_config = "pi05_axis_joint"
+        args.no_init_randomization = True
 
-    # 预检评测环境,避免每个任务都失败后才发现 setup.sh 没跑过。
-    from libero_eval.paths import CLIENT_VENV_PY, SERVER_VENV_PY  # 只含路径常量
 
-    for py, what in [(SERVER_VENV_PY, "openpi server venv"), (CLIENT_VENV_PY, "LIBERO client venv")]:
+def preflight_runtime(benchmark: str) -> None:
+    from libero_eval.paths import (
+        AXIS_VENV_PY,
+        CLIENT_VENV_PY,
+        LINGBOT_VLA_V2_VENV_PY,
+        ROBOTWIN_VENV_PY,
+        SERVER_VENV_PY,
+    )
+
+    if benchmark == "robotwin":
+        runtime_envs = [
+            (LINGBOT_VLA_V2_VENV_PY, "LingBot-VLA 2.0 server venv"),
+            (ROBOTWIN_VENV_PY, "RoboTwin simulator venv"),
+        ]
+    elif is_axis_benchmark(benchmark):
+        runtime_envs = [
+            (SERVER_VENV_PY, "OpenPI server venv"),
+            (AXIS_VENV_PY, "AXIS simulator venv"),
+        ]
+    else:
+        # The policy runtime is selected per queue task. run_eval performs its
+        # family-specific preflight; only the shared LIBERO client is required
+        # at worker startup.
+        runtime_envs = [(CLIENT_VENV_PY, "LIBERO client venv")]
+    for py, what in runtime_envs:
         if not py.exists():
-            sys.exit(f"[benchmark_worker] Missing {py} — install the {what} first (bash setup.sh; see README).")
+            raise ValueError(f"Missing {py}; install the {what} first (see README).")
+
+
+def main():
+    args = parse_args()
+    rotation = None
+    try:
+        args.evaluator_source_git_commit = resolve_evaluator_source_commit(args.evaluator_source_git_commit)
+        if getattr(args, "axis_selector_root", None):
+            rotation = AxisRotation(
+                directory=args.axis_benchmark_dir,
+                backend_url=args.backend_url,
+                selector_root=args.axis_selector_root,
+                runtime_pool=args.axis_runtime_pool,
+            )
+        if args.benchmark is not None:
+            preflight_runtime(args.benchmark)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        sys.exit(f"[benchmark_worker] {exc}")
+    log_path = _setup_logger(args.backend_url)
+    _install_stderr_logging()
+    logger.info(f"worker log: {log_path}")
+    logger.info("benchmark source: %s", args.benchmark or "queue (per task)")
+    if args.axis_only:
+        logger.info("queue filter: AXIS only; non-AXIS tasks and pending scores are left untouched")
 
     client = BackendClient(
         args.backend_url,
         public_api_key=args.public_api_key,
         admin_api_key=args.admin_api_key,
         queue_path=args.queue_path,
+        worker_api_key=getattr(args, "worker_key", None),
     )
     store = StateStore(pathlib.Path(args.state_file))
     local_q: queue.Queue = queue.Queue()
@@ -1114,6 +1804,15 @@ def main():
     # 启动恢复:上次死在排队/评测中的任务重新入队;评完未确认的走补交路径。
     for task_id, entry in store.all_tasks().items():
         if entry.get("status") in ("pending", "running") and entry.get("task"):
+            if not task_matches_filter(entry["task"], args):
+                continue
+            try:
+                recovered_args = task_evaluation_args(entry["task"], args)
+                preflight_runtime(recovered_args.benchmark)
+            except ValueError as exc:
+                store.update(task_id, status="stale", note=str(exc))
+                logger.warning("recover: skip %s: %s", task_id, exc)
+                continue
             logger.info(f"recover: requeue {task_id} ({_model_label(entry['task'])}, was {entry['status']})")
             store.update(task_id, status="pending")
             local_q.put(entry["task"])
@@ -1123,17 +1822,33 @@ def main():
     logger.info(f"benchmark worker up: backend={args.backend_url} poll={args.poll_interval:.0f}s once={args.once}")
 
     first_poll = True
-    while not stop_event.is_set():
+    while not _stopping():
+        # 清除的是触发“本轮立即轮询”的旧通知；本轮期间的新通知会保留到
+        # 末尾 wait，避免恰好发生在 HTTP 请求期间的刷新信号被丢失。
+        _poll_wakeup_event.clear()
+        if _stopping():
+            break
+        # Prepare and publish complete bundles before a new baseline can be claimed.
+        # Polling/generation failures do not mark queue submissions as failed.
+        if rotation is not None:
+            try:
+                pending_rotation = client.fetch_rotation()
+                if pending_rotation is not None:
+                    ready = rotation.prepare(pending_rotation)
+                    if ready is not None:
+                        logger.info("AXIS rotation prepared: %s", ready)
+            except (BackendError, OSError, ValueError, KeyError, TypeError, ImportError) as exc:
+                logger.warning("AXIS rotation not ready; retry on next poll: %s", exc)
+        refresh_axis_profiles()
         # 先补交欠账(worker 已放弃原地重试的、或重启前遗留的)。
         # _inflight 保证不会和 worker 线程对同一任务双重提交。
         with _inflight_lock:
             inflight = set(_inflight)
         for task_id, entry in store.all_tasks().items():
             if entry.get("status") == "done_pending_submit" and task_id not in inflight and submit_retry_due(entry):
-                expected_revision = _protocol_revision(args.benchmark)
-                if entry.get("benchmark") != args.benchmark or (
-                    expected_revision is not None and entry.get("protocol_revision") != expected_revision
-                ):
+                if not task_matches_filter(entry.get("task") or {}, args):
+                    continue
+                if not pending_score_matches_profile(entry, args.benchmark):
                     store.update(
                         task_id,
                         status="stale",
@@ -1166,11 +1881,18 @@ def main():
             tid = t.get("task_id")
             if not tid:
                 continue
+            try:
+                selected_args = task_evaluation_args(t, args)
+                preflight_runtime(selected_args.benchmark)
+            except ValueError as exc:
+                logger.warning("queue task %s (%s) skipped: %s", tid, _model_label(t), exc)
+                continue
+            selected_benchmark = selected_args.benchmark
             with _inflight_lock:
                 if tid in _inflight:
                     continue  # worker 线程正处理中,下一轮再看
             entry = store.get(tid)
-            verdict = classify_queued_task(entry, t, args.benchmark)
+            verdict = classify_queued_task(entry, t, selected_benchmark)
             if verdict == "evaluate":
                 if entry is not None:
                     prev = entry.get("task") or {}
@@ -1179,7 +1901,14 @@ def main():
                         f"{prev.get('hf_repo_id')}@{str(prev.get('hf_commit'))[:12]} -> "
                         f"{t.get('hf_repo_id')}@{str(t.get('hf_commit'))[:12]}; re-evaluating"
                     )
-                store.update(tid, status="pending", task=t, benchmark=args.benchmark, payload=None)
+                store.update(tid, status="pending", task=t, benchmark=selected_benchmark, payload=None)
+                logger.info(
+                    "queue task %s: benchmark=%s source=%s queue_benchmark=%r",
+                    tid,
+                    selected_benchmark,
+                    "cli" if args.benchmark is not None else "queue",
+                    t.get("benchmark"),
+                )
                 local_q.put(t)
                 new += 1
         if new:
@@ -1188,8 +1917,8 @@ def main():
             # 首轮空转也出一条日志,否则启动后长时间静默像卡死。
             if tasks:
                 logger.info(
-                    f"queue has {len(tasks)} task(s), all already evaluated in the local "
-                    f"ledger ({args.state_file}); confirmed results were not re-submitted"
+                    f"queue has {len(tasks)} task(s), no new eligible tasks; "
+                    f"see routing warnings and local ledger ({args.state_file})"
                 )
             else:
                 logger.info(f"queue empty; polling every {args.poll_interval:.0f}s")
@@ -1199,7 +1928,7 @@ def main():
         if args.once:
             local_q.put(None)
             break
-        stop_event.wait(args.poll_interval)
+        _wait_for_event(_poll_wakeup_event, args.poll_interval)
 
     worker.join()
     logger.info("benchmark worker stopped")

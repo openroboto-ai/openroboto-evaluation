@@ -51,7 +51,7 @@ _HFD_THREADS = 8
 _HFD_JOBS = 5
 
 # hfd.sh 断点续传信号:三处 "Re-run to resume"(下载不完整 exit 1、列文件失败
-# exit 1、SIGINT trap exit 130)。hfd.sh 重跑会 diff 本地文件与 manifest 只下
+# exit 1、SIGINT trap exit 130)。主动中断不自动重跑。hfd.sh 重跑会 diff 本地文件与 manifest 只下
 # 缺失部分(aria2c -c),部分文件从不清理,因此命中且本次有净进度时原地重跑
 # 同一策略,而不是丢弃镜像已下载的部分回退下一策略。
 _RESUME_HINT = "Re-run to resume"
@@ -78,6 +78,10 @@ class DownloadError(Exception):
 
 class SnapshotIntegrityError(OSError):
     """远端清单与本地快照不一致；快照不能用于评测。"""
+
+
+class DownloadInterrupted(InterruptedError):
+    """The downloader was stopped intentionally; do not resume or fall back."""
 
 
 def parse_strategies(spec: str) -> list[str]:
@@ -108,6 +112,7 @@ def download_model(
     repo_type: str = "model",
     allow_patterns: list[str] | None = None,
     ignore_patterns: list[str] | None = None,
+    optional_patterns: list[str] | None = None,
     log=print,
 ) -> pathlib.Path:
     """按策略链下载 repo 到 local_dir,返回 local_dir;全部失败抛 DownloadError。
@@ -116,6 +121,10 @@ def download_model(
     DEFAULT_STRATEGIES。repo_type="dataset" 供数据集 repo 复用。
     allow_patterns/ignore_patterns 非空时筛选下载路径；hfd.sh 不支持可靠的
     按目录校验，因此这类请求直接使用对应端点的 snapshot_download。
+    optional_patterns 只用于明确不参与模型加载的附属文件（例如 ``*.bak``）：
+    hfd 会把它们从下载清单排除，然后对其余固定 commit 文件逐个做
+    size/hash 校验。若旧版 hfd 仍因可选文件失败，同一校验也可作为安全回退。
+    必需权重绝不因此跳过校验。
     """
     names = (
         strategies
@@ -148,17 +157,77 @@ def download_model(
         failure_official = not use_mirror
         try:
             if use_hfd and not allow_patterns and not ignore_patterns:
-                _run_hfd(repo_id, revision, local_dir, endpoint, repo_type, log)
+                try:
+                    if optional_patterns:
+                        _run_hfd(
+                            repo_id,
+                            revision,
+                            local_dir,
+                            endpoint,
+                            repo_type,
+                            log,
+                            ignore_patterns=optional_patterns,
+                        )
+                    else:
+                        _run_hfd(repo_id, revision, local_dir, endpoint, repo_type, log)
+                except DownloadInterrupted:
+                    raise
+                except Exception as hfd_error:  # noqa: BLE001 - 可选附属文件可能由上游拒绝
+                    if not optional_patterns:
+                        raise
+                    try:
+                        _verify_local_snapshot(
+                            repo_id,
+                            revision,
+                            local_dir,
+                            endpoint,
+                            use_mirror,
+                            repo_type,
+                            ignore_patterns=optional_patterns,
+                            log=log,
+                        )
+                    except Exception as verify_error:  # noqa: BLE001 - 保留原始下载错误供策略回退
+                        log(
+                            "[download] required snapshot is not complete after optional-artifact "
+                            f"failure ({type(verify_error).__name__}: {verify_error})"
+                        )
+                        raise hfd_error from verify_error
+                    log(
+                        "[download] hfd.sh failed, but optional artifacts are excluded "
+                        f"({optional_patterns}); all required files passed fixed-commit size/hash verification"
+                    )
+                    return local_dir
                 if use_mirror:
                     # 镜像的 repo_info(files_metadata=True) 已包含固定 commit 下
                     # 每个文件的 size、Git blob id 与 LFS sha256。直接以它为清单
                     # 做本地逐文件验全，不再为了“收尾”访问 huggingface.co。
-                    _verify_local_snapshot(repo_id, revision, local_dir, endpoint, True, repo_type, log=log)
+                    _verify_local_snapshot(
+                        repo_id,
+                        revision,
+                        local_dir,
+                        endpoint,
+                        True,
+                        repo_type,
+                        ignore_patterns=optional_patterns,
+                        log=log,
+                    )
                 else:
                     failure_official = True
-                    _snapshot(repo_id, revision, local_dir, OFFICIAL_ENDPOINT, False, repo_type)
+                    if optional_patterns:
+                        _snapshot(
+                            repo_id,
+                            revision,
+                            local_dir,
+                            OFFICIAL_ENDPOINT,
+                            False,
+                            repo_type,
+                            ignore_patterns=optional_patterns,
+                        )
+                    else:
+                        _snapshot(repo_id, revision, local_dir, OFFICIAL_ENDPOINT, False, repo_type)
             else:
-                if allow_patterns or ignore_patterns:
+                effective_ignore_patterns = list(ignore_patterns or []) + list(optional_patterns or [])
+                if allow_patterns or effective_ignore_patterns:
                     _snapshot(
                         repo_id,
                         revision,
@@ -167,7 +236,7 @@ def download_model(
                         use_mirror,
                         repo_type,
                         allow_patterns=allow_patterns,
-                        ignore_patterns=ignore_patterns,
+                        ignore_patterns=effective_ignore_patterns or None,
                     )
                 else:
                     _snapshot(repo_id, revision, local_dir, endpoint, use_mirror, repo_type)
@@ -182,11 +251,13 @@ def download_model(
                         True,
                         repo_type,
                         allow_patterns=allow_patterns,
-                        ignore_patterns=ignore_patterns,
+                        ignore_patterns=effective_ignore_patterns or None,
                         log=log,
                     )
             log(f"[download] strategy '{name}' OK in {time.monotonic() - t0:.0f}s -> {local_dir}")
             return local_dir
+        except DownloadInterrupted:
+            raise
         except Exception as e:  # noqa: BLE001 - 每个策略的失败都要兜住并汇总
             msg = f"{type(e).__name__}: {e}"
             attempts.append((name, msg))
@@ -326,6 +397,8 @@ def _verify_local_snapshot(
             dirnames[:] = [name for name in dirnames if name not in {".hfd", ".cache"}]
         for filename in filenames:
             rel_path = (rel_dir / filename).as_posix()
+            if ignore_patterns and any(fnmatch.fnmatchcase(rel_path, pattern) for pattern in ignore_patterns):
+                continue
             if rel_path not in expected_paths:
                 size_errors.append(f"unexpected {rel_path}")
 
@@ -372,6 +445,8 @@ def _build_hfd_cmd(
     endpoint: str,
     repo_type: str,
     send_token: bool,
+    *,
+    ignore_patterns: list[str] | None = None,
 ) -> tuple[list[str], dict[str, str]]:
     """拼 hfd.sh 的 argv 与子进程 env(纯函数,供单测)。
 
@@ -395,6 +470,8 @@ def _build_hfd_cmd(
         cmd += ["--revision", revision]
     if repo_type == "dataset":
         cmd += ["--dataset"]
+    if ignore_patterns:
+        cmd += ["--exclude", *ignore_patterns]
     env = dict(os.environ)
     env["HF_ENDPOINT"] = endpoint
     if not send_token:
@@ -434,6 +511,8 @@ def _run_hfd(
     endpoint: str,
     repo_type: str,
     log,
+    *,
+    ignore_patterns: list[str] | None = None,
 ) -> None:
     if not HFD_SCRIPT.is_file():
         raise FileNotFoundError(f"hfd.sh not found at {HFD_SCRIPT}")
@@ -444,6 +523,7 @@ def _run_hfd(
         endpoint,
         repo_type,
         send_token=(endpoint == OFFICIAL_ENDPOINT),
+        ignore_patterns=ignore_patterns,
     )
     local_dir.mkdir(parents=True, exist_ok=True)
     (local_dir / ".hfd").mkdir(exist_ok=True)
@@ -474,6 +554,8 @@ def _run_hfd(
                 ) from None
         if ret == 0:
             return
+        if ret in (-signal.SIGINT, -signal.SIGTERM, 128 + signal.SIGINT, 128 + signal.SIGTERM):
+            raise DownloadInterrupted(f"hfd.sh interrupted (exit {ret}); partial files kept")
         # offset 是字节数,必须二进制 seek 再解码(文本模式 seek 任意偏移未定义)。
         with open(console_log, "rb") as f:
             f.seek(offset)

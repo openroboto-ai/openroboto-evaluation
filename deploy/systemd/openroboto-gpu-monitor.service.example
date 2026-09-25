@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenRoboto GPU health and email notifications
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/validator
+EnvironmentFile=%h/.config/openroboto/gpu-monitor.env
+ExecStart=/path/to/validator/.venv/bin/python -m benchmark_worker.gpu_monitor --config %h/.config/openroboto/gpu-monitor.yaml
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=5
+UMask=0077
+
+[Install]
+WantedBy=default.target

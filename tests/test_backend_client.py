@@ -8,6 +8,8 @@ key 配置问题,必须保持可重试,不能丢结果。
 """
 
 import datetime
+import http.client
+import io
 import json
 import os
 import pathlib
@@ -15,6 +17,7 @@ import queue
 import sys
 import tempfile
 import unittest
+import urllib.error
 from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
@@ -23,6 +26,7 @@ from benchmark_worker.backend_client import (  # noqa: E402
     DEFAULT_QUEUE_PATH,
     BackendClient,
     BackendError,
+    TaskInvalidatedError,
 )
 from benchmark_worker.state import StateStore  # noqa: E402
 from benchmark_worker import worker  # noqa: E402
@@ -67,6 +71,114 @@ class TestFetchQueue(unittest.TestCase):
         self.assertIsNone(ctx.exception.status)
         self.assertFalse(ctx.exception.permanent)
         self.assertIn("timed out", str(ctx.exception))
+
+    def test_incomplete_response_is_wrapped_as_retryable_backend_error(self):
+        client = BackendClient("http://x", "public", "admin")
+        response = mock.MagicMock()
+        response.read.side_effect = http.client.IncompleteRead(b'{"tasks":', 7974)
+        context = mock.MagicMock()
+        context.__enter__.return_value = response
+
+        with mock.patch("urllib.request.urlopen", return_value=context):
+            with self.assertRaises(BackendError) as ctx:
+                client.fetch_queue()
+
+        self.assertIsNone(ctx.exception.status)
+        self.assertFalse(ctx.exception.permanent)
+        self.assertIn("incomplete or invalid HTTP response", str(ctx.exception))
+        self.assertIn("7974 more expected", str(ctx.exception))
+
+    def test_incomplete_http_error_body_preserves_status(self):
+        client = BackendClient("http://x", "public", "admin")
+        error = urllib.error.HTTPError("http://x/probe", 502, "bad gateway", {}, None)
+        error.read = mock.MagicMock(side_effect=http.client.IncompleteRead(b"partial", 100))
+
+        with mock.patch("urllib.request.urlopen", side_effect=error):
+            with self.assertRaises(BackendError) as ctx:
+                client._request("GET", "/probe", api_key="public")
+
+        self.assertEqual(ctx.exception.status, 502)
+        self.assertFalse(ctx.exception.permanent)
+        self.assertIn("HTTP 502", str(ctx.exception))
+
+    def test_invalid_json_response_is_wrapped_as_retryable_backend_error(self):
+        client = BackendClient("http://x", "public", "admin")
+        response = mock.MagicMock()
+        response.read.return_value = b'{"tasks":'
+        context = mock.MagicMock()
+        context.__enter__.return_value = response
+
+        with mock.patch("urllib.request.urlopen", return_value=context):
+            with self.assertRaises(BackendError) as ctx:
+                client.fetch_queue()
+
+        self.assertIsNone(ctx.exception.status)
+        self.assertFalse(ctx.exception.permanent)
+        self.assertIn("invalid JSON response", str(ctx.exception))
+
+    def test_superseded_progress_post_raises_task_invalidated_error(self):
+        body = {
+            "detail": "submission is superseded; stop evaluating this task and fetch the queue again",
+            "code": "SUPERSEDED",
+            "request_id": "de23663ed894",
+        }
+        error = urllib.error.HTTPError(
+            "http://x/api/benchmark-progress",
+            409,
+            "Conflict",
+            {},
+            io.BytesIO(json.dumps(body).encode()),
+        )
+        client = BackendClient("http://x", "public", "admin")
+
+        with mock.patch("urllib.request.urlopen", side_effect=error):
+            with self.assertRaises(TaskInvalidatedError) as ctx:
+                client.report_progress("t1", "evaluating", {}, "validator-01")
+
+        self.assertEqual(ctx.exception.status, 409)
+        self.assertEqual(ctx.exception.code, "SUPERSEDED")
+        self.assertEqual(ctx.exception.detail, body["detail"])
+        self.assertEqual(ctx.exception.request_id, "de23663ed894")
+
+    def test_rejected_score_post_raises_task_invalidated_error(self):
+        body = {
+            "detail": "submission is rejected; stop evaluating this task and fetch the queue again",
+            "code": "REJECTED",
+            "request_id": "41504738c5ab",
+        }
+        error = urllib.error.HTTPError(
+            "http://x/api/v1/benchmark/task/t1/score",
+            409,
+            "Conflict",
+            {},
+            io.BytesIO(json.dumps(body).encode()),
+        )
+        client = BackendClient("http://x", "public", "admin")
+
+        with mock.patch("urllib.request.urlopen", side_effect=error):
+            with self.assertRaises(TaskInvalidatedError) as ctx:
+                client.submit_score("t1", {"success": True})
+
+        self.assertEqual(ctx.exception.code, "REJECTED")
+        self.assertEqual(ctx.exception.request_id, "41504738c5ab")
+
+    def test_unrecognized_409_remains_a_regular_backend_error(self):
+        body = {"detail": "another conflict", "code": "UNKNOWN"}
+        error = urllib.error.HTTPError(
+            "http://x/api/benchmark-progress",
+            409,
+            "Conflict",
+            {},
+            io.BytesIO(json.dumps(body).encode()),
+        )
+        client = BackendClient("http://x", "public", "admin")
+
+        with mock.patch("urllib.request.urlopen", side_effect=error):
+            with self.assertRaises(BackendError) as ctx:
+                client.report_progress("t1", "evaluating", {}, "validator-01")
+
+        self.assertNotIsInstance(ctx.exception, TaskInvalidatedError)
+        self.assertEqual(ctx.exception.code, "UNKNOWN")
 
     def test_submit_uses_extended_timeout(self):
         client = BackendClient("http://x", "public", "admin", timeout_s=3, submit_timeout_s=123)
@@ -116,9 +228,10 @@ class TestFetchQueue(unittest.TestCase):
 
     def test_benchmark_queue_uses_public_key_and_unwraps_envelope(self):
         client = BackendClient("http://x", "public", "admin")
-        envelope = {"queue_size": 1, "tasks": [{"task_id": "t1"}]}
+        task = {"task_id": "t1", "base_model": "lingbot-vla-2.0"}
+        envelope = {"queue_size": 1, "tasks": [task]}
         with mock.patch.object(client, "_request", return_value=envelope) as req:
-            self.assertEqual(client.fetch_queue(), [{"task_id": "t1"}])
+            self.assertEqual(client.fetch_queue(), [task])
             req.assert_called_once_with("GET", DEFAULT_QUEUE_PATH, api_key="public")
 
     def test_queue_error_propagates(self):
@@ -137,6 +250,14 @@ class TestFetchQueue(unittest.TestCase):
         client = BackendClient("http://x", "public", "admin")
         with mock.patch.object(client, "_request", return_value=[{"task_id": "t1"}]):
             self.assertEqual(client.fetch_queue(), [{"task_id": "t1"}])
+
+    def test_invalid_queue_shape_is_retryable_backend_error(self):
+        client = BackendClient("http://x", "public", "admin")
+        with mock.patch.object(client, "_request", return_value={"tasks": "not-a-list"}):
+            with self.assertRaisesRegex(BackendError, "expected a list of task objects") as ctx:
+                client.fetch_queue()
+
+        self.assertFalse(ctx.exception.permanent)
 
     def test_one_key_constructor_remains_compatible(self):
         client = BackendClient("http://x", "legacy")
@@ -215,7 +336,6 @@ def _score_payload(total_score=0.8085):
         "miner_hotkey": "hotkey-1",
         "hf_repo_id": "user/model",
         "hf_commit": "a" * 40,
-        "round_num": 7,
         "total_score": total_score,
         "env_scores": [
             {
@@ -247,12 +367,13 @@ def _remote_submission(payload, result_as_json=False, include_benchmark=True):
     }
     if include_benchmark:
         result["benchmark"] = payload["benchmark"]
+    if "protocol_revision" in payload:
+        result["protocol_revision"] = payload["protocol_revision"]
     return {
         "task_id": "t1",
         "miner_hotkey": payload["miner_hotkey"],
         "hf_repo_id": payload["hf_repo_id"],
         "hf_commit": payload["hf_commit"],
-        "round_num": payload["round_num"],
         "status": "done",
         "result": json.dumps(result) if result_as_json else result,
     }
@@ -291,12 +412,38 @@ class TestTrySubmitAuthFailure(unittest.TestCase):
         self.assertEqual(store.get("t1")["status"], "abandoned")
         self.assertEqual(client.fetch_calls, 0)
 
-    def test_successful_submit_omits_task_details_but_preserves_stored_payload(self):
+    def test_rejected_conflict_discards_score_and_requests_queue_refresh(self):
+        store = self._store()
+        payload = {"success": True, "error": ""}
+        store.update("t1", status="done_pending_submit", payload=payload, submit_attempts=3)
+        client = mock.Mock()
+        client.submit_score.side_effect = TaskInvalidatedError(
+            "conflict",
+            status=409,
+            code="REJECTED",
+            detail="submission is rejected",
+            request_id="request-1",
+        )
+        worker._poll_wakeup_event.clear()
+        self.addCleanup(worker._poll_wakeup_event.clear)
+
+        self.assertTrue(try_submit(client, store, "t1", payload))
+
+        entry = store.get("t1")
+        self.assertEqual(entry["status"], "rejected")
+        self.assertIsNone(entry["payload"])
+        self.assertEqual(entry["submit_attempts"], 0)
+        self.assertIsNone(entry["next_submit_at"])
+        self.assertIn("request_id=request-1", entry["note"])
+        self.assertTrue(worker._poll_wakeup_event.is_set())
+
+    def test_successful_submit_omits_local_and_legacy_fields_but_preserves_stored_payload(self):
         store = self._store()
         payload = {
             "success": True,
             "total_score": 0.5,
             "error": "",
+            "round_num": 7,
             "per_task_scores": [{"task_id": "libero_spatial_00", "success_rate": 0.5, "trials": 10}],
         }
         store.update("t1", status="done_pending_submit", payload=payload)
@@ -307,7 +454,9 @@ class TestTrySubmitAuthFailure(unittest.TestCase):
         self.assertTrue(done)
         submitted_payload = client.submit_score.call_args.args[1]
         self.assertEqual(submitted_payload["per_task_scores"], [])
+        self.assertNotIn("round_num", submitted_payload)
         self.assertEqual(store.get("t1")["payload"]["per_task_scores"], payload["per_task_scores"])
+        self.assertEqual(store.get("t1")["payload"]["round_num"], 7)
         self.assertEqual(store.get("t1")["status"], "submitted")
         self.assertEqual(store.get("t1")["submit_attempts"], 0)
         self.assertIsNone(store.get("t1")["next_submit_at"])
@@ -350,6 +499,7 @@ class TestTrySubmitAuthFailure(unittest.TestCase):
     def test_502_with_exact_remote_result_is_treated_as_submitted(self):
         store = self._store()
         payload = _score_payload()
+        payload["round_num"] = 7  # 升级前 state 中可能仍有该废弃字段。
         store.update("t1", status="done_pending_submit", payload=payload, submit_attempts=3)
         client = _PersistedFailingClient(_remote_submission(payload))
 
@@ -371,6 +521,16 @@ class TestTrySubmitAuthFailure(unittest.TestCase):
         self.assertTrue(try_submit(client, store, "t1", payload))
         self.assertEqual(store.get("t1")["status"], "submitted")
 
+    def test_502_with_production_evaluated_status_is_treated_as_submitted(self):
+        store = self._store()
+        payload = _score_payload()
+        remote = _remote_submission(payload)
+        remote["status"] = "evaluated"
+        store.update("t1", status="done_pending_submit", payload=payload)
+
+        self.assertTrue(try_submit(_PersistedFailingClient(remote), store, "t1", payload))
+        self.assertEqual(store.get("t1")["status"], "submitted")
+
     def test_502_with_legacy_remote_result_without_benchmark_is_treated_as_submitted(self):
         store = self._store()
         payload = _score_payload()
@@ -390,7 +550,26 @@ class TestTrySubmitAuthFailure(unittest.TestCase):
         store.update("t1", status="done_pending_submit", payload=payload)
 
         self.assertFalse(try_submit(_PersistedFailingClient(remote), store, "t1", payload))
+
+    def test_502_with_conflicting_remote_protocol_revision_keeps_retrying(self):
+        store = self._store()
+        payload = _score_payload()
+        payload["protocol_revision"] = "axis_v1.0_30tasks_native_joint_osmesa_v1"
+        remote = _remote_submission(payload)
+        remote["result"]["protocol_revision"] = "old"
+        store.update("t1", status="done_pending_submit", payload=payload)
+
+        self.assertFalse(try_submit(_PersistedFailingClient(remote), store, "t1", payload))
         self.assertEqual(store.get("t1")["status"], "done_pending_submit")
+
+    def test_axis_readback_requires_benchmark_and_protocol_revision(self):
+        payload = _score_payload()
+        payload["benchmark"] = "axis_v1.0"
+        payload["protocol_revision"] = "axis_v1.0_30tasks_native_joint_osmesa_v1"
+        remote = _remote_submission(payload, include_benchmark=False)
+        remote["result"].pop("protocol_revision")
+
+        self.assertFalse(worker.remote_score_matches("t1", remote, payload))
 
     def test_502_with_mismatched_remote_total_keeps_retrying(self):
         store = self._store()

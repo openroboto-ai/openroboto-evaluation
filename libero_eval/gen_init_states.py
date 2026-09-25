@@ -5,9 +5,9 @@ files, so the eval set is fully deterministic — in an adversarial (subnet)
 setting a miner can overfit to those exact layouts. Object initial positions
 and rotations are the one perturbation dimension that is continuous: every env
 reset re-samples them via np.random.uniform over the BDDL region ranges
-(LIBERO base_region_sampler). Re-sampling with a post-submission, publicly
-derived seed therefore yields a fresh init set from the *same distribution*
-that cannot be memorized before submission.
+(LIBERO base_region_sampler). Re-sampling with a private seed therefore yields
+a fresh init set from the *same distribution* that cannot be memorized in
+advance.
 
 Runs inside the LIBERO client venv (Python 3.8), same contract as
 eval_task.py: the caller injects PYTHONPATH (libero package root) and
@@ -180,9 +180,7 @@ def main():
         ]
     else:
         out_of_range = [
-            (suite, task_id)
-            for suite, task_id in requested_tasks
-            if not 0 <= task_id < task_suites[suite].n_tasks
+            (suite, task_id) for suite, task_id in requested_tasks if not 0 <= task_id < task_suites[suite].n_tasks
         ]
         if out_of_range:
             raise SystemExit(f"task ids out of range: {out_of_range}")

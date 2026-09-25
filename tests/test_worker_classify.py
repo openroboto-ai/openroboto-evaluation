@@ -11,9 +11,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from benchmark_worker.worker import _model_label, classify_queued_task  # noqa: E402
 
-TASK = {"task_id": "t1", "hf_repo_id": "u/r", "hf_commit": "aaa"}
-NEW_COMMIT = {"task_id": "t1", "hf_repo_id": "u/r", "hf_commit": "bbb"}
-NEW_REPO = {"task_id": "t1", "hf_repo_id": "u/r2", "hf_commit": "aaa"}
+TASK = {"task_id": "t1", "hf_repo_id": "u/r", "hf_commit": "aaa", "base_model": "pi0.5"}
+NEW_COMMIT = {"task_id": "t1", "hf_repo_id": "u/r", "hf_commit": "bbb", "base_model": "pi0.5"}
+NEW_REPO = {"task_id": "t1", "hf_repo_id": "u/r2", "hf_commit": "aaa", "base_model": "pi0.5"}
+NEW_BASE_MODEL = {**TASK, "base_model": "lingbot-vla-2.0"}
 
 
 def _entry(status, task=TASK, payload=None):
@@ -26,6 +27,9 @@ def _entry(status, task=TASK, payload=None):
 class TestClassifyQueuedTask(unittest.TestCase):
     def test_unseen_task_is_evaluated(self):
         self.assertEqual(classify_queued_task(None, TASK), "evaluate")
+
+    def test_stale_task_can_be_retried_after_configuration_is_fixed(self):
+        self.assertEqual(classify_queued_task(_entry("stale"), TASK), "evaluate")
 
     def test_in_progress_is_skipped_even_with_new_commit(self):
         # 本地正在排队/评测:先等它出结果,新 commit 下一轮再处理。
@@ -60,6 +64,10 @@ class TestClassifyQueuedTask(unittest.TestCase):
     def test_new_repo_id_reevaluates(self):
         entry = _entry("submitted", payload={"success": False})
         self.assertEqual(classify_queued_task(entry, NEW_REPO), "evaluate")
+
+    def test_new_base_model_reevaluates(self):
+        entry = _entry("submitted", payload={"success": False})
+        self.assertEqual(classify_queued_task(entry, NEW_BASE_MODEL), "evaluate")
 
     def test_done_pending_submit_same_commit_left_to_retry_path(self):
         # 补交由主循环的 done_pending_submit 路径负责,这里不掺和。

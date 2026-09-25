@@ -22,6 +22,12 @@ import imageio
 import numpy as np
 import torch
 from init_mix import mix_counts  # sibling module; sys.path[0] is this script's dir
+from lingbot_eval_protocol import (
+    POLICY_BATCH_LANE_FIELD,
+    POLICY_RNG_FIELD,
+    POLICY_RNG_MODE,
+    derive_policy_seed,
+)
 from libero.libero import benchmark
 from prompt_clean import clean_task_prompt
 from libero.libero import get_libero_path
@@ -157,6 +163,11 @@ def eval_one_task(args):
         action_plan = collections.deque()
         obs = env.set_init_state(initial_states[episode_idx])
         env_s += time.time() - t_mark
+        if args.policy_preprocess == "lingbot_vla_v2":
+            reset_request = {"reset": True, "robo_name": "libero"}
+            if args.policy_batch_lane is not None:
+                reset_request[POLICY_BATCH_LANE_FIELD] = args.policy_batch_lane
+            client.infer(reset_request)
 
         t = 0
         done = False
@@ -189,23 +200,42 @@ def eval_one_task(args):
                     replay_images.append(img)
 
                 if not action_plan:
-                    element = {
-                        "observation/image": img,
-                        "observation/wrist_image": wrist_img,
-                        "observation/state": np.concatenate((
-                            obs["robot0_eef_pos"],
-                            _quat2axisangle(obs["robot0_eef_quat"]),
-                            obs["robot0_gripper_qpos"],
-                        )),
-                        "prompt": prompt,
-                        "task_suite": args.task_suite_name,
-                    }
+                    state = np.concatenate((
+                        obs["robot0_eef_pos"],
+                        _quat2axisangle(obs["robot0_eef_quat"]),
+                        obs["robot0_gripper_qpos"],
+                    ))
+                    if args.policy_preprocess == "lingbot_vla_v2":
+                        element = {
+                            "observation.image": img,
+                            "observation.wrist_image": wrist_img,
+                            "observation.state": state,
+                            "task": prompt,
+                            POLICY_RNG_FIELD: derive_policy_seed(
+                                args.seed,
+                                args.task_suite_name,
+                                args.task_id,
+                                episode_idx,
+                                num_infer_calls,
+                            ),
+                        }
+                        if args.policy_batch_lane is not None:
+                            element[POLICY_BATCH_LANE_FIELD] = args.policy_batch_lane
+                    else:
+                        element = {
+                            "observation/image": img,
+                            "observation/wrist_image": wrist_img,
+                            "observation/state": state,
+                            "prompt": prompt,
+                            "task_suite": args.task_suite_name,
+                        }
                     t_mark = time.time()
                     infer_result = client.infer(element)
                     infer_s += time.time() - t_mark
                     infer_server_s += infer_result.get("server_timing", {}).get("infer_ms", 0.0) / 1000.0
                     batch_size_sum += infer_result.get("server_timing", {}).get("batch_size", 1)
-                    action_chunk = infer_result["actions"]
+                    action_key = "action" if args.policy_preprocess == "lingbot_vla_v2" else "actions"
+                    action_chunk = infer_result[action_key]
                     num_infer_calls += 1
                     assert len(action_chunk) >= args.replan_steps, (
                         f"Policy predicts {len(action_chunk)} steps, need >= {args.replan_steps}"
@@ -273,6 +303,7 @@ def eval_one_task(args):
         "success_rate": num_successes / args.num_trials if args.num_trials else 0.0,
         "max_steps": max_steps,
         "seed": args.seed,
+        "policy_rng_mode": POLICY_RNG_MODE if args.policy_preprocess == "lingbot_vla_v2" else None,
         "init_states_root": args.init_states_root,
         "init_states_mix": bool(args.init_states_root and args.init_states_mix),
         "duration_s": round(time.time() - start_time, 2),
@@ -302,11 +333,11 @@ def eval_one_task(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="localhost")
+    parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--resize-size", type=int, default=224)
     parser.add_argument("--replan-steps", type=int, default=5)
-    parser.add_argument("--policy-preprocess", choices=("openpi", "openvla_oft"), default="openpi")
+    parser.add_argument("--policy-preprocess", choices=("openpi", "openvla_oft", "lingbot_vla_v2"), default="openpi")
     parser.add_argument(
         "--task-suite-name", required=True, help="Any suite registered in the libero package on PYTHONPATH"
     )
@@ -326,6 +357,12 @@ def main():
     parser.add_argument("--num-steps-wait", type=int, default=10)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument(
+        "--policy-batch-lane",
+        type=int,
+        default=None,
+        help="Stable zero-based lane used by the LingBot static-batch server",
+    )
+    parser.add_argument(
         "--init-states-root",
         default=None,
         help="Load init states from {root}/{suite}/{task}.pruned_init instead of the "
@@ -341,6 +378,8 @@ def main():
     parser.add_argument("--video-dir", default=None, help="Directory to save rollout videos")
     parser.add_argument("--save-videos", type=int, default=0, help="Save videos for the first N trials")
     args = parser.parse_args()
+    if args.policy_batch_lane is not None and args.policy_batch_lane < 0:
+        parser.error("--policy-batch-lane must be non-negative")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     eval_one_task(args)

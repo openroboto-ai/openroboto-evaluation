@@ -3,7 +3,7 @@
 回归背景:
 - /api/pending-tasks 曾把 env_list 发成 JSON 字符串,直接迭代拆成单字符,
   任务被错报成 "invalid env names" 秒失败(parse_env_list)。
-- 后端轮次配置把 env 换成 libero_100(LIBERO-100 = 90+10 的合称,没有独立
+- 后端旧配置把 env 换成 libero_100(LIBERO-100 = 90+10 的合称,没有独立
   bddl 资产),直接当 suite 执行会 FileNotFoundError,失败报告又因缺 env 被
   后端 400 拒收(expand_env_suites / build_score_payload 按 env 名聚合)。
 
@@ -22,9 +22,23 @@ from benchmark_worker.scoring import (  # noqa: E402
     expand_env_suites,
     parse_env_list,
     prepare_submit_payload,
+    score_task_id,
 )
 
 SUITES = ["libero_spatial", "libero_object", "libero_goal", "libero_100"]
+
+
+class TestScoreTaskId(unittest.TestCase):
+    def test_same_axis_task_keeps_its_upstream_identity_across_benchmarks(self):
+        self.assertEqual(score_task_id("axis_v1.1", 501), "501")
+        self.assertEqual(score_task_id("axis_v1.0", 501), "501")
+        self.assertEqual(score_task_id("axis_v1.0", 22), "22")
+        self.assertEqual(score_task_id("libero_spatial", 3), "libero_spatial_03")
+
+    def test_invalid_axis_numeric_ids_are_not_silently_truncated(self):
+        for value in (22.5, True, 0, -1, "22"):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "positive integer"):
+                score_task_id("axis_v1.0", value)
 
 
 class TestParseEnvList(unittest.TestCase):
@@ -116,6 +130,44 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
             },
         }
 
+    def test_axis_summary_maps_native_task_ids_and_single_environment(self):
+        from test_axis_yaml_benchmark import complete_summary
+
+        summary = complete_summary()
+        for task in summary["tasks"].values():
+            success = task["task_id"] == 501
+            task.update(
+                num_successes=20 if success else 0,
+                success_rate=float(success),
+                prepare_s=1.0,
+                compile_s=2.0,
+                episodes=[{"duration_s": 3.0}] * 20,
+            )
+        summary["suites"]["axis_v1.0"].update(successes=20, success_rate=1 / 30)
+        payload = build_score_payload(
+            {
+                "miner_hotkey": "miner",
+                "hf_repo_id": "org/model",
+                "hf_commit": "a" * 40,
+                "protocol_revision": summary["protocol_revision"],
+            },
+            summary,
+            duration_sec=50,
+            benchmark="axis_v1.0",
+        )
+        self.assertTrue(payload["success"], payload.get("error"))
+        self.assertEqual(payload["protocol_revision"], "axis_v1.0_30tasks_native_joint_osmesa_v1")
+        self.assertEqual(payload["total_score"], round(1 / 30, 6))
+        self.assertEqual(len(payload["env_scores"]), 1)
+        environment = payload["env_scores"][0]
+        self.assertEqual(environment["env_name"], "axis_v1.0")
+        self.assertEqual(environment["base_suite"], "axis_v1.0")
+        self.assertIsNone(environment["perturbation"])
+        self.assertEqual(environment["samples"], 600)
+        self.assertEqual(environment["duration_sec"], 1890.0)
+        self.assertEqual(len(payload["per_task_scores"]), 30)
+        self.assertEqual({score["task_id"] for score in payload["per_task_scores"]}, set(summary["tasks"]))
+
     def test_libero_uses_four_real_base_suite_names(self):
         payload = build_score_payload({"env_list": SUITES}, self._summary(), 10.0, benchmark="libero")
         self.assertEqual(
@@ -126,6 +178,30 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
         self.assertEqual(payload["env_scores"][1]["base_suite"], "libero_object")
         self.assertTrue(payload["success"])
         self.assertAlmostEqual(payload["total_score"], round((0.8 + 0.6 + 0.7 + 0.9) / 4, 6))
+
+    def test_robotwin_summary_uses_the_shared_score_payload_schema(self):
+        tasks = {
+            f"task_{task_id:02d}": {
+                "status": "ok",
+                "task_suite_name": "robotwin_clean",
+                "task_id": task_id,
+                "num_trials": 100,
+                "num_successes": 90,
+                "success_rate": 0.9,
+                "duration_s": 1.0,
+            }
+            for task_id in range(50)
+        }
+        summary = {
+            "tasks": tasks,
+            "num_trials_per_task": 100,
+            "suites": {"robotwin_clean": _suite_agg(0.9, 5000, 50)},
+        }
+        payload = build_score_payload({}, summary, 10.0, benchmark="robotwin")
+        self.assertTrue(payload["success"], payload["error"])
+        self.assertEqual(payload["expected_trials_per_task"], 100)
+        self.assertEqual(payload["env_scores"][0]["env_name"], "robotwin_clean")
+        self.assertEqual(payload["total_score"], 0.9)
 
     def test_env_without_results_reported_as_zero_with_error(self):
         summary = self._summary()
@@ -259,8 +335,20 @@ class TestBuildScorePayloadProfiles(unittest.TestCase):
         )
         self.assertEqual(payload["miner_hotkey"], "canonical-hotkey")
 
+    def test_legacy_queue_round_is_not_copied_to_payload(self):
+        payload = build_score_payload({"round_num": 7}, None, 10.0, "failed")
+        self.assertNotIn("round_num", payload)
+
 
 class TestPrepareSubmitPayload(unittest.TestCase):
+    def test_omits_legacy_round_without_mutating_stored_payload(self):
+        payload = {"success": False, "round_num": 7, "per_task_scores": []}
+
+        submitted = prepare_submit_payload(payload)
+
+        self.assertNotIn("round_num", submitted)
+        self.assertEqual(payload["round_num"], 7)
+
     def test_omits_optional_task_details_without_mutating_stored_payload(self):
         payload = {
             "success": True,

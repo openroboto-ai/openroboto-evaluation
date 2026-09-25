@@ -1,6 +1,6 @@
-"""Parallel LIBERO / LIBERO-Pro evaluation orchestrator for multi-GPU machines.
+"""Multi-GPU, multi-backbone evaluator for LIBERO, RoboTwin, and RoboDojo.
 
-Input: a model reference — a local openpi checkpoint dir, a Hugging Face repo id
+Input: a model reference — a local VLA checkpoint dir, a Hugging Face repo id
 (`user/repo`), or a HF URL (`https://huggingface.co/user/repo`).
 
 What it does:
@@ -8,24 +8,23 @@ What it does:
      downloaded pinned to --commit-id (mandatory), and the download cache is
      keyed by that commit — a re-submission to the same repo can never be
      confused with a previously evaluated version.
-  2. Prepares the selected benchmark (--benchmark libero|libero_pro|libero_plus;
-     see benchmarks.py — LIBERO-Pro/LIBERO-plus assets are downloaded on first
-     use).
-  3. Spawns one openpi policy server per GPU (CUDA_VISIBLE_DEVICES isolation).
-  4. Builds the task list (suites x task_ids, default all tasks per suite),
-     dispatches tasks dynamically to per-GPU workers (each worker runs
-     eval_task.py in the LIBERO client venv, rendering via EGL on its own GPU).
-  5. Aggregates per-task JSONs into summary.json and prints a report (per suite,
-     plus per perturbation dimension for LIBERO-plus).
+  2. Prepares the selected benchmark. LIBERO-family evaluations use the local
+     client and selected policy server; RoboTwin and RoboDojo delegate simulation
+     to pinned compatible upstream checkouts.
+  3. Dispatches tasks dynamically across reserved GPUs.
+  4. Aggregates per-task JSONs into summary.json using the selected benchmark's
+     official scoring protocol.
 
 Run from the validator repo root (env managed by uv, see pyproject.toml):
-    uv run libero_eval/run_eval.py --model <path-or-hf-repo> --commit-id <hf-commit-sha> [options]
+    uv run python libero_eval/run_eval.py --model <path-or-hf-repo> --commit-id <hf-commit-sha> [options]
 """
 
 import argparse
 import dataclasses
 import datetime
 import fcntl
+import heapq
+import http.client
 import json
 import os
 import pathlib
@@ -37,26 +36,50 @@ import sys
 import threading
 import time
 
+from backbones import BACKBONES, resolve_backbone
+from axis_backend import AXIS_BENCHMARKS, apply_manifest_defaults
+from axis_runtime import AXIS_V1_NAME
 from benchmarks import BENCHMARKS, get_benchmark
 from check_model import (
     ARCHITECTURE_CONFIGS,
     MODEL_FAMILIES,
-    check_openvla_oft_model,
+    check_lingbot_data_contract,
+    check_lingbot_vla_v2_model,
     check_model_for_architectures,
+    check_openvla_oft_model,
     detect_model_family,
     parse_model_architectures,
 )
 from download import COMMIT_HASH_RE, DEFAULT_STRATEGIES, DownloadError, download_model, parse_strategies
+from gpu_health import check_gpu_availability, check_gpu_health
+from lingbot_runtime import (
+    DEFAULT_LINGBOT_DATA_CONTRACT,
+    DEFAULT_LINGBOT_NORM_STATS,
+    DEFAULT_LINGBOT_ROBOT_CONFIG_ROOT,
+    LINGBOT_COMPILE_THREADS,
+    LINGBOT_TORCH_INTEROP_THREADS,
+    LINGBOT_TORCH_THREADS,
+    runtime_contract_metadata,
+)
+from lingbot_eval_protocol import POLICY_BATCH_MODE_STATIC, POLICY_RNG_MODE
 from paths import (
+    AXIS_VENV_PY,
     CLIENT_VENV_PY,
     OPENPI_DIR,
     OPENVLA_OFT_DIR,
     OPENVLA_OFT_VENV_PY,
+    ROBODOJO_DIR,
+    ROBOTWIN_DIR,
     SERVER_VENV_PY,
+    LINGBOT_VLA_V2_DIR,
+    LINGBOT_VLA_V2_VENV_PY,
+    QWEN3_VL_DIR,
+    ROBOTWIN_VENV_PY,
     VALIDATOR_ROOT,
 )
 
 EVAL_TASK_SCRIPT = pathlib.Path(__file__).resolve().parent / "eval_task.py"
+RELEASE_POLICY_BATCH_LANE_SCRIPT = pathlib.Path(__file__).resolve().parent / "release_policy_batch_lane.py"
 
 
 def emit_progress_event(progress_file: pathlib.Path | None, detail: dict) -> None:
@@ -109,6 +132,9 @@ def resolve_model(
     download_dir: pathlib.Path,
     strategies: list[str] | None = None,
     commit_id: str | None = None,
+    repo_type: str = "model",
+    subdir: str | None = None,
+    ignore_patterns: list[str] | None = None,
 ) -> pathlib.Path:
     """Resolve a model reference (local path / HF repo id / HF URL) to a local checkpoint dir.
 
@@ -119,9 +145,21 @@ def resolve_model(
     """
     # Resolve to an absolute path: the policy server subprocess runs with its
     # cwd inside the openpi checkout, so a relative --model would break there.
+    if repo_type not in ("model", "dataset"):
+        raise ValueError(f"unsupported Hugging Face repo type {repo_type!r}")
+    normalized_subdir = None
+    if subdir:
+        candidate = pathlib.PurePosixPath(subdir)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            raise ValueError("--model-subdir must be a relative path without '..'")
+        normalized_subdir = candidate.as_posix().strip("/")
+        if not normalized_subdir or normalized_subdir == ".":
+            raise ValueError("--model-subdir must name a checkpoint directory")
+
     local = pathlib.Path(model).expanduser()
     if local.exists():
-        return _find_checkpoint_root(local.resolve())
+        root = local.resolve() / normalized_subdir if normalized_subdir else local.resolve()
+        return _find_checkpoint_root(root)
 
     # Not a local path -> treat as Hugging Face reference.
     repo_id = model
@@ -143,17 +181,32 @@ def resolve_model(
         )
 
     print(f"[run_eval] Downloading HF model '{repo_id}@{commit_id[:12]}' ...")
-    local_dir = (download_dir / f"{repo_id.replace('/', '__')}@{commit_id[:12]}").resolve()
-    download_model(repo_id, local_dir, revision=commit_id, strategies=strategies)
-    return _find_checkpoint_root(local_dir)
+    type_suffix = "__dataset" if repo_type == "dataset" else ""
+    local_dir = (download_dir / f"{repo_id.replace('/', '__')}{type_suffix}@{commit_id[:12]}").resolve()
+    allow_patterns = (
+        [f"{normalized_subdir}/**", "lingbotvla_cli.yaml"]
+        if normalized_subdir and repo_type == "model"
+        else ([f"{normalized_subdir}/**"] if normalized_subdir else None)
+    )
+    download_model(
+        repo_id,
+        local_dir,
+        revision=commit_id,
+        strategies=strategies,
+        repo_type=repo_type,
+        allow_patterns=allow_patterns,
+        ignore_patterns=ignore_patterns,
+    )
+    root = local_dir / normalized_subdir if normalized_subdir else local_dir
+    return _find_checkpoint_root(root)
 
 
 def _find_checkpoint_root(path: pathlib.Path) -> pathlib.Path:
     """Find the directory that actually contains a supported checkpoint.
 
-    Accepts either a JAX checkpoint (params/ dir) or a PyTorch checkpoint
-    (model.safetensors), possibly nested one or two levels deep (e.g. HF repos
-    laid out as `checkpoints/<step>/params`).
+    Accepts a JAX checkpoint (params/), a single-file PyTorch checkpoint, or a
+    sharded Hugging Face checkpoint.  The official LingBot-VLA 2.0 release is
+    nested three levels deep as `checkpoints/<step>/hf_ckpt/`.
     """
 
     def is_ckpt(p: pathlib.Path) -> bool:
@@ -171,11 +224,14 @@ def _find_checkpoint_root(path: pathlib.Path) -> pathlib.Path:
     candidates += sorted(p.parent for p in path.glob("*/*/model.safetensors"))
     candidates += sorted(p.parent for p in path.glob("*/model.safetensors.index.json"))
     candidates += sorted(p.parent for p in path.glob("*/*/model.safetensors.index.json"))
+    candidates += sorted(p.parent for p in path.glob("*/*/*/params"))
+    candidates += sorted(p.parent for p in path.glob("*/*/*/model.safetensors"))
+    candidates += sorted(p.parent for p in path.glob("*/*/*/model.safetensors.index.json"))
     if candidates:
         return candidates[0]
     raise FileNotFoundError(
         f"No supported checkpoint found under {path} (expected params/, model.safetensors, "
-        "or model.safetensors.index.json)."
+        "or model.safetensors.index.json, up to three nested directories)."
     )
 
 
@@ -205,7 +261,7 @@ def _find_free_ports(base_port: int, count: int) -> list[int]:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
-                s.bind(("localhost", port))
+                s.bind(("0.0.0.0", port))
                 ports.append(port)
             except OSError:
                 print(f"[run_eval] port {port} is in use by another service, skipping")
@@ -221,9 +277,19 @@ def start_servers(
     log_dir: pathlib.Path,
     mem_fraction: float,
     server_impl: str = "upstream",
-    max_batch: int = 8,
+    max_batch: int = 4,
     model_family: str = "openpi",
     seed: int = 7,
+    lingbot_norm_stats: pathlib.Path | None = None,
+    lingbot_robot_config_root: pathlib.Path | None = None,
+    lingbot_data_contract: pathlib.Path | None = None,
+    lingbot_compile: bool = True,
+    qwen3_vl_path: pathlib.Path | None = None,
+    lane_count: int = 8,
+    benchmark: str | None = None,
+    axis_gripper_mode: str = "continuous",
+    axis_policy_samples: int = 1,
+    axis_sample_reduction: str = "mean",
 ) -> list[PolicyServer]:
     ports = _find_free_ports(base_port, len(gpus))
     # Persistent XLA compilation cache: the pi0.5 sample_actions JIT takes ~20s
@@ -246,23 +312,84 @@ def start_servers(
             "XLA_PYTHON_CLIENT_MEM_FRACTION": str(mem_fraction),
             "JAX_COMPILATION_CACHE_DIR": str(jax_cache_dir),
         }
+        if qwen3_vl_path is not None:
+            env["QWEN3VL_PATH"] = str(qwen3_vl_path)
         if is_pytorch:
             # serve_policy imports jax even on the PyTorch path; keep it off the
             # GPU so it cannot preallocate mem_fraction of VRAM ahead of torch.
             env["JAX_PLATFORMS"] = "cpu"
-        if model_family == "openvla_oft":
+        if model_family == "lingbot_vla_v2":
+            if (
+                lingbot_norm_stats is None
+                or lingbot_robot_config_root is None
+                or lingbot_data_contract is None
+                or qwen3_vl_path is None
+            ):
+                raise ValueError(
+                    "LingBot-VLA 2.0 LIBERO serving requires norm stats, data/robot contracts and Qwen3-VL path"
+                )
+            # LingBot inference is GPU-bound.  Without explicit limits every
+            # server creates host-wide PyTorch/OpenMP pools; seven servers then
+            # starve the 21 MuJoCo clients that feed them.
+            env.update({
+                "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+                "OMP_NUM_THREADS": str(LINGBOT_TORCH_THREADS),
+                "MKL_NUM_THREADS": str(LINGBOT_TORCH_THREADS),
+                "TORCHINDUCTOR_COMPILE_THREADS": str(LINGBOT_COMPILE_THREADS),
+                "TORCHINDUCTOR_MAX_AUTOTUNE": "0",
+                "TORCHINDUCTOR_MAX_AUTOTUNE_GEMM": "0",
+                "PYTHONHASHSEED": str(seed),
+            })
+            cmd = [
+                str(LINGBOT_VLA_V2_VENV_PY),
+                str(pathlib.Path(__file__).resolve().parent / "serve_lingbot_vla_v2.py"),
+                "--port",
+                str(port),
+                "--model-path",
+                str(ckpt_dir),
+                "--robot-config-root",
+                str(lingbot_robot_config_root),
+                "--data-contract",
+                str(lingbot_data_contract),
+                "--norm-stats",
+                str(lingbot_norm_stats),
+                "--use-length",
+                "5",
+                "--use-bf16",
+                "True",
+                "--use-compile",
+                str(bool(lingbot_compile)),
+                "--seed",
+                str(seed),
+                "--torch-threads",
+                str(LINGBOT_TORCH_THREADS),
+                "--torch-interop-threads",
+                str(LINGBOT_TORCH_INTEROP_THREADS),
+                "--dynamic-batching",
+                str(server_impl == "batched"),
+                "--static-batching",
+                str(server_impl == "static"),
+                "--max-batch",
+                str(max_batch),
+                "--lane-count",
+                str(lane_count),
+                "--deterministic",
+                str(server_impl == "static"),
+            ]
+            server_cwd = LINGBOT_VLA_V2_DIR
+        elif model_family == "openvla_oft":
+            if server_impl == "static":
+                raise ValueError("static batching is currently supported only for LingBot-VLA 2.0")
             # TensorFlow is used only for the official JPEG/Lanczos + center-crop
             # preprocessing.  Its default is "all host cores per process"; with
             # one server per GPU that causes catastrophic CPU oversubscription.
-            env.update(
-                {
-                    "TF_NUM_INTRAOP_THREADS": "2",
-                    "TF_NUM_INTEROP_THREADS": "1",
-                    "OMP_NUM_THREADS": "2",
-                    "MKL_NUM_THREADS": "2",
-                    "OPENVLA_TORCH_THREADS": "2",
-                }
-            )
+            env.update({
+                "TF_NUM_INTRAOP_THREADS": "2",
+                "TF_NUM_INTEROP_THREADS": "1",
+                "OMP_NUM_THREADS": "2",
+                "MKL_NUM_THREADS": "2",
+                "OPENVLA_TORCH_THREADS": "2",
+            })
             cmd = [
                 str(OPENVLA_OFT_VENV_PY),
                 str(pathlib.Path(__file__).resolve().parent / "serve_openvla_oft.py"),
@@ -274,6 +401,36 @@ def start_servers(
                 str(seed),
             ]
             server_cwd = OPENVLA_OFT_DIR
+        elif benchmark in AXIS_BENCHMARKS:
+            if model_family != "openpi" or server_impl != "upstream":
+                raise ValueError(f"{benchmark} native OpenPI serving currently requires --server-impl upstream")
+            if config != "pi05_axis_joint":
+                raise ValueError(f"{benchmark} native checkpoint requires --config pi05_axis_joint")
+            # Fixed diffusion noise alone is insufficient for reproducibility:
+            # XLA may otherwise select nondeterministic GPU kernels, and the
+            # resulting numerical differences can change an entire rollout.
+            env["XLA_FLAGS"] = "--xla_gpu_deterministic_ops=true --xla_gpu_exclude_nondeterministic_ops=true"
+            cmd = [
+                str(SERVER_VENV_PY),
+                str(pathlib.Path(__file__).resolve().parent / "serve_axis_openpi.py"),
+                "--port",
+                str(port),
+                "--config",
+                config,
+                "--checkpoint",
+                str(ckpt_dir),
+                "--openpi-root",
+                str(OPENPI_DIR),
+                "--gripper-mode",
+                axis_gripper_mode,
+                "--policy-samples",
+                str(axis_policy_samples),
+                "--sample-reduction",
+                axis_sample_reduction,
+                "--seed",
+                str(seed),
+            ]
+            server_cwd = VALIDATOR_ROOT
         elif server_impl == "batched":
             cmd = [
                 str(SERVER_VENV_PY),
@@ -289,6 +446,8 @@ def start_servers(
             ]
             server_cwd = OPENPI_DIR
         else:
+            if server_impl == "static":
+                raise ValueError("static batching is currently supported only for LingBot-VLA 2.0")
             cmd = [
                 str(SERVER_VENV_PY),
                 "scripts/serve_policy.py",
@@ -301,15 +460,15 @@ def start_servers(
                 str(ckpt_dir),
             ]
             server_cwd = OPENPI_DIR
-        log_f = open(log_path, "w")
-        proc = subprocess.Popen(
-            cmd,
-            cwd=str(server_cwd),
-            env=env,
-            stdout=log_f,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-        )
+        with open(log_path, "w") as log_f:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(server_cwd),
+                env=env,
+                stdout=log_f,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
         servers.append(PolicyServer(gpu=gpu, port=port, proc=proc, log_path=log_path))
         print(f"[run_eval] policy server: gpu={gpu} port={port} pid={proc.pid} log={log_path}")
     return servers
@@ -323,8 +482,45 @@ def _base_env() -> dict:
     return env
 
 
+def _mujoco_egl_device_id(gpu: int) -> str:
+    """Allow containers with a remapped/single EGL device to override the physical GPU id."""
+    return os.environ.get("MUJOCO_EGL_DEVICE_ID") or str(gpu)
+
+
+def _client_env(gpu: int, bench) -> dict:
+    """Build a bounded environment for one simulator client subprocess.
+
+    NumPy/OpenBLAS can otherwise create one host-sized thread pool per LIBERO
+    client.  Static LingBot evaluation intentionally runs 56 clients, so those
+    implicit pools oversubscribe the host without helping the single-threaded
+    MuJoCo control loop.
+    """
+    return {
+        **_base_env(),
+        **bench.client_env(),
+        "MUJOCO_GL": "egl",
+        "MUJOCO_EGL_DEVICE_ID": _mujoco_egl_device_id(gpu),
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+    }
+
+
+def _policy_server_is_healthy(port: int, timeout_s: float = 1.0) -> bool:
+    """Check the HTTP health endpoint without creating a broken WebSocket handshake."""
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout_s)
+    try:
+        connection.request("GET", "/healthz")
+        response = connection.getresponse()
+        response.read()
+        return response.status == 200
+    finally:
+        connection.close()
+
+
 def wait_for_servers(servers: list[PolicyServer], timeout_s: float) -> None:
-    """Block until every server accepts TCP connections (model loaded), or raise."""
+    """Block until every server reports healthy (model loaded), or raise."""
     deadline = time.time() + timeout_s
     pending = {s.port: s for s in servers}
     while pending:
@@ -336,14 +532,10 @@ def wait_for_servers(servers: list[PolicyServer], timeout_s: float) -> None:
                     f"--- last log lines ({s.log_path}) ---\n{tail}"
                 )
             try:
-                with socket.create_connection(("localhost", port), timeout=1):
-                    pass
-                # Port accepts connections AND our process is still alive -> it is
-                # really our server listening (a bind failure would have killed it).
-                if s.proc.poll() is None:
+                if _policy_server_is_healthy(port) and s.proc.poll() is None:
                     print(f"[run_eval] server ready: gpu={s.gpu} port={port}")
                     del pending[port]
-            except OSError:
+            except (OSError, http.client.HTTPException):
                 pass
         if pending:
             if time.time() > deadline:
@@ -354,13 +546,31 @@ def wait_for_servers(servers: list[PolicyServer], timeout_s: float) -> None:
 def stop_servers(servers: list[PolicyServer]) -> None:
     for s in servers:
         if s.proc.poll() is None:
-            s.proc.terminate()
-    deadline = time.time() + 10
+            try:
+                s.proc.terminate()
+            except ProcessLookupError:
+                pass
+    deadline = time.monotonic() + 10
     for s in servers:
-        while s.proc.poll() is None and time.time() < deadline:
-            time.sleep(0.2)
-        if s.proc.poll() is None:
-            s.proc.kill()
+        try:
+            s.proc.wait(timeout=max(0, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired:
+            try:
+                s.proc.kill()
+            except ProcessLookupError:
+                pass
+    # kill() sends a signal; it does not reap a child. Bound this second wait
+    # across all servers because a driver-blocked child may never exit.
+    deadline = time.monotonic() + 5
+    for s in servers:
+        try:
+            s.proc.wait(timeout=max(0, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired:
+            print(
+                f"[run_eval] policy server pid={s.proc.pid} gpu={s.gpu} did not exit after SIGKILL; "
+                "GPU driver may be blocked",
+                file=sys.stderr,
+            )
 
 
 def _tail(path: pathlib.Path, n: int = 15) -> str:
@@ -425,9 +635,7 @@ def _init_task_shards(suites, suite_n_tasks, gpus, workers_per_gpu):
     return [(gpu, worker_id, tasks) for (gpu, worker_id), tasks in shards.items() if tasks]
 
 
-def ensure_seeded_init_states(
-    seed, num_inits, suites, suite_n_tasks, gpus, init_workers_per_gpu, bench, log_dir
-):
+def ensure_seeded_init_states(seed, num_inits, suites, suite_n_tasks, gpus, init_workers_per_gpu, bench, log_dir):
     """Generate the seeded init states for `suites` (idempotent) and return the root.
 
     Individual (suite, task_id) pairs are round-robined across GPU worker slots
@@ -458,12 +666,15 @@ def ensure_seeded_init_states(
             "--output-root",
             str(root),
         ]
-        env = {**_base_env(), "MUJOCO_GL": "egl", "MUJOCO_EGL_DEVICE_ID": str(gpu), **bench.client_env()}
+        env = {
+            **_base_env(),
+            "MUJOCO_GL": "egl",
+            "MUJOCO_EGL_DEVICE_ID": _mujoco_egl_device_id(gpu),
+            **bench.client_env(),
+        }
         log_path = log_dir / f"gen_init_seed{seed}_gpu{gpu}_worker{worker_id}.log"
         log_f = open(log_path, "w")
-        procs.append(
-            (gpu, worker_id, subprocess.Popen(cmd, env=env, stdout=log_f, stderr=subprocess.STDOUT), log_f)
-        )
+        procs.append((gpu, worker_id, subprocess.Popen(cmd, env=env, stdout=log_f, stderr=subprocess.STDOUT), log_f))
 
     started = time.monotonic()
     last_completed = -1
@@ -512,10 +723,99 @@ class TaskSpec:
     suite: str
     task_id: int
     max_steps: int
+    scheduling_cost: float | None = None
 
     @property
     def name(self) -> str:
         return f"{self.suite}_task{self.task_id:02d}"
+
+    @property
+    def dispatch_cost(self) -> float:
+        return float(self.max_steps if self.scheduling_cost is None else self.scheduling_cost)
+
+
+# Immutable scheduling estimates from the median per-suite task runtime of two
+# complete LingBot deterministic/static production baselines. ``max_steps``
+# badly underestimates failure-heavy spatial swap tasks and used to place them
+# behind the longest 520-step tasks, creating a 30-45 minute tail. These values
+# affect only the fixed task-to-lane plan, never model inputs, outputs, or score.
+# Keep the version stable so evaluator_source_git_commit fully identifies the
+# schedule used for a submitted result.
+LINGBOT_LIBERO_PRO_STATIC_SCHEDULING_PROFILE = "lingbot_libero_pro_suite_runtime_v1"
+LINGBOT_LIBERO_PRO_STATIC_SUITE_COSTS = {
+    "libero_spatial_object": 1589.0,
+    "libero_spatial_swap": 2293.0,
+    "libero_spatial_lan": 1557.0,
+    "libero_spatial_task": 2254.0,
+    "libero_object_object": 2537.0,
+    "libero_object_swap": 3404.0,
+    "libero_object_lan": 2384.0,
+    "libero_object_task": 3615.0,
+    "libero_goal_object": 2235.0,
+    "libero_goal_swap": 3510.0,
+    "libero_goal_lan": 1877.0,
+    "libero_goal_task": 3538.0,
+    "libero_10_object": 4514.0,
+    "libero_10_swap": 5844.0,
+    "libero_10_lan": 3613.0,
+    "libero_10_task": 5883.0,
+}
+
+
+def static_scheduling_profile(benchmark_name: str) -> str:
+    if benchmark_name == "libero_pro":
+        return LINGBOT_LIBERO_PRO_STATIC_SCHEDULING_PROFILE
+    return "max_steps_v1"
+
+
+def static_scheduling_cost(benchmark_name: str, suite: str, max_steps: int) -> float:
+    if benchmark_name == "libero_pro":
+        try:
+            return LINGBOT_LIBERO_PRO_STATIC_SUITE_COSTS[suite]
+        except KeyError as exc:
+            raise ValueError(f"no fixed LingBot static scheduling cost for LIBERO-Pro suite {suite!r}") from exc
+    return float(max_steps)
+
+
+def partition_static_lanes(specs: list[TaskSpec], lane_count: int) -> list[list[TaskSpec]]:
+    """Deterministically balance an already highest-cost-first task list over fixed lanes."""
+    if lane_count < 1:
+        raise ValueError(f"lane_count must be positive, got {lane_count}")
+    lanes: list[list[TaskSpec]] = [[] for _ in range(lane_count)]
+    heap = [(0, lane) for lane in range(lane_count)]
+    heapq.heapify(heap)
+    for spec in specs:
+        load, lane = heapq.heappop(heap)
+        lanes[lane].append(spec)
+        heapq.heappush(heap, (load + spec.dispatch_cost, lane))
+    return lanes
+
+
+def interleaved_static_lane_index(
+    server_index: int,
+    lane_id: int,
+    server_count: int,
+    cohort_size: int,
+) -> int:
+    """Map a GPU-local lane to the global LPT plan by whole fixed cohorts.
+
+    LPT gives neighboring plan lanes similar assignments. Mapping contiguous
+    blocks of eight to GPUs can therefore put every short two-task lane on one
+    GPU and leave that card idle during the tail. Interleave complete cohorts
+    across GPUs, but never transpose individual lanes: keeping adjacent plan
+    lanes together preserves prompt-length locality inside each exact-shape
+    model batch and avoids unnecessary sequence padding.
+    """
+    if server_count < 1:
+        raise ValueError(f"server_count must be positive, got {server_count}")
+    if cohort_size < 1:
+        raise ValueError(f"cohort_size must be positive, got {cohort_size}")
+    if not 0 <= server_index < server_count:
+        raise ValueError(f"server_index {server_index} is outside server_count={server_count}")
+    if lane_id < 0:
+        raise ValueError(f"lane_id must be non-negative, got {lane_id}")
+    cohort_id, slot_id = divmod(lane_id, cohort_size)
+    return (cohort_id * server_count + server_index) * cohort_size + slot_id
 
 
 def split_resumable(specs: list, out_dir: pathlib.Path) -> tuple[list, dict]:
@@ -537,6 +837,37 @@ def split_resumable(specs: list, out_dir: pathlib.Path) -> tuple[list, dict]:
     return todo, results
 
 
+def release_static_lane(server: PolicyServer, lane_id: int) -> None:
+    """Tell the server that this lane has no more tasks.
+
+    eval_task connections intentionally come and go between tasks, so socket
+    closure cannot carry this meaning. Keep the control request in the same
+    client environment and wire codec as scored requests.
+    """
+    cmd = [
+        str(CLIENT_VENV_PY),
+        str(RELEASE_POLICY_BATCH_LANE_SCRIPT),
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(server.port),
+        "--lane",
+        str(lane_id),
+    ]
+    try:
+        completed = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        print(f"[run_eval] WARNING: failed to release static lane {lane_id} on gpu={server.gpu}: {exc}")
+        return
+    if completed.returncode:
+        detail = completed.stderr.strip().splitlines()
+        suffix = f": {detail[-1]}" if detail else ""
+        print(
+            f"[run_eval] WARNING: static lane {lane_id} release failed on gpu={server.gpu} "
+            f"with exit {completed.returncode}{suffix}"
+        )
+
+
 def worker_loop(
     server: PolicyServer,
     task_q: "queue.Queue[TaskSpec]",
@@ -546,11 +877,14 @@ def worker_loop(
     results: dict,
     lock: threading.Lock,
     progress: dict,
+    lane_id: int | None = None,
 ) -> None:
     while True:
         try:
             spec = task_q.get_nowait()
         except queue.Empty:
+            if args.server_impl == "static" and lane_id is not None:
+                release_static_lane(server, lane_id)
             return
 
         result_json = out_dir / "results" / f"{spec.name}.json"
@@ -559,7 +893,7 @@ def worker_loop(
             str(CLIENT_VENV_PY),
             str(EVAL_TASK_SCRIPT),
             "--host",
-            "localhost",
+            "127.0.0.1",
             "--port",
             str(server.port),
             "--task-suite-name",
@@ -579,6 +913,10 @@ def worker_loop(
         ]
         if args.model_family == "openvla_oft":
             cmd += ["--policy-preprocess", "openvla_oft", "--resize-size", "256", "--replan-steps", "8"]
+        elif args.model_family == "lingbot_vla_v2":
+            cmd += ["--policy-preprocess", "lingbot_vla_v2", "--resize-size", "256", "--replan-steps", "5"]
+            if args.server_impl == "static" and lane_id is not None:
+                cmd += ["--policy-batch-lane", str(lane_id)]
         if args.init_states_root:
             cmd += ["--init-states-root", str(args.init_states_root)]
             if args.init_states_mix:
@@ -586,12 +924,7 @@ def worker_loop(
         if args.save_videos > 0:
             cmd += ["--video-dir", str(out_dir / "videos"), "--save-videos", str(args.save_videos)]
 
-        env = {
-            **_base_env(),
-            "MUJOCO_GL": "egl",
-            "MUJOCO_EGL_DEVICE_ID": str(server.gpu),
-            **bench.client_env(),
-        }
+        env = _client_env(server.gpu, bench)
 
         # Generous per-task timeout so a hung simulator can't stall the whole run.
         task_timeout = args.task_timeout or (args.num_trials * 200 + 900)
@@ -735,9 +1068,35 @@ def print_report(summary: dict) -> None:
 # ----------------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------------
+def _reject_model(message: str) -> None:
+    """Exit with the worker's stable code for a permanent model rejection."""
+    print(f"[run_eval] model REJECTED: {message}")
+    raise SystemExit(3)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", required=True, help="Local checkpoint dir, HF repo id (user/repo), or HF URL")
+    parser.add_argument(
+        "--model-repo-type",
+        choices=("model", "dataset"),
+        default="model",
+        help="Hugging Face repo type (RoboDojo publishes checkpoints in a dataset repo)",
+    )
+    parser.add_argument(
+        "--model-subdir",
+        default=None,
+        help="Only download/resolve this checkpoint subdirectory inside the Hugging Face repo",
+    )
+    parser.add_argument(
+        "--backbone",
+        default=None,
+        metavar="NAME",
+        help=(
+            "Policy backbone (default: detect checkpoint family; openpi falls back to pi0.5; "
+            f"choose from {', '.join(BACKBONES)})"
+        ),
+    )
     parser.add_argument(
         "--model-family",
         default="auto",
@@ -753,16 +1112,30 @@ def main():
         "(pass 'local' for ad-hoc local runs).",
     )
     parser.add_argument(
+        "--evaluator-source-git-commit",
+        default=None,
+        help="Full Git revision of a separately deployed evaluator source bundle; recorded in summary.json",
+    )
+    benchmark_group = parser.add_mutually_exclusive_group()
+    benchmark_group.add_argument(
         "--benchmark",
         default="libero",
-        choices=sorted(BENCHMARKS),
-        help="Which benchmark to evaluate on (default: libero)",
+        choices=sorted((*BENCHMARKS, *AXIS_BENCHMARKS, "robodojo", "robotwin")),
+        metavar="BENCHMARK",
+        help="Which benchmark to evaluate on; use axis_v1.0 for AXIS (default: libero)",
+    )
+    benchmark_group.add_argument(
+        "--axis_v1.0",
+        dest="benchmark",
+        action="store_const",
+        const=AXIS_V1_NAME,
+        help="Shortcut for --benchmark=axis_v1.0 (30 tasks configured in axis_v1.0.yaml)",
     )
     parser.add_argument(
         "--model-architectures",
-        default="pi0.5",
+        default=None,
         metavar="ARCH[,ARCH...]",
-        help="Accepted model architectures (default: pi0.5; e.g. pi0 or pi0,pi0.5; π spellings also work)",
+        help="Deprecated openpi architecture allow-list; use --backbone for new commands",
     )
     parser.add_argument(
         "--config",
@@ -776,18 +1149,41 @@ def main():
         "--task-ids", default=None, help="Comma-separated task ids to evaluate (default: all tasks in each suite)"
     )
     parser.add_argument(
+        "--axis-sample-size",
+        type=int,
+        default=None,
+        help="AXIS only: randomly draw N tasks from the configured pool (default: evaluate the full pool)",
+    )
+    parser.add_argument(
+        "--axis-sampling-seed",
+        type=int,
+        default=None,
+        help="AXIS task-selection seed; omitted means fresh local randomness, recorded in task_selection.json",
+    )
+    parser.add_argument(
+        "--tasks",
+        default=None,
+        help="RoboDojo/RoboTwin only: comma-separated task names",
+    )
+    parser.add_argument(
+        "--eval-seeds",
+        default="0,1,2",
+        help="RoboDojo only: layout seeds (default: official 0,1,2)",
+    )
+    parser.add_argument(
         "--num-trials",
         type=int,
         default=None,
-        help="Trials per task (default: the benchmark's protocol — 10 for libero/libero_pro "
-        "[official LIBERO: 50], 1 for libero_plus)",
+        help="Trials per task (default: benchmark protocol; RoboDojo uses native 50, or 25+25 "
+        "for Generalization; a RoboDojo override applies to each simulator half)",
     )
     parser.add_argument("--gpus", default="0,1,2,3,4,5,6,7", help="Comma-separated GPU ids")
     parser.add_argument(
         "--workers-per-gpu",
         type=int,
-        default=3,
-        help="Concurrent eval clients per GPU sharing one policy server (default 3: measured "
+        default=None,
+        help="Concurrent eval clients per GPU sharing one policy server (default: 3 for LIBERO, "
+        "1 for RoboTwin). LIBERO's default 3 is measured "
         "optimum on 4090, ~1.8x over 1 — the server handles requests serially, so >1 overlaps "
         "one client's CPU simulation with another's GPU inference). Note: with >1 the JAX rng "
         "consumption order depends on request arrival order, so per-call action noise differs "
@@ -803,20 +1199,19 @@ def main():
     )
     parser.add_argument(
         "--server-impl",
-        choices=("upstream", "batched"),
+        choices=("upstream", "batched", "static"),
         default="upstream",
-        help="Policy server implementation: 'upstream' = openpi's serve_policy.py (batch 1); "
-        "'batched' = serve_policy_batched.py, which greedily batches whatever requests are "
-        "queued (nobody waits for a batch to fill) — pair with a higher --workers-per-gpu",
+        help="Policy server implementation: 'upstream' = batch 1; 'batched' = greedy dynamic batching; "
+        "'static' = LingBot-only fixed cohorts with strict deterministic CUDA/PyTorch settings",
     )
     parser.add_argument(
         "--max-batch",
         type=int,
-        default=8,
+        default=4,
         help="Upper bound on the dynamic batch size (batched server only); padded to powers of 2",
     )
     parser.add_argument("--base-port", type=int, default=9000)
-    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--seed", type=int, default=None, help="Policy seed (default: benchmark config, otherwise 7)")
     parser.add_argument(
         "--init-states-root",
         default=None,
@@ -869,62 +1264,337 @@ def main():
         action="store_true",
         help="Skip the pre-evaluation checkpoint format check (debugging only)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="AXIS/RoboDojo/RoboTwin: validate the environment without starting a policy server",
+    )
+    parser.add_argument(
+        "--axis-task-api-base-url",
+        default=None,
+        help="Override the Axis task API (base-only protocols use frozen repository snapshots)",
+    )
+    parser.add_argument(
+        "--axis-asset-base-url",
+        default=None,
+        help="Override the Axis MuJoCo asset CDN from the selected frozen manifest",
+    )
+    parser.add_argument(
+        "--axis-cache-root",
+        default=str(VALIDATOR_ROOT / ".cache" / "axis"),
+        help="Task-payload and scene-asset cache for Axis benchmarks",
+    )
+    parser.add_argument(
+        "--axis-manifest",
+        default=None,
+        help="Explicit versioned task manifest for --benchmark axis; named Axis releases remain frozen",
+    )
+    parser.add_argument(
+        "--axis-randomization-manifest",
+        default=None,
+        help="Frozen scene-variant manifest override for randomized AXIS protocols",
+    )
+    parser.add_argument(
+        "--axis-randomization-seed",
+        type=int,
+        default=None,
+        help="Public seed for deterministic AXIS variant selection (default: 0 for randomized protocols)",
+    )
+    parser.add_argument(
+        "--axis-asset-fetch-workers",
+        type=int,
+        default=16,
+        help="Concurrent first-run AXIS asset downloads (default: 16)",
+    )
+    parser.add_argument(
+        "--axis-record-trials",
+        type=int,
+        default=0,
+        help="Save a rollout GIF and per-step state/checker for the first N trials of every Axis task",
+    )
+    parser.add_argument(
+        "--axis-replan-steps",
+        type=int,
+        default=None,
+        help="Joint-target steps consumed from each AXIS policy action chunk",
+    )
+    parser.add_argument(
+        "--axis-gripper-mode",
+        choices=("continuous", "symmetric-binary"),
+        default="continuous",
+        help="Uniform policy output decoding, frozen by the AXIS manifest protocol",
+    )
+    parser.add_argument(
+        "--axis-policy-samples",
+        type=int,
+        choices=range(1, 17),
+        default=1,
+        help="Independent diffusion predictions per AXIS policy request; frozen in the manifest",
+    )
+    parser.add_argument("--axis-sample-reduction", choices=("mean", "medoid"), default="mean")
+    parser.add_argument(
+        "--axis-max-control-steps",
+        type=int,
+        default=None,
+        help="Development override for the selected Axis protocol's episode limit",
+    )
+    parser.add_argument(
+        "--axis-policy-host",
+        default="127.0.0.1",
+        help="Host for an external AXIS-compatible policy server",
+    )
+    parser.add_argument(
+        "--axis-policy-port",
+        type=int,
+        default=None,
+        help="Use an already-running AXIS-compatible policy server instead of starting the model",
+    )
+    parser.add_argument(
+        "--robotwin-task-config",
+        choices=("demo_clean", "demo_randomized"),
+        default="demo_clean",
+        help="RoboTwin domain setting (default: demo_clean)",
+    )
+    parser.add_argument(
+        "--robotwin-instruction-type",
+        choices=("seen", "unseen"),
+        default=None,
+        help="Override RoboTwin language split for diagnostics (default: upstream deploy config, unseen)",
+    )
+    parser.add_argument(
+        "--qwen3-vl-path",
+        default=str(QWEN3_VL_DIR),
+        help="Local pinned Qwen3-VL config/processor snapshot used by LingBot-VLA 2.0",
+    )
+    parser.add_argument(
+        "--lingbot-norm-stats",
+        default=str(DEFAULT_LINGBOT_NORM_STATS),
+        help="Evaluator-owned normalization JSON for LingBot-VLA 2.0 on LIBERO/LIBERO-Pro",
+    )
+    parser.add_argument(
+        "--lingbot-data-contract",
+        default=str(DEFAULT_LINGBOT_DATA_CONTRACT),
+        help="Evaluator-owned LingBot-VLA 2.0 LIBERO camera/state/action contract",
+    )
+    parser.add_argument(
+        "--lingbot-compile",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable torch.compile in the LingBot-VLA 2.0 server (default: enabled)",
+    )
     args = parser.parse_args()
+    sampling_requested = args.axis_sample_size is not None or args.axis_sampling_seed is not None
+    if sampling_requested and args.benchmark not in AXIS_BENCHMARKS:
+        parser.error("--axis-sample-size and --axis-sampling-seed require an AXIS benchmark")
+    if args.axis_manifest is not None and args.benchmark != "axis":
+        parser.error("--axis-manifest requires --benchmark axis; named releases cannot be overridden")
+    if args.benchmark == "axis" and args.axis_manifest is None:
+        parser.error("--benchmark axis requires --axis-manifest")
+    if args.benchmark in AXIS_BENCHMARKS:
+        try:
+            apply_manifest_defaults(args)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+    if args.seed is None:
+        args.seed = 7
+    if args.axis_replan_steps is None:
+        args.axis_replan_steps = 5
+    if args.evaluator_source_git_commit is not None and not COMMIT_HASH_RE.fullmatch(args.evaluator_source_git_commit):
+        parser.error("--evaluator-source-git-commit must be a full 40-character lowercase Git hash")
+    if args.workers_per_gpu is None:
+        args.workers_per_gpu = 1 if args.benchmark in ("robotwin", *AXIS_BENCHMARKS) else 3
+    backbone_explicit = args.backbone is not None or args.model_architectures is not None or args.model_family != "auto"
 
+    if args.workers_per_gpu < 1:
+        parser.error("--workers-per-gpu must be at least 1")
     if args.init_workers_per_gpu < 1:
         parser.error("--init-workers-per-gpu must be at least 1")
 
     try:
-        model_architectures = parse_model_architectures(args.model_architectures)
+        legacy_architectures = (
+            parse_model_architectures(args.model_architectures) if args.model_architectures is not None else None
+        )
+        backbone, model_architectures = resolve_backbone(
+            args.backbone,
+            legacy_architectures,
+            args.model_family,
+        )
     except ValueError as e:
         parser.error(str(e))
+    args.backbone = backbone.name
 
-    for py, what in [(CLIENT_VENV_PY, "LIBERO client venv")]:
-        if not py.exists():
-            sys.exit(f"[run_eval] Missing {py} — install the {what} first (bash setup.sh; see README).")
-
-    # Preflight: a hung NVIDIA driver makes every CUDA/EGL process enter an
-    # unkillable D state. Detect it up front instead of spawning 8 servers into it.
-    try:
-        subprocess.run(["nvidia-smi", "-L"], capture_output=True, timeout=15, check=True)
-    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError) as e:
-        sys.exit(
-            f"[run_eval] GPU preflight failed ({type(e).__name__}): nvidia-smi is not responding.\n"
-            "The NVIDIA driver may be hung (D-state processes). A reboot or driver reload is "
-            "required before evaluation can run."
-        )
+    if args.benchmark in AXIS_BENCHMARKS:
+        if args.backbone != "pi0.5":
+            parser.error(f"{args.benchmark} currently requires --backbone pi0.5; no LingBot AXIS adapter is installed")
+        if not AXIS_VENV_PY.exists():
+            sys.exit(f"[run_eval] Missing {AXIS_VENV_PY} — install it with bash setup_axis.sh")
+    elif args.benchmark not in ("robodojo", "robotwin"):
+        for py, what in [(CLIENT_VENV_PY, "LIBERO client venv")]:
+            if not py.exists():
+                sys.exit(f"[run_eval] Missing {py} — install the {what} first (bash setup.sh; see README).")
 
     gpus = [int(g) for g in args.gpus.split(",") if g != ""]
-    try:
-        # Keep these file objects alive until main exits. The OS releases the
-        # flock automatically on normal, exceptional, or signalled exit.
-        _gpu_locks = acquire_gpu_locks(gpus)
-    except (OSError, ValueError, RuntimeError) as e:
-        sys.exit(f"[run_eval] GPU reservation failed: {e}")
+    if args.benchmark in (*AXIS_BENCHMARKS, "robodojo", "robotwin") and args.dry_run:
+        if not gpus or len(gpus) != len(set(gpus)):
+            parser.error("--gpus must contain at least one unique GPU id")
+    else:
+        # Preflight: a hung NVIDIA driver makes every CUDA/EGL process enter an
+        # unkillable D state. Detect it before spawning policy/simulator processes.
+        print("[run_eval] GPU preflight: checking NVIDIA driver (15s timeout)", flush=True)
+        health = check_gpu_health()
+        if not health.healthy:
+            sys.exit(
+                f"[run_eval] GPU preflight failed: {health.detail}\n"
+                "The NVIDIA driver may be hung (D-state processes). A reboot or driver reload is "
+                "required before evaluation can run."
+            )
+        try:
+            # Keep these file objects alive until main exits. The OS releases the
+            # flock automatically on normal, exceptional, or signalled exit.
+            _gpu_locks = acquire_gpu_locks(gpus)
+        except (OSError, ValueError, RuntimeError) as e:
+            sys.exit(f"[run_eval] GPU reservation failed: {e}")
+        # LIBERO starts its own model and renderers. External-policy backends
+        # deliberately share with an existing server and keep their own policy.
+        if args.benchmark in ("libero", "libero_pro", "libero_plus"):
+            availability = check_gpu_availability(gpus)
+            if not availability.healthy:
+                sys.exit(f"[run_eval] GPU reservation failed: {availability.detail}")
 
-    bench = get_benchmark(args.benchmark)
-    suites = [s.strip() for s in args.suites.split(",") if s.strip()] if args.suites else list(bench.default_suites)
+    if args.benchmark in AXIS_BENCHMARKS and (args.dry_run or args.axis_policy_port is not None):
+        try:
+            from axis_backend import run as run_axis
+
+            return_code = run_axis(args, None, gpus, AXIS_VENV_PY)
+        except (FileNotFoundError, RuntimeError, ValueError) as e:
+            sys.exit(f"[run_eval] AXIS environment rejected: {e}")
+        if return_code:
+            sys.exit(return_code)
+        return
+
+    if args.benchmark == "robotwin":
+        if args.init_seed is not None or args.init_states_root:
+            sys.exit(
+                "[run_eval] RoboTwin task layouts are selected by --robotwin-task-config; "
+                "LIBERO init options do not apply"
+            )
+        if args.backbone != "lingbot-vla-v2":
+            sys.exit(
+                f"[run_eval] RoboTwin integration currently requires --backbone lingbot-vla-v2, got {args.backbone!r}"
+            )
+        try:
+            strategies = parse_strategies(args.download_strategies)
+            checkpoint = resolve_model(
+                args.model,
+                pathlib.Path(args.download_dir),
+                strategies,
+                commit_id=args.commit_id,
+                repo_type=args.model_repo_type,
+                subdir=args.model_subdir,
+            )
+            from robotwin_backend import run as run_robotwin
+
+            return_code = run_robotwin(
+                args,
+                checkpoint,
+                gpus,
+                LINGBOT_VLA_V2_DIR,
+                ROBOTWIN_DIR,
+                LINGBOT_VLA_V2_VENV_PY,
+                ROBOTWIN_VENV_PY,
+                pathlib.Path(args.qwen3_vl_path).expanduser().resolve(),
+            )
+        except DownloadError as e:
+            sys.exit(f"[run_eval] model download failed: {e}")
+        except (FileNotFoundError, RuntimeError, TimeoutError, ValueError) as e:
+            sys.exit(f"[run_eval] RoboTwin evaluation rejected: {e}")
+        if return_code:
+            sys.exit(return_code)
+        return
+
+    if args.benchmark == "robodojo":
+        if args.init_seed is not None or args.init_states_root:
+            sys.exit(
+                "[run_eval] RoboDojo layout randomization uses --eval-seeds; LIBERO init-state options do not apply"
+            )
+        if args.model_family not in ("auto", "openpi"):
+            sys.exit("[run_eval] RoboDojo currently supports the official Pi 0.5/Pi 0 OpenPI adapters only")
+        try:
+            strategies = parse_strategies(args.download_strategies)
+            checkpoint_input = None
+            if args.model_subdir and ("{" in args.model_subdir or "}" in args.model_subdir):
+                if (
+                    args.model_subdir.count("{seed}") != 1
+                    or "{" in args.model_subdir.replace("{seed}", "")
+                    or "}" in args.model_subdir.replace("{seed}", "")
+                ):
+                    raise ValueError("RoboDojo --model-subdir only supports the {seed} placeholder")
+                try:
+                    eval_seeds = tuple(dict.fromkeys(int(item) for item in args.eval_seeds.split(",") if item != ""))
+                except ValueError as exc:
+                    raise ValueError("--eval-seeds must be comma-separated integers") from exc
+                checkpoint_input = {
+                    seed: resolve_model(
+                        args.model,
+                        pathlib.Path(args.download_dir),
+                        strategies,
+                        commit_id=args.commit_id,
+                        repo_type=args.model_repo_type,
+                        subdir=args.model_subdir.replace("{seed}", str(seed)),
+                        ignore_patterns=[f"{args.model_subdir.replace('{seed}', str(seed))}/train_state/**"],
+                    )
+                    for seed in eval_seeds
+                }
+            else:
+                checkpoint_input = resolve_model(
+                    args.model,
+                    pathlib.Path(args.download_dir),
+                    strategies,
+                    commit_id=args.commit_id,
+                    repo_type=args.model_repo_type,
+                    subdir=args.model_subdir,
+                    ignore_patterns=[f"{args.model_subdir}/train_state/**"] if args.model_subdir else None,
+                )
+            from robodojo_backend import run as run_robodojo
+
+            return_code = run_robodojo(args, checkpoint_input, model_architectures, gpus, ROBODOJO_DIR)
+        except DownloadError as e:
+            sys.exit(f"[run_eval] model download failed: {e}")
+        except (FileNotFoundError, RuntimeError, ValueError) as e:
+            sys.exit(f"[run_eval] RoboDojo evaluation rejected: {e}")
+        if return_code:
+            sys.exit(return_code)
+        return
+
+    is_axis = args.benchmark in AXIS_BENCHMARKS
+    bench = None if is_axis else get_benchmark(args.benchmark)
+    suites = (
+        []
+        if is_axis
+        else ([s.strip() for s in args.suites.split(",") if s.strip()] if args.suites else list(bench.default_suites))
+    )
     task_ids = [int(t) for t in args.task_ids.split(",")] if args.task_ids else None
-    if args.num_trials is None:
+    if args.num_trials is None and not is_axis:
         args.num_trials = bench.default_num_trials
 
     args.init_states_mix = False
     if args.init_states_root and args.init_seed is not None:
         sys.exit("[run_eval] --init-seed and --init-states-root are mutually exclusive")
-    if (args.init_seed is not None or args.init_states_root) and not bench.supports_seeded_inits:
-        sys.exit(
-            f"[run_eval] --init-seed/--init-states-root are not supported for benchmark '{bench.name}': "
-            "its task variants carry their own perturbation-specific init states that must not be resampled"
-        )
-    if args.init_states_root:
-        args.init_states_root = str(pathlib.Path(args.init_states_root).expanduser().resolve())
-        missing = [s for s in suites if not (pathlib.Path(args.init_states_root) / s).is_dir()]
-        if missing:
+    if not is_axis:
+        if (args.init_seed is not None or args.init_states_root) and not bench.supports_seeded_inits:
             sys.exit(
-                f"[run_eval] --init-states-root {args.init_states_root} has no init states for "
-                f"suites {missing}; generate them first (libero_eval/gen_init_states.py)."
+                f"[run_eval] --init-seed/--init-states-root are not supported for benchmark '{bench.name}': "
+                "its task variants carry their own perturbation-specific init states that must not be resampled"
             )
-        print(f"[run_eval] init states override: {args.init_states_root}")
+        if args.init_states_root:
+            args.init_states_root = str(pathlib.Path(args.init_states_root).expanduser().resolve())
+            missing = [s for s in suites if not (pathlib.Path(args.init_states_root) / s).is_dir()]
+            if missing:
+                sys.exit(
+                    f"[run_eval] --init-states-root {args.init_states_root} has no init states for "
+                    f"suites {missing}; generate them first (libero_eval/gen_init_states.py)."
+                )
+            print(f"[run_eval] init states override: {args.init_states_root}")
 
     try:
         strategies = parse_strategies(args.download_strategies)
@@ -932,39 +1602,66 @@ def main():
         sys.exit(f"[run_eval] {e}")
 
     try:
-        ckpt_dir = resolve_model(args.model, pathlib.Path(args.download_dir), strategies, commit_id=args.commit_id)
+        ckpt_dir = resolve_model(
+            args.model,
+            pathlib.Path(args.download_dir),
+            strategies,
+            commit_id=args.commit_id,
+            repo_type=args.model_repo_type,
+            subdir=args.model_subdir,
+        )
     except DownloadError as e:
         # 基础设施失败(网络/镜像/Hub),与"模型本身不合法"区分开
         sys.exit(f"[run_eval] model download failed: {e}")
     except (FileNotFoundError, ValueError) as e:
-        sys.exit(f"[run_eval] model REJECTED: {e}")
+        _reject_model(str(e))
     print(f"[run_eval] checkpoint: {ckpt_dir}")
-    print(f"[run_eval] benchmark: {bench.name}")
+    print(f"[run_eval] benchmark: {args.benchmark}")
 
     try:
         detected_family = detect_model_family(ckpt_dir)
     except ValueError as e:
-        sys.exit(f"[run_eval] model REJECTED: {e}")
+        _reject_model(str(e))
     if args.model_family == "auto":
         args.model_family = detected_family
     elif args.model_family != detected_family:
-        sys.exit(
-            f"[run_eval] model REJECTED: --model-family {args.model_family!r} does not match "
-            f"detected checkpoint family {detected_family!r}"
+        _reject_model(
+            f"--model-family {args.model_family!r} does not match detected checkpoint family {detected_family!r}"
         )
-    server_python = OPENVLA_OFT_VENV_PY if args.model_family == "openvla_oft" else SERVER_VENV_PY
+    if not backbone_explicit and detected_family != backbone.model_family:
+        backbone = next(item for item in BACKBONES.values() if item.model_family == detected_family)
+        args.backbone = backbone.name
+        model_architectures = backbone.legacy_architectures
+    elif detected_family != backbone.model_family:
+        _reject_model(
+            f"--backbone {backbone.name!r} expects family {backbone.model_family!r}, detected {detected_family!r}"
+        )
+    server_python = {
+        "openpi": SERVER_VENV_PY,
+        "openvla_oft": OPENVLA_OFT_VENV_PY,
+        "lingbot_vla_v2": LINGBOT_VLA_V2_VENV_PY,
+    }[args.model_family]
     if not server_python.exists():
         sys.exit(f"[run_eval] Missing {server_python} — install the {args.model_family} server env (bash setup.sh).")
     print(f"[run_eval] model family: {args.model_family}")
+    if args.server_impl == "static":
+        if args.model_family != "lingbot_vla_v2":
+            sys.exit("[run_eval] --server-impl static is supported only for LingBot-VLA 2.0")
+        if args.workers_per_gpu < args.max_batch or args.workers_per_gpu % args.max_batch:
+            sys.exit(
+                "[run_eval] static batching requires --workers-per-gpu to be a positive multiple "
+                f"of --max-batch (got {args.workers_per_gpu} and {args.max_batch})"
+            )
 
     # Legality gate: reject malformed checkpoints with explicit reasons before
     # spending any GPU time (see check_model.py for what is validated).
     if args.skip_model_check:
-        args.config = args.config or (
-            "openvla_oft_libero"
-            if args.model_family == "openvla_oft"
-            else ARCHITECTURE_CONFIGS[model_architectures[0]]
-        )
+        if args.model_family == "openvla_oft":
+            args.config = args.config or "openvla_oft_libero"
+        elif args.model_family == "lingbot_vla_v2":
+            args.config = args.config or "lingbot-vla-v2"
+        else:
+            args.config = args.config or ARCHITECTURE_CONFIGS[model_architectures[0]]
         print("[run_eval] model format check SKIPPED (--skip-model-check)")
     elif args.model_family == "openvla_oft":
         if args.config is not None:
@@ -979,6 +1676,37 @@ def main():
             sys.exit(3)
         args.config = check.config
         print("[run_eval] model format check passed (OpenVLA-OFT sharded checkpoint)")
+    elif args.model_family == "lingbot_vla_v2":
+        if args.config is not None:
+            sys.exit("[run_eval] --config is only valid for openpi checkpoints")
+        check = check_lingbot_vla_v2_model(ckpt_dir)
+        for warning in check.warnings:
+            print(f"[run_eval] model check warning: {warning}")
+        if not check.ok:
+            print(f"[run_eval] model REJECTED by the LingBot-VLA 2.0 format check ({len(check.errors)} problem(s)):")
+            for index, problem in enumerate(check.errors, 1):
+                print(f"  {index}. {problem}")
+            sys.exit(3)
+        contract_errors = check_lingbot_data_contract(
+            ckpt_dir,
+            expected_cameras=("camera_top", "camera_wrist"),
+            required_joints={"end.position": 14, "effector.position": 2},
+            metadata_required=False,
+        )
+        if contract_errors:
+            print(
+                f"[run_eval] model REJECTED by the LingBot LIBERO data-contract check "
+                f"({len(contract_errors)} problem(s)):"
+            )
+            for index, problem in enumerate(contract_errors, 1):
+                print(f"  {index}. {problem}")
+            print(
+                "  This benchmark needs a LingBot-VLA 2.0 checkpoint fine-tuned for the evaluator's "
+                "two-camera, 7D LIBERO action contract; the official RoboTwin checkpoint is not interchangeable."
+            )
+            sys.exit(3)
+        args.config = check.config
+        print("[run_eval] model format check passed (LingBot-VLA 2.0 sharded checkpoint)")
     else:
         selection = check_model_for_architectures(ckpt_dir, model_architectures, args.config)
         check = selection.result
@@ -990,10 +1718,53 @@ def main():
                 print(f"  {i}. {problem}")
             sys.exit(3)
         args.config = selection.config
+        args.backbone = selection.architecture
         print(
             f"[run_eval] model format check passed "
             f"({check.checkpoint_type} checkpoint, architecture {selection.architecture}, config {args.config})"
         )
+
+    if is_axis:
+        try:
+            from axis_backend import run as run_axis
+
+            return_code = run_axis(
+                args,
+                ckpt_dir,
+                gpus,
+                AXIS_VENV_PY,
+                start_servers=start_servers,
+                wait_for_servers=wait_for_servers,
+                stop_servers=stop_servers,
+            )
+        except (FileNotFoundError, RuntimeError, TimeoutError, ValueError) as e:
+            sys.exit(f"[run_eval] AXIS evaluation rejected: {e}")
+        if return_code:
+            sys.exit(return_code)
+        return
+
+    lingbot_norm_stats = None
+    lingbot_robot_config_root = None
+    lingbot_data_contract = None
+    lingbot_runtime_metadata = None
+    qwen3_vl_path = None
+    if args.model_family == "lingbot_vla_v2":
+        lingbot_norm_stats = pathlib.Path(args.lingbot_norm_stats).expanduser().resolve()
+        lingbot_data_contract = pathlib.Path(args.lingbot_data_contract).expanduser().resolve()
+        lingbot_robot_config_root = DEFAULT_LINGBOT_ROBOT_CONFIG_ROOT
+        qwen3_vl_path = pathlib.Path(args.qwen3_vl_path).expanduser().resolve()
+        required = (
+            lingbot_norm_stats,
+            lingbot_data_contract,
+            lingbot_robot_config_root / "libero.yaml",
+            qwen3_vl_path / "config.json",
+        )
+        if missing := [str(path) for path in required if not path.exists()]:
+            sys.exit("[run_eval] LingBot-VLA 2.0 LIBERO runtime is incomplete; missing: " + ", ".join(missing))
+        try:
+            lingbot_runtime_metadata = runtime_contract_metadata(lingbot_data_contract, lingbot_norm_stats)
+        except ValueError as exc:
+            sys.exit(f"[run_eval] LingBot-VLA 2.0 LIBERO runtime contract is invalid: {exc}")
 
     model_tag = pathlib.Path(str(args.model).rstrip("/")).name.replace("/", "_")
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1048,10 +1819,7 @@ def main():
                 f"({protocol['expected_task_count']} tasks x {protocol['expected_trials_per_task']} trial)"
             )
         else:
-            print(
-                f"[run_eval] protocol: NON-OFFICIAL DEVELOPMENT RUN; "
-                f"{'; '.join(protocol['deviations'])}"
-            )
+            print(f"[run_eval] protocol: NON-OFFICIAL DEVELOPMENT RUN; {'; '.join(protocol['deviations'])}")
 
     if args.init_seed is not None:
         seeded_inits = _required_seeded_inits(args.num_trials)
@@ -1081,15 +1849,32 @@ def main():
                 f"50/50 official + seed {args.init_seed} ({root})"
             )
 
-    specs = [
-        TaskSpec(suite=s, task_id=t, max_steps=bench.resolve_max_steps(s))
-        for s in suites
-        for t in (task_ids if task_ids is not None else range(suite_n_tasks[s]))
-    ]
-    # Longest tasks first (stable sort keeps task_id order within a suite): a
-    # 520-step libero_10 task dispatched last would stretch the tail by minutes
-    # while every other worker sits idle.
-    specs.sort(key=lambda sp: sp.max_steps, reverse=True)
+    static_schedule_profile = static_scheduling_profile(bench.name) if args.server_impl == "static" else None
+    specs = []
+    for suite in suites:
+        for task_id in task_ids if task_ids is not None else range(suite_n_tasks[suite]):
+            max_steps = bench.resolve_max_steps(suite)
+            specs.append(
+                TaskSpec(
+                    suite=suite,
+                    task_id=task_id,
+                    max_steps=max_steps,
+                    scheduling_cost=(
+                        static_scheduling_cost(bench.name, suite, max_steps) if args.server_impl == "static" else None
+                    ),
+                )
+            )
+    # Highest estimated cost first (stable sort keeps task_id order within a
+    # suite). Static LingBot uses a fixed benchmark profile because max_steps
+    # alone is a poor runtime estimate; other paths retain the old max-step key.
+    specs.sort(key=lambda spec: spec.dispatch_cost, reverse=True)
+
+    # Build the lane map from the complete task set, before --resume removes
+    # finished entries. This preserves task -> GPU/cohort/lane identity when a
+    # stopped run is resumed in the same output directory.
+    static_lane_plan = (
+        partition_static_lanes(specs, len(gpus) * args.workers_per_gpu) if args.server_impl == "static" else None
+    )
 
     progress_file = pathlib.Path(args.progress_file).resolve() if args.progress_file else None
 
@@ -1099,9 +1884,27 @@ def main():
         print(f"[run_eval] resume: {len(results)} tasks already have results in {out_dir}, {len(specs)} to run")
     suite_task_totals = {suite: sum(spec.suite == suite for spec in specs) for suite in suites}
 
-    task_q: queue.Queue[TaskSpec] = queue.Queue()
-    for spec in specs:
-        task_q.put(spec)
+    task_q: queue.Queue[TaskSpec] | None = None
+    static_lane_queues: list[queue.Queue[TaskSpec]] | None = None
+    if args.server_impl == "static":
+        assert static_lane_plan is not None
+        todo_names = {spec.name for spec in specs}
+        lane_specs = [[spec for spec in assignments if spec.name in todo_names] for assignments in static_lane_plan]
+        static_lane_queues = []
+        for assignments in lane_specs:
+            lane_q: queue.Queue[TaskSpec] = queue.Queue()
+            for spec in assignments:
+                lane_q.put(spec)
+            static_lane_queues.append(lane_q)
+        print(
+            f"[run_eval] static task map: {len(static_lane_queues)} fixed lanes, "
+            f"batch_size={args.max_batch}, cohorts_per_gpu={args.workers_per_gpu // args.max_batch}, "
+            f"scheduling_profile={static_schedule_profile}"
+        )
+    else:
+        task_q = queue.Queue()
+        for spec in specs:
+            task_q.put(spec)
     print(
         f"[run_eval] {len(specs)} tasks ({len(suites)} suites, "
         f"{'ids ' + str(task_ids) if task_ids is not None else 'all tasks'}) "
@@ -1120,6 +1923,12 @@ def main():
         max_batch=args.max_batch,
         model_family=args.model_family,
         seed=args.seed,
+        lingbot_norm_stats=lingbot_norm_stats,
+        lingbot_robot_config_root=lingbot_robot_config_root,
+        lingbot_data_contract=lingbot_data_contract,
+        lingbot_compile=args.lingbot_compile,
+        qwen3_vl_path=qwen3_vl_path,
+        lane_count=args.workers_per_gpu,
     )
 
     try:
@@ -1148,13 +1957,24 @@ def main():
                 "episodes_total": len(specs) * args.num_trials,
             },
         )
-        threads = [
-            threading.Thread(
-                target=worker_loop, args=(s, task_q, args, bench, out_dir, results, lock, progress), daemon=True
-            )
-            for s in servers
-            for _ in range(max(1, args.workers_per_gpu))
-        ]
+        threads = []
+        for server_index, server in enumerate(servers):
+            for lane_id in range(max(1, args.workers_per_gpu)):
+                lane_q = (
+                    static_lane_queues[
+                        interleaved_static_lane_index(server_index, lane_id, len(servers), args.max_batch)
+                    ]
+                    if static_lane_queues is not None
+                    else task_q
+                )
+                assert lane_q is not None
+                threads.append(
+                    threading.Thread(
+                        target=worker_loop,
+                        args=(server, lane_q, args, bench, out_dir, results, lock, progress, lane_id),
+                        daemon=True,
+                    )
+                )
         for th in threads:
             th.start()
         for th in threads:
@@ -1168,7 +1988,9 @@ def main():
         {
             "model": str(args.model),
             "model_family": args.model_family,
+            "backbone": args.backbone,
             "commit_id": args.commit_id,
+            "evaluator_source_git_commit": args.evaluator_source_git_commit,
             "checkpoint_dir": str(ckpt_dir),
             "benchmark": bench.name,
             "prompt_source": bench.prompt_source,
@@ -1180,7 +2002,12 @@ def main():
             "init_states_mix": args.init_states_mix,
             "gpus": gpus,
             "workers_per_gpu": args.workers_per_gpu,
+            "policy_rng_mode": POLICY_RNG_MODE if args.model_family == "lingbot_vla_v2" else None,
+            "policy_batch_mode": POLICY_BATCH_MODE_STATIC if args.server_impl == "static" else None,
             "server_impl": args.server_impl,
+            "static_batch_size": args.max_batch if args.server_impl == "static" else None,
+            "static_scheduling_profile": static_schedule_profile,
+            "deterministic_algorithms": args.server_impl == "static",
             "wall_time_s": round(time.time() - t_start, 1),
             "timestamp": datetime.datetime.now().astimezone().isoformat(),
         },
@@ -1194,13 +2021,14 @@ def main():
         protocol["official_result"] = bool(
             protocol["official_request"]
             and len(results) == protocol["expected_task_count"]
-            and summary["total_episodes"]
-            == protocol["expected_task_count"] * protocol["expected_trials_per_task"]
+            and summary["total_episodes"] == protocol["expected_task_count"] * protocol["expected_trials_per_task"]
             and failed_tasks == 0
         )
         if protocol["official_request"] and not protocol["official_result"]:
             protocol["deviations"].append("evaluation did not complete every official task successfully")
         summary["evaluation_protocol"] = protocol
+    if lingbot_runtime_metadata is not None:
+        summary["lingbot_runtime"] = lingbot_runtime_metadata
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
     print_report(summary)
     print(f"[run_eval] summary written to {out_dir / 'summary.json'}")

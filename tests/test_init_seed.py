@@ -109,9 +109,7 @@ class TestInitProgress(unittest.TestCase):
             for suite, task_names in (("suite_a", ["a", "b"]), ("suite_b", ["c"])):
                 suite_dir = root / suite
                 suite_dir.mkdir()
-                (suite_dir / "manifest.json").write_text(
-                    json.dumps({"tasks": {name: {} for name in task_names}})
-                )
+                (suite_dir / "manifest.json").write_text(json.dumps({"tasks": {name: {} for name in task_names}}))
 
             self.assertEqual(_count_completed_seeded_tasks(root, ["suite_a", "suite_b"]), 3)
             self.assertEqual(_count_completed_seeded_tasks(root, ["suite_a"]), 2)
@@ -165,11 +163,11 @@ class TestInitGenerationSizing(unittest.TestCase):
 
 class TestPayloadPublishesSeed(unittest.TestCase):
     def test_init_seed_in_payload(self):
-        payload = build_score_payload({"round_num": 5}, None, 1.0, init_seed=12345)
+        payload = build_score_payload({}, None, 1.0, init_seed=12345)
         self.assertEqual(payload["init_seed"], 12345)
 
     def test_init_seed_none_when_disabled(self):
-        payload = build_score_payload({"round_num": 5}, None, 1.0)
+        payload = build_score_payload({}, None, 1.0)
         self.assertIsNone(payload["init_seed"])
 
 

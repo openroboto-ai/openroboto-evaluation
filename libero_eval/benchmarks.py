@@ -153,9 +153,7 @@ class Benchmark:
         if num_trials != self.official_num_trials:
             deviations.append(f"--num-trials must be {self.official_num_trials}, got {num_trials}")
         if self.official_prompt_source is not None and self.prompt_source != self.official_prompt_source:
-            deviations.append(
-                f"prompt_source must be {self.official_prompt_source!r}, got {self.prompt_source!r}"
-            )
+            deviations.append(f"prompt_source must be {self.official_prompt_source!r}, got {self.prompt_source!r}")
 
         scheduled = (
             len(suites) * len(task_ids)
@@ -331,8 +329,7 @@ class _LiberoPlusBenchmark(Benchmark):
             unknown_dimensions = set(groups.values()) - PLUS_DIMENSIONS
             if unknown_dimensions:
                 raise ValueError(
-                    f"LIBERO-Plus classification for {suite} has unknown dimensions: "
-                    f"{sorted(unknown_dimensions)}"
+                    f"LIBERO-Plus classification for {suite} has unknown dimensions: {sorted(unknown_dimensions)}"
                 )
 
     @staticmethod

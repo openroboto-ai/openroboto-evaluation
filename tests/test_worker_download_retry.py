@@ -1,4 +1,4 @@
-"""下载/评测异常清缓存并重新排队，绝不发布不完整结果。
+"""下载异常清缓存、评测异常保留诊断产物并重新排队，绝不发布不完整结果。
 
 回归背景(2026-07-18):代理上游抖动导致三种下载策略同时 SSL 失败,worker
 把 DownloadError 做成 success=false 报告提交,被后端"env 必须齐全"校验
@@ -20,13 +20,16 @@ from unittest import mock
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from benchmark_worker import worker  # noqa: E402
+from benchmark_worker.backend_client import TaskInvalidatedError  # noqa: E402
 from benchmark_worker.state import StateStore  # noqa: E402
 from libero_eval.download import DownloadError  # noqa: E402
 
 TASK = {
     "task_id": "t1",
+    "benchmark": "libero",
     "hf_repo_id": "u/r",
     "hf_commit": "a" * 40,
+    "base_model": "pi0.5",
     "env_list": ["libero_spatial"],
 }
 
@@ -46,6 +49,11 @@ def _args(tmp: pathlib.Path, retries: int) -> types.SimpleNamespace:
 
 
 class TestDownloadWithRetry(unittest.TestCase):
+    def test_backup_artifacts_are_optional_but_required_files_remain_verified(self):
+        with mock.patch.object(worker, "download_model") as dl:
+            worker.download_with_retry("u/r", "a" * 40, pathlib.Path("/x"), _args(pathlib.Path("/x"), retries=1))
+        self.assertEqual(dl.call_args.kwargs["optional_patterns"], ["*.bak"])
+
     def test_transient_failure_retried_until_success(self):
         calls = []
 
@@ -55,13 +63,13 @@ class TestDownloadWithRetry(unittest.TestCase):
                 raise DownloadError("boom")
 
         with mock.patch.object(worker, "download_model", side_effect=flaky):
-            with mock.patch.object(worker.stop_event, "wait", return_value=False):
+            with mock.patch.object(worker, "_wait_for_event", return_value=False):
                 worker.download_with_retry("u/r", "a" * 40, pathlib.Path("/x"), _args(pathlib.Path("/x"), retries=4))
         self.assertEqual(len(calls), 3)
 
     def test_exhausted_retries_raise(self):
         with mock.patch.object(worker, "download_model", side_effect=DownloadError("boom")) as dl:
-            with mock.patch.object(worker.stop_event, "wait", return_value=False):
+            with mock.patch.object(worker, "_wait_for_event", return_value=False):
                 with self.assertRaises(DownloadError):
                     worker.download_with_retry(
                         "u/r", "a" * 40, pathlib.Path("/x"), _args(pathlib.Path("/x"), retries=2)
@@ -78,7 +86,7 @@ class TestDownloadWithRetry(unittest.TestCase):
 
     def test_shutdown_signal_interrupts_backoff(self):
         with mock.patch.object(worker, "download_model", side_effect=DownloadError("boom")):
-            with mock.patch.object(worker.stop_event, "wait", return_value=True):
+            with mock.patch.object(worker, "_wait_for_event", return_value=True):
                 with self.assertRaises(worker.EvalInterrupted):
                     worker.download_with_retry(
                         "u/r", "a" * 40, pathlib.Path("/x"), _args(pathlib.Path("/x"), retries=2)
@@ -104,6 +112,8 @@ class TestProcessTaskDownloadFailure(unittest.TestCase):
             def fail_after_partial_download(*_args, **_kwargs):
                 model_dir.mkdir(parents=True)
                 (model_dir / "partial.safetensors").write_text("partial")
+                (model_dir / ".hfd").mkdir()
+                (model_dir / ".hfd" / "console.log").write_text("download traceback")
                 raise DownloadError("all strategies failed")
 
             with mock.patch.object(worker, "download_model", side_effect=fail_after_partial_download):
@@ -117,7 +127,12 @@ class TestProcessTaskDownloadFailure(unittest.TestCase):
             self.assertIsNone(entry["next_submit_at"])
             self.assertIsNone(entry["out_dir"])
             self.assertFalse(model_dir.exists())
-            self.assertEqual(list((tmp / "runs").iterdir()), [])
+            failed_out = pathlib.Path(entry["last_failed_out_dir"])
+            self.assertEqual(entry["failed_out_dirs"], [str(failed_out)])
+            self.assertEqual((failed_out / "download.log").read_text(), "download traceback")
+            failure = json.loads((failed_out / "failure.json").read_text())
+            self.assertEqual(failure["task_id"], "t1")
+            self.assertIn("download failed", failure["reason"])
             client.submit_score.assert_not_called()
 
     def test_permanent_failure_also_clears_cache_and_requeues_without_report(self):
@@ -147,11 +162,12 @@ class TestProcessTaskDownloadFailure(unittest.TestCase):
             self.assertEqual(entry["status"], "pending")
             self.assertIn("download failed (permanent)", entry["note"])
             self.assertFalse(model_dir.exists())
-            self.assertEqual(list((tmp / "runs").iterdir()), [])
+            failed_out = pathlib.Path(entry["last_failed_out_dir"])
+            self.assertTrue((failed_out / "failure.json").is_file())
 
 
 class TestProcessTaskEvaluationFailure(unittest.TestCase):
-    def test_partial_custom_benchmark_cache_is_deleted_and_full_run_requeued(self):
+    def test_partial_custom_benchmark_artifacts_are_preserved_and_full_run_requeued(self):
         with tempfile.TemporaryDirectory() as tmp_str:
             tmp = pathlib.Path(tmp_str)
             args = _args(tmp, retries=1)
@@ -190,10 +206,14 @@ class TestProcessTaskEvaluationFailure(unittest.TestCase):
             self.assertFalse(entry["resume_evaluation"])
             self.assertIn("10/160", entry["note"])
             self.assertTrue(model_dir.exists(), "verified model download should be kept after an eval-only failure")
-            self.assertEqual(list((tmp / "runs").iterdir()), [])
+            failed_out = pathlib.Path(entry["last_failed_out_dir"])
+            self.assertEqual(entry["failed_out_dirs"], [str(failed_out)])
+            self.assertEqual(len(list((failed_out / "results").iterdir())), 10)
+            failure = json.loads((failed_out / "failure.json").read_text())
+            self.assertIn("10/160", failure["reason"])
             client.submit_score.assert_not_called()
 
-    def test_unexpected_evaluator_exception_also_deletes_partial_cache(self):
+    def test_unexpected_evaluator_exception_also_preserves_partial_artifacts(self):
         with tempfile.TemporaryDirectory() as tmp_str:
             tmp = pathlib.Path(tmp_str)
             args = _args(tmp, retries=1)
@@ -221,10 +241,12 @@ class TestProcessTaskEvaluationFailure(unittest.TestCase):
             entry = store.get("t1")
             self.assertEqual(entry["status"], "pending")
             self.assertIn("unexpected evaluating failure", entry["note"])
-            self.assertEqual(list((tmp / "runs").iterdir()), [])
+            failed_out = pathlib.Path(entry["last_failed_out_dir"])
+            self.assertTrue((failed_out / "results" / "task_00.json").is_file())
+            self.assertIn("evaluator crashed", (failed_out / "failure.json").read_text())
             client.submit_score.assert_not_called()
 
-    def test_old_pending_output_is_cleaned_before_new_attempt(self):
+    def test_old_pending_output_is_preserved_before_new_attempt(self):
         with tempfile.TemporaryDirectory() as tmp_str:
             tmp = pathlib.Path(tmp_str)
             args = _args(tmp, retries=1)
@@ -244,7 +266,7 @@ class TestProcessTaskEvaluationFailure(unittest.TestCase):
             client = mock.Mock()
 
             def reject_model(_task, _model_dir, out_dir, _args, **kwargs):
-                self.assertFalse(old_out.exists())
+                self.assertTrue(old_out.exists())
                 self.assertNotEqual(out_dir, old_out)
                 self.assertNotIn("resume", kwargs)
                 return None, "model rejected by pre-eval check"
@@ -262,7 +284,9 @@ class TestProcessTaskEvaluationFailure(unittest.TestCase):
                 stack.enter_context(mock.patch.object(worker, "try_submit", return_value=True))
                 worker.process_task(dict(TASK), client, store, args)
 
-            self.assertFalse(old_out.exists())
+            self.assertTrue(old_out.exists())
+            self.assertTrue((old_out / "completed_task.json").is_file())
+            self.assertIn(str(old_out), store.get("t1")["failed_out_dirs"])
 
 
 class TestCacheCleanupSafety(unittest.TestCase):
@@ -299,9 +323,12 @@ class TestCacheCleanupSafety(unittest.TestCase):
             self.assertEqual(entry["status"], "pending")
             self.assertIsNone(entry["payload"])
             self.assertIsNone(entry["out_dir"])
-            self.assertEqual(entry["cleanup_evaluation_dir"], str(old_out))
+            self.assertIsNone(entry["cleanup_evaluation_dir"])
+            self.assertEqual(entry["last_failed_out_dir"], str(old_out))
+            self.assertEqual(entry["failed_out_dirs"], [str(old_out)])
+            self.assertTrue(old_out.exists())
 
-    def test_dirty_cache_outside_configured_root_blocks_retry(self):
+    def test_legacy_output_outside_configured_root_is_not_deleted_or_written(self):
         with tempfile.TemporaryDirectory() as tmp_str:
             tmp = pathlib.Path(tmp_str)
             args = _args(tmp, retries=1)
@@ -315,18 +342,26 @@ class TestCacheCleanupSafety(unittest.TestCase):
                 task=TASK,
                 cleanup_evaluation_dir=str(outside),
             )
-            client = mock.Mock()
+            previous = store.get("t1")
+            self.assertTrue(worker._finish_pending_cleanup("t1", store, args, previous))
 
-            with mock.patch.object(worker, "run_evaluation") as run:
-                worker.process_task(dict(TASK), client, store, args)
-
-            run.assert_not_called()
             entry = store.get("t1")
             self.assertEqual(entry["status"], "pending")
-            self.assertEqual(entry["cleanup_evaluation_dir"], str(outside))
-            self.assertIn("retry is blocked until clean", entry["note"])
+            self.assertIsNone(entry["cleanup_evaluation_dir"])
+            self.assertEqual(entry["last_failed_out_dir"], str(outside))
+            self.assertIn("refusing to write failure metadata outside output root", entry["note"])
             self.assertTrue(outside.exists())
-            client.submit_score.assert_not_called()
+            self.assertFalse((outside / "failure.json").exists())
+
+    def test_output_directory_allocation_never_reuses_an_attempt(self):
+        with tempfile.TemporaryDirectory() as tmp_str:
+            root = pathlib.Path(tmp_str) / "runs"
+            with mock.patch.object(worker.time, "strftime", return_value="20260831_230000"):
+                first = worker._create_output_dir(root, "task/unsafe")
+                second = worker._create_output_dir(root, "task/unsafe")
+
+            self.assertEqual(first.name, "20260831_230000_task_unsafe")
+            self.assertEqual(second.name, "20260831_230000_task_unsafe_attempt2")
 
 
 class TestProgressEvents(unittest.TestCase):
@@ -437,6 +472,89 @@ class TestProgressEvents(unittest.TestCase):
 
         self.assertFalse(success)
 
+    def test_progress_invalidation_is_not_swallowed(self):
+        client = mock.Mock()
+        error = TaskInvalidatedError(
+            "conflict",
+            status=409,
+            code="SUPERSEDED",
+            detail="submission is superseded",
+        )
+        client.report_progress.side_effect = error
+
+        with self.assertRaises(TaskInvalidatedError) as ctx:
+            worker._report_progress(client, "task_1", "evaluating", {}, "host-a")
+
+        self.assertIs(ctx.exception, error)
+
+    def test_superseded_progress_stops_task_before_download(self):
+        with tempfile.TemporaryDirectory() as tmp_str:
+            tmp = pathlib.Path(tmp_str)
+            args = _args(tmp, retries=1)
+            args.benchmark = "libero_pro_custom_1"
+            args.worker_id = "validator-host-a"
+            store = StateStore(tmp / "state.json")
+            client = mock.Mock()
+            client.report_progress.side_effect = TaskInvalidatedError(
+                "conflict",
+                status=409,
+                code="SUPERSEDED",
+                detail="submission is superseded",
+                request_id="request-2",
+            )
+            worker._poll_wakeup_event.clear()
+            self.addCleanup(worker._poll_wakeup_event.clear)
+
+            with mock.patch.object(worker, "resolve_model") as resolve:
+                worker.process_task(dict(TASK), client, store, args)
+
+            resolve.assert_not_called()
+            client.submit_score.assert_not_called()
+            entry = store.get("t1")
+            self.assertEqual(entry["status"], "superseded")
+            self.assertIsNone(entry["payload"])
+            self.assertIn("request_id=request-2", entry["note"])
+            self.assertTrue(worker._poll_wakeup_event.is_set())
+
+    def test_invalidation_from_eval_progress_terminates_subprocess(self):
+        with tempfile.TemporaryDirectory() as tmp_str:
+            out_dir = pathlib.Path(tmp_str) / "run"
+            out_dir.mkdir()
+            args = types.SimpleNamespace(
+                benchmark="libero_pro",
+                eval_config=None,
+                num_trials=10,
+                gpus="0",
+                workers_per_gpu=1,
+                init_workers_per_gpu=1,
+                server_impl="upstream",
+                task_ids="",
+                eval_timeout=60,
+            )
+            error = TaskInvalidatedError(
+                "conflict",
+                status=409,
+                code="SUPERSEDED",
+                detail="submission is superseded",
+            )
+            proc = mock.Mock()
+            proc.poll.return_value = None
+
+            with ExitStack() as stack:
+                stack.enter_context(mock.patch.object(worker.subprocess, "Popen", return_value=proc))
+                stack.enter_context(mock.patch.object(worker, "_forward_progress_events", side_effect=error))
+                terminate = stack.enter_context(mock.patch.object(worker, "_terminate"))
+                with self.assertRaises(TaskInvalidatedError):
+                    worker.run_evaluation(
+                        TASK,
+                        pathlib.Path(tmp_str) / "model",
+                        out_dir,
+                        args,
+                        progress_callback=lambda _stage, _detail: None,
+                    )
+
+            terminate.assert_called_once_with(proc)
+
 
 class TestInfrastructureDetection(unittest.TestCase):
     def tearDown(self):
@@ -500,6 +618,36 @@ class TestInfrastructureDetection(unittest.TestCase):
                 with self.assertRaisesRegex(worker.EvalInfrastructureError, "refusing to publish a partial score"):
                     worker.run_evaluation(TASK, pathlib.Path(tmp_str) / "model", out_dir, args)
 
+    def test_missing_summary_error_includes_run_eval_log_tail(self):
+        with tempfile.TemporaryDirectory() as tmp_str:
+            out_dir = pathlib.Path(tmp_str) / "run"
+            out_dir.mkdir()
+            args = types.SimpleNamespace(
+                benchmark="libero_pro",
+                eval_config=None,
+                num_trials=10,
+                gpus="0",
+                workers_per_gpu=1,
+                init_workers_per_gpu=1,
+                server_impl="upstream",
+                task_ids="",
+                eval_timeout=60,
+            )
+            proc = mock.Mock(returncode=1)
+            proc.poll.return_value = 1
+
+            def failed_process(*_args, **kwargs):
+                kwargs["stdout"].write("server startup\nRuntimeError: deterministic self-test failed\n")
+                kwargs["stdout"].flush()
+                return proc
+
+            with mock.patch.object(worker.subprocess, "Popen", side_effect=failed_process):
+                with self.assertRaisesRegex(
+                    worker.EvalInfrastructureError,
+                    "RuntimeError: deterministic self-test failed",
+                ):
+                    worker.run_evaluation(TASK, pathlib.Path(tmp_str) / "model", out_dir, args)
+
 
 class TestEvaluationShutdownRace(unittest.TestCase):
     def tearDown(self):
@@ -530,14 +678,34 @@ class TestEvaluationShutdownRace(unittest.TestCase):
 class TestSignalHandling(unittest.TestCase):
     def tearDown(self):
         worker.stop_event.clear()
+        worker._shutdown_requested = False
 
     def test_handler_only_sets_stop_flag_without_reentrant_logging(self):
         worker.stop_event.clear()
         with mock.patch.object(worker.logger, "info", side_effect=RuntimeError("reentrant call")) as log:
             worker._handle_signal(worker.signal.SIGTERM, None)
 
-        self.assertTrue(worker.stop_event.is_set())
+        self.assertTrue(worker._stopping())
         log.assert_not_called()
+
+    def test_signal_handler_never_acquires_event_locks(self):
+        with worker.stop_event._cond, worker._poll_wakeup_event._cond:
+            worker._handle_signal(worker.signal.SIGTERM, None)
+            worker._handle_signal(worker.signal.SIGTERM, None)
+        self.assertTrue(worker._stopping())
+        self.assertFalse(worker._wait_for_event(worker._poll_wakeup_event, 60))
+
+    def test_no_download_after_shutdown_or_after_interrupted_hfd(self):
+        worker._handle_signal(worker.signal.SIGTERM, None)
+        with mock.patch.object(worker, "download_model") as download:
+            with self.assertRaises(worker.EvalInterrupted):
+                worker.download_with_retry("u/r", "a" * 40, pathlib.Path("/tmp/model"), _args(pathlib.Path("/tmp"), 4))
+        download.assert_not_called()
+        worker._shutdown_requested = False
+        with mock.patch.object(worker, "download_model", side_effect=worker.DownloadInterrupted("stopped")) as download:
+            with self.assertRaises(worker.EvalInterrupted):
+                worker.download_with_retry("u/r", "a" * 40, pathlib.Path("/tmp/model"), _args(pathlib.Path("/tmp"), 4))
+        download.assert_called_once()
 
 
 if __name__ == "__main__":

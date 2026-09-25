@@ -1,9 +1,10 @@
 """
 后端 Benchmark API 的最小 HTTP 客户端 | Minimal HTTP client for the backend benchmark API.
 
-只覆盖 worker 需要的四个接口(prototype backend 协议):
+只覆盖 worker 需要的接口(prototype backend 协议):
 
     GET  /api/v1/benchmark/queue          -> 待评测任务队列(public key)
+    GET  /api/v1/benchmark/rotation       -> 待准备的 AXIS 版本(worker key，可选)
     GET  /api/submission/{id}             -> 核对评分是否已经落库(public key)
     POST /api/v1/benchmark/task/{id}/score     -> 提交评测结果
     POST /api/benchmark-progress           -> 上报非终态评测进度
@@ -13,6 +14,7 @@
 仅用标准库(urllib),保持通信层零第三方依赖。
 """
 
+import http.client
 import json
 import urllib.error
 import urllib.request
@@ -31,6 +33,8 @@ _PROGRESS_STAGE_MAP = {
     "failed": "failed",
 }
 
+TASK_INVALIDATION_CODES = frozenset({"SUPERSEDED", "REJECTED"})
+
 
 class BackendError(Exception):
     """与后端通信失败(HTTP 或网络层)。
@@ -39,15 +43,30 @@ class BackendError(Exception):
     `permanent` 标记重试无意义的错误(4xx;但 401/403/429 除外)。
     """
 
-    def __init__(self, message: str, status: int | None = None):
+    def __init__(
+        self,
+        message: str,
+        status: int | None = None,
+        *,
+        code: str | None = None,
+        detail: str | None = None,
+        request_id: str | None = None,
+    ):
         super().__init__(message)
         self.status = status
+        self.code = code
+        self.detail = detail
+        self.request_id = request_id
 
     @property
     def permanent(self) -> bool:
         # 401/403 是本端 key 没配对(后端并没有否定结果本身),改对 key 重试
         # 即可成功;429 是限流。两者都不能作为丢弃已评测结果的依据。
         return self.status is not None and 400 <= self.status < 500 and self.status not in (401, 403, 429)
+
+
+class TaskInvalidatedError(BackendError):
+    """POST 告知当前提交已作废；调用方必须停止评测并重新拉取队列。"""
 
 
 class BackendClient:
@@ -59,6 +78,7 @@ class BackendClient:
         timeout_s: float = 30.0,
         submit_timeout_s: float = 300.0,
         queue_path: str = DEFAULT_QUEUE_PATH,
+        worker_api_key: str | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.public_api_key = public_api_key
@@ -68,6 +88,7 @@ class BackendClient:
         self.timeout_s = timeout_s
         self.submit_timeout_s = submit_timeout_s
         self.queue_path = "/" + queue_path.lstrip("/")
+        self.worker_api_key = worker_api_key
 
     def _request(
         self,
@@ -92,16 +113,50 @@ class BackendClient:
                 return json.loads(resp.read().decode() or "{}")
         except urllib.error.HTTPError as e:
             try:
-                detail = e.read().decode(errors="replace")[:500]
-            except OSError:
-                detail = ""
-            raise BackendError(f"{method} {path} -> HTTP {e.code}: {detail}", status=e.code) from e
+                full_response_text = e.read().decode(errors="replace")
+            except (OSError, http.client.HTTPException, UnicodeDecodeError):
+                full_response_text = ""
+            response_text = full_response_text[:500]
+            error_body = {}
+            try:
+                decoded = json.loads(full_response_text)
+                if isinstance(decoded, dict):
+                    error_body = decoded
+            except json.JSONDecodeError:
+                pass
+            code = error_body.get("code") if isinstance(error_body.get("code"), str) else None
+            detail = error_body.get("detail") if isinstance(error_body.get("detail"), str) else None
+            request_id = error_body.get("request_id") if isinstance(error_body.get("request_id"), str) else None
+            error_type = (
+                TaskInvalidatedError
+                if method == "POST" and e.code == 409 and code in TASK_INVALIDATION_CODES
+                else BackendError
+            )
+            raise error_type(
+                f"{method} {path} -> HTTP {e.code}: {response_text}",
+                status=e.code,
+                code=code,
+                detail=detail,
+                request_id=request_id,
+            ) from e
         except urllib.error.URLError as e:
             raise BackendError(f"{method} {path} -> {e.reason}") from e
+        except http.client.HTTPException as e:
+            # urllib lets response framing errors escape directly from
+            # http.client. In particular, IncompleteRead means the peer
+            # advertised a longer body than it delivered. This is a
+            # transient transport failure, not a reason to terminate the
+            # long-running worker.
+            raise BackendError(f"{method} {path} -> incomplete or invalid HTTP response: {e}") from e
         except OSError as e:
             # Python 3.14 的 socket read timeout 会从 urllib 直接冒成
             # TimeoutError(OSError),而不是包装成 URLError。
             raise BackendError(f"{method} {path} -> {e}") from e
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            # A complete HTTP response can still be truncated/corrupted at
+            # the payload layer. Keep all response decoding failures inside
+            # the same retryable BackendError boundary as network failures.
+            raise BackendError(f"{method} {path} -> invalid JSON response: {e}") from e
 
     def fetch_queue(self) -> list[dict]:
         """拉取后端待评测任务列表(可能包含本地已处理过的任务,由调用方去重)。
@@ -110,11 +165,26 @@ class BackendClient:
         这里解开只返回任务列表。
         """
         data = self._request("GET", self.queue_path, api_key=self.public_api_key)
-        return data.get("tasks", []) if isinstance(data, dict) else data
+        tasks = data.get("tasks", []) if isinstance(data, dict) else data
+        if not isinstance(tasks, list) or any(not isinstance(task, dict) for task in tasks):
+            raise BackendError(f"GET {self.queue_path} -> invalid queue response: expected a list of task objects")
+        return tasks
 
     def fetch_submission(self, task_id: str) -> dict:
         """读取任务详情,用于确认超时/5xx 的评分 POST 是否实际已经落库。"""
         return self._request("GET", f"/api/submission/{task_id}", api_key=self.public_api_key)
+
+    def fetch_rotation(self) -> dict | None:
+        """Read the pending rotation without claiming a queue submission."""
+        if not self.worker_api_key:
+            raise BackendError("AXIS rotation requires --worker-key or WORKER_KEY")
+        response = self._request("GET", "/api/v1/benchmark/rotation", api_key=self.worker_api_key)
+        if not isinstance(response, dict) or "data" not in response:
+            raise BackendError("invalid rotation response: expected an object with data")
+        rotation = response["data"]
+        if rotation is not None and not isinstance(rotation, dict):
+            raise BackendError("invalid rotation response: data must be an object or null")
+        return rotation
 
     def submit_score(self, task_id: str, payload: dict) -> dict:
         # 后端同步落库耗时可能明显长于普通 GET,单独留出充足超时。

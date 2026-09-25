@@ -91,6 +91,11 @@ class TestBuildHfdCmd(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--revision") + 1], "abc123")
         self.assertIn("--dataset", cmd)
 
+    def test_optional_artifacts_are_excluded_from_hfd_manifest(self):
+        cmd, _ = self._build(ignore_patterns=["*.bak", "notes/**"])
+        exclude = cmd.index("--exclude")
+        self.assertEqual(cmd[exclude + 1 :], ["*.bak", "notes/**"])
+
     def test_token_never_in_argv(self):
         with mock.patch.dict(os.environ, {"HF_TOKEN": "hf_secret"}):
             cmd, _ = self._build(send_token=True)
@@ -220,6 +225,13 @@ class TestRunHfdResume(unittest.TestCase):
             self._call(script)
         self.assertEqual(self._runs(), 1)
 
+    def test_signal_termination_does_not_resume(self):
+        for body in ("kill -TERM $$\n", "exit 130\n"):
+            with self.subTest(body=body):
+                script = self._script(body)
+                with self.assertRaises(download.DownloadInterrupted):
+                    self._call(script)
+
     def test_retry_cap_exhausted(self):
         script = self._script(
             f"head -c 100 /dev/zero >> {self.local_dir}/payload.bin\n"
@@ -324,7 +336,7 @@ class TestDownloadModelChain(unittest.TestCase):
         self.dir = pathlib.Path("/tmp/x")
 
     def _patch(self, hfd=None, snapshot=None, verify=None):
-        def fake_hfd(repo_id, revision, local_dir, endpoint, repo_type, log):
+        def fake_hfd(repo_id, revision, local_dir, endpoint, repo_type, log, **kwargs):
             self.calls.append(("hfd", endpoint))
             if hfd:
                 hfd(endpoint)
@@ -360,6 +372,21 @@ class TestDownloadModelChain(unittest.TestCase):
             self.calls,
             [("hfd", download._mirror_endpoint()), ("verify", download._mirror_endpoint())],
         )
+
+    def test_interrupted_hfd_never_verifies_or_falls_back(self):
+        def interrupted(_endpoint):
+            raise download.DownloadInterrupted("stopped")
+
+        with self._patch(hfd=interrupted):
+            with self.assertRaises(download.DownloadInterrupted):
+                download_model(
+                    "u/r",
+                    self.dir,
+                    strategies=["hfd-mirror", "hub-mirror"],
+                    optional_patterns=["*.bak"],
+                    log=lambda *_: None,
+                )
+        self.assertEqual(self.calls, [("hfd", download._mirror_endpoint())])
 
     def test_fallback_in_order(self):
         mirror = download._mirror_endpoint()
@@ -538,6 +565,86 @@ class TestDownloadModelChain(unittest.TestCase):
                 log=lambda *_: None,
             )
         self.assertEqual(seen, [(None, ["train_state/**"])])
+
+    def test_optional_pattern_keeps_hfd_and_accepts_hash_verified_required_snapshot(self):
+        run_hfd = mock.Mock(side_effect=RuntimeError("optional file returned 403"))
+        verify = mock.Mock()
+        with mock.patch.multiple(
+            download,
+            _run_hfd=run_hfd,
+            _verify_local_snapshot=verify,
+            _preflight_repo_check=mock.Mock(),
+        ):
+            result = download_model(
+                "u/r",
+                self.dir,
+                revision="a" * 40,
+                strategies=["hfd-mirror"],
+                optional_patterns=["*.bak"],
+                log=lambda *_: None,
+            )
+        self.assertEqual(result, self.dir.resolve())
+        self.assertEqual(run_hfd.call_args.kwargs["ignore_patterns"], ["*.bak"])
+        self.assertEqual(verify.call_args.kwargs["ignore_patterns"], ["*.bak"])
+
+    def test_optional_pattern_hfd_success_is_hash_verified_with_same_exclusion(self):
+        run_hfd = mock.Mock()
+        verify = mock.Mock()
+        with mock.patch.multiple(
+            download,
+            _run_hfd=run_hfd,
+            _verify_local_snapshot=verify,
+            _preflight_repo_check=mock.Mock(),
+        ):
+            result = download_model(
+                "u/r",
+                self.dir,
+                revision="a" * 40,
+                strategies=["hfd-mirror"],
+                optional_patterns=["*.bak"],
+                log=lambda *_: None,
+            )
+        self.assertEqual(result, self.dir.resolve())
+        self.assertEqual(run_hfd.call_args.kwargs["ignore_patterns"], ["*.bak"])
+        self.assertEqual(verify.call_args.kwargs["ignore_patterns"], ["*.bak"])
+
+    def test_optional_pattern_does_not_accept_an_incomplete_required_snapshot(self):
+        with mock.patch.multiple(
+            download,
+            _run_hfd=mock.Mock(side_effect=RuntimeError("optional file returned 403")),
+            _verify_local_snapshot=mock.Mock(side_effect=SnapshotIntegrityError("missing weights")),
+            _preflight_repo_check=mock.Mock(),
+        ):
+            with self.assertRaises(DownloadError) as ctx:
+                download_model(
+                    "u/r",
+                    self.dir,
+                    revision="a" * 40,
+                    strategies=["hfd-mirror"],
+                    optional_patterns=["*.bak"],
+                    log=lambda *_: None,
+                )
+        self.assertIn("optional file returned 403", str(ctx.exception))
+
+    def test_optional_pattern_is_excluded_by_hub_strategy(self):
+        snapshot = mock.Mock()
+        verify = mock.Mock()
+        with mock.patch.multiple(
+            download,
+            _snapshot=snapshot,
+            _verify_local_snapshot=verify,
+            _preflight_repo_check=mock.Mock(),
+        ):
+            download_model(
+                "u/r",
+                self.dir,
+                revision="a" * 40,
+                strategies=["hub-mirror"],
+                optional_patterns=["*.bak"],
+                log=lambda *_: None,
+            )
+        self.assertEqual(snapshot.call_args.kwargs["ignore_patterns"], ["*.bak"])
+        self.assertEqual(verify.call_args.kwargs["ignore_patterns"], ["*.bak"])
 
 
 class TestSnapshotIntegrityContext(unittest.TestCase):

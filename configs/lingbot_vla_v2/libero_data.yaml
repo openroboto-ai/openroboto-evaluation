@@ -1,0 +1,10 @@
+joints:
+  - end.position: 14
+  - effector.position: 2
+cameras:
+  - camera_top
+  - camera_wrist
+norm_type:
+  - end.position: bounds_99_woclip
+  - effector.position: bounds_99_woclip
+img_size: 256

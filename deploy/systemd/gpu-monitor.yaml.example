@@ -1,0 +1,11 @@
+smtp:
+  host: ""
+  port: 587
+  security: starttls
+  sender: ""
+  username: ""
+  password_env: GPU_ALERT_SMTP_PASSWORD
+
+subscribers:
+  - email: ops@example.com
+    enabled: false

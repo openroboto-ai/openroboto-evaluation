@@ -73,9 +73,7 @@ class TestRunEvalResolveModel(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
             (root / "model.safetensors.index.json").write_text("{}")
-            # macOS exposes temporary directories through /var while
-            # Path.resolve() canonicalizes the same path under /private/var.
-            self.assertEqual(run_eval.resolve_model(str(root), root / "downloads"), root.resolve())
+            self.assertEqual(run_eval.resolve_model(str(root), root / "downloads"), root)
 
     def test_gpu_locks_reject_overlapping_processes(self):
         with tempfile.TemporaryDirectory() as td:
@@ -85,7 +83,7 @@ class TestRunEvalResolveModel(unittest.TestCase):
                 script = f"""
 import os, sys
 os.environ['LIBERO_EVAL_GPU_LOCK_DIR'] = {td!r}
-sys.path.insert(0, {str(_ROOT / 'libero_eval')!r})
+sys.path.insert(0, {str(_ROOT / "libero_eval")!r})
 import run_eval
 try:
     run_eval.acquire_gpu_locks([3])
@@ -133,6 +131,34 @@ raise SystemExit(1)
             (pathlib.Path(td) / "params").mkdir()
             ckpt = run_eval.resolve_model(td, DL, commit_id="local")
         self.assertEqual(ckpt, pathlib.Path(td).resolve())
+
+    def test_dataset_subdir_download_is_selective(self):
+        seen = {}
+
+        def fake_download(repo_id, local_dir, **kwargs):
+            seen.update(kwargs)
+            root = pathlib.Path(local_dir) / "ckpt" / "Pi_05" / "seed0" / "59999"
+            (root / "params").mkdir(parents=True)
+            return local_dir
+
+        with tempfile.TemporaryDirectory() as td:
+            with mock.patch.object(run_eval, "download_model", fake_download):
+                ckpt = run_eval.resolve_model(
+                    "RoboDojo-Benchmark/RoboDojo",
+                    pathlib.Path(td),
+                    commit_id=SHA,
+                    repo_type="dataset",
+                    subdir="ckpt/Pi_05/seed0",
+                    ignore_patterns=["ckpt/Pi_05/seed0/train_state/**"],
+                )
+        self.assertEqual(ckpt.name, "59999")
+        self.assertEqual(seen["repo_type"], "dataset")
+        self.assertEqual(seen["allow_patterns"], ["ckpt/Pi_05/seed0/**"])
+        self.assertEqual(seen["ignore_patterns"], ["ckpt/Pi_05/seed0/train_state/**"])
+
+    def test_model_subdir_rejects_parent_traversal(self):
+        with self.assertRaisesRegex(ValueError, "relative path"):
+            run_eval.resolve_model("u/r", DL, commit_id=SHA, subdir="../secret")
 
 
 if __name__ == "__main__":

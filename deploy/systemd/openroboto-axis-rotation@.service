@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenRoboto AXIS rotation worker (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/openroboto/axis-rotation-%i.env
+WorkingDirectory=%h
+UMask=0077
+ExecStart=/usr/bin/env ${VALIDATOR_ROOT}/.venv/bin/python ${VALIDATOR_ROOT}/benchmark_worker/worker.py --backend-url ${BACKEND_URL} --num-trials 20 --download-strategies ${DOWNLOAD_STRATEGIES} --gpus ${AXIS_GPUS} --workers-per-gpu 1 --server-impl upstream --axis-selector-root ${AXIS_SELECTOR_ROOT} --axis-runtime-pool ${AXIS_RUNTIME_POOL} --axis-benchmark-dir ${AXIS_BENCHMARK_DIR} --state-file ${AXIS_STATE_FILE} --output-root ${AXIS_OUTPUT_ROOT} --download-dir ${MODEL_DOWNLOAD_DIR}
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=90
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+LimitNOFILE=65536
+
+[Install]
+WantedBy=default.target

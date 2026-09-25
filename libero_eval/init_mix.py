@@ -6,10 +6,10 @@ Pure stdlib and Python-3.8-safe: imported by eval_task.py / gen_init_states.py
 split and the per-task seed formula each have a single definition.
 
 derive_task_seed is the published "translate" function: given a queue entry's
-seed (uint32, itself derived from block_hash + round_num + drand — see the
-prototype repo's docs/SEED_GENERATION.md and protocol/seed.py), any miner can
-recompute the exact per-task seeds the validator used. Keep it bitwise-stable;
-tests/test_init_seed.py pins the shared test vectors.
+seed (an opaque uint32 produced by the backend), any miner can recompute the
+exact per-task seeds the validator used. Keep it bitwise-stable; the prototype
+repo ships an identical copy (scripts/verify_init_seed.py) checked against
+shared test vectors on both sides.
 """
 
 import zlib

@@ -8,7 +8,7 @@ Map a validator run_eval.py summary.json onto the backend score payload.
 
 import json
 
-from benchmark_worker.profiles import ScoreTarget, get_profile
+from benchmark_worker.profiles import ScoreTarget, get_profile, is_axis_benchmark
 
 # 原版 LIBERO 自带的 suite;其余名字(如 libero_spatial_lan 等扰动 suite)
 # 一律走 libero_pro benchmark。
@@ -37,6 +37,15 @@ _CUSTOM_1_GROUPS = (
 )
 _CUSTOM_1_EXTRA_SUITES = ("libero_object_swap", "libero_spatial_swap")
 _CUSTOM_1_DIMENSIONS = ("object", "swap", "lan", "task")
+
+
+def score_task_id(suite: str, task_id: int) -> str:
+    """AXIS uses its upstream decimal ID, independent of benchmark version."""
+    if is_axis_benchmark(suite):
+        if type(task_id) is not int or task_id < 1:
+            raise ValueError(f"AXIS task_id must be a positive integer, got {task_id!r}")
+        return str(task_id)
+    return f"{suite}_{int(task_id):02d}"
 
 
 def env_suites(env: str) -> tuple[str, ...]:
@@ -205,6 +214,10 @@ def successful_payload_incomplete_reason(payload: dict) -> str:
             return f"task {entry['task_id']} completed {trials}/{expected_trials} required trials"
     if len(set(task_ids)) != len(task_ids):
         return "per_task_scores contains duplicate task ids"
+    if profile.expected_task_ids is not None:
+        expected_ids = {score_task_id(profile.name, task_id) for task_id in profile.expected_task_ids}
+        if set(task_ids) != expected_ids:
+            return "task ids do not match the frozen benchmark manifest"
 
     env_scores = payload.get("env_scores")
     if not isinstance(env_scores, list) or not env_scores:
@@ -235,10 +248,8 @@ def build_score_payload(
     duration_sec: 处理该任务的端到端墙钟时间(下载 + 评测)。
     error:        顶层错误说明(一切正常时为空串)。
     init_seed:    init states 随机化种子(None = 未启用),即该队列条目自带的
-                  seed(由 block_hash + round_num + drand 派生,见 prototype 仓库
-                  docs/SEED_GENERATION.md)。随 payload 回传作确认:miner 可独立
-                  验证 seed 本身,再用 gen_init_states.py --seed 逐 task 复现
-                  评测所用的初始状态。
+                  seed。随 payload 回传作确认:miner 可独立验证 seed 本身,再用
+                  gen_init_states.py --seed 逐 task 复现评测所用的初始状态。
 
     `success` 的语义是「完整执行了 benchmark 协议」。行为成功率为零仍是
     有效分数；但缺 task、缺 trial 或评测器错误只能留在本地重试，绝不能
@@ -252,7 +263,6 @@ def build_score_payload(
         "miner_hotkey": task.get("miner_hotkey") or task.get("hotkey", ""),
         "hf_repo_id": task.get("hf_repo_id", ""),
         "hf_commit": task.get("hf_commit", ""),
-        "round_num": task.get("round_num", 0),
         "init_seed": init_seed,
         "expected_trials_per_task": None,
         "env_scores": [],
@@ -261,6 +271,9 @@ def build_score_payload(
         "error": error,
         "per_task_scores": [],
     }
+    protocol_revision = task.get("protocol_revision")
+    if protocol_revision is not None:
+        payload["protocol_revision"] = protocol_revision
     if summary is None:
         return payload
 
@@ -271,11 +284,24 @@ def build_score_payload(
     suite_secs: dict[str, float] = {}
     per_task = []
     for r in summary.get("tasks", {}).values():
-        suite = r["task_suite_name"]
-        suite_secs[suite] = suite_secs.get(suite, 0.0) + float(r.get("duration_s") or 0.0)
+        suite = r.get("task_suite_name") or r.get("benchmark")
+        if not isinstance(suite, str):
+            raise ValueError(f"task result has no benchmark/suite identity: {r!r}")
+        task_duration = float(r.get("duration_s") or 0.0)
+        if is_axis_benchmark(suite) and not task_duration:
+            task_duration = (
+                float(r.get("prepare_s") or 0.0)
+                + float(r.get("compile_s") or 0.0)
+                + sum(
+                    float(episode.get("duration_s") or 0.0)
+                    for episode in r.get("episodes", [])
+                    if isinstance(episode, dict)
+                )
+            )
+        suite_secs[suite] = suite_secs.get(suite, 0.0) + task_duration
         if r.get("status") == "ok":
             per_task.append({
-                "task_id": f"{suite}_{r['task_id']:02d}",
+                "task_id": score_task_id(suite, r["task_id"]),
                 "success_rate": r["success_rate"],
                 "trials": r["num_trials"],
             })
@@ -327,12 +353,15 @@ def build_score_payload(
 
 
 def prepare_submit_payload(payload: dict) -> dict:
-    """构造实际提交体,省略只在本地结果中保留的 task 级明细。
+    """构造实际提交体；Axis 保留逐题明细，其他 profile 沿用精简提交。
 
     后端会逐条同步写入 ``per_task_scores``。完整 LIBERO-100 有 130 条,
     经 Cloudflare 访问时写库会超过代理超时并稳定返回 524。该字段在 API
-    中是可选的;四环境汇总才是评分所需数据,完整 task 明细仍保存在
-    ``score_payload.json`` 和本地 state 账本中。
+    中是可选的。Axis 对接要求逐题分数，因此保留原始 AXIS ID 的明细；
+    其他 profile 的完整 task 明细仍保存在 ``score_payload.json`` 和本地 state 账本中。
+
+    ``round_num`` 已从后端协议移除。这里仍主动剥掉该字段,使升级前保存在
+    worker state 中的待补交 payload 也能提交给新后端。
     """
     custom_scores = payload.get("env_scores")
     collapsed_scores = (
@@ -341,10 +370,13 @@ def prepare_submit_payload(payload: dict) -> dict:
         else custom_scores
     )
     needs_custom_collapse = collapsed_scores is not custom_scores
-    if not payload.get("per_task_scores") and not needs_custom_collapse:
+    has_legacy_round = "round_num" in payload
+    omit_task_details = bool(payload.get("per_task_scores")) and not is_axis_benchmark(payload.get("benchmark"))
+    if not omit_task_details and not needs_custom_collapse and not has_legacy_round:
         return payload
     slim = dict(payload)
-    if payload.get("per_task_scores"):
+    slim.pop("round_num", None)
+    if omit_task_details:
         slim["per_task_scores"] = []
     if needs_custom_collapse:
         slim["env_scores"] = collapsed_scores

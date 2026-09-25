@@ -142,7 +142,7 @@ async def _serve(infer, host: str, port: int) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=pathlib.Path, required=True)
-    parser.add_argument("--host", default="localhost")
+    parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()

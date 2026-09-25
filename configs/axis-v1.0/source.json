@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/AxisAIOrg/AxisDataCleaning",
+  "revision": "a5a2efa2baff8b91818871fd9418e8d1925511d6",
+  "path": "tasks_config.json",
+  "source_url": "https://raw.githubusercontent.com/AxisAIOrg/AxisDataCleaning/a5a2efa2baff8b91818871fd9418e8d1925511d6/tasks_config.json",
+  "sha256": "d1eaceb587e1c0b0f5b4c20147bd8b3eb5e97b6d8ae45d49703cd08830d0a775",
+  "task_count": 30,
+  "source_kind": "official-repository-legacy-task-export",
+  "note": "Historical task definitions, distinct from the 1006-task public browser catalog snapshot. Runtime compatibility and task validity require verification."
+}

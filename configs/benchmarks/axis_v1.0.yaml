@@ -1,0 +1,100 @@
+# AXIS V1.0: 30 tasks. Edit tasks here; IDs distinguish tasks with the same name.
+# Frozen scenes, checkers and protocol come from source_manifest (20 trials/task, 120 steps, replan 10).
+# Published versions are immutable. Add a new version; workers discover complete new bundles without restarting.
+schema_version: 1
+name: axis_v1.0
+source_manifest: axis_v1.0.json
+source_manifest_sha256: 42ee689981290ac3a6c21ca64e02174faedfe8ecd0e2cc4aa5c3efc3d5a8c9e3
+protocol_revision: axis_v1.0_30tasks_native_joint_osmesa_v1
+policy_seed: 20260907
+tasks:
+- task_id: 22
+  name_zh: 抓起易拉罐
+  instruction: Grab Can
+- task_id: 31
+  name_zh: 打开柜子下层抽屉
+  instruction: Open Cabinet Bottom Drawer
+- task_id: 33
+  name_zh: 把黑碗放到柜顶
+  instruction: Place Black Bowl on Top of Cabinet
+- task_id: 34
+  name_zh: 打开抽屉并把黑碗放进去
+  instruction: Open Drawer and Place Black Bowl Inside
+- task_id: 35
+  name_zh: 关闭柜子上层抽屉
+  instruction: Close Cabinet Top Drawer
+- task_id: 37
+  name_zh: 把黑碗放进柜子上层抽屉
+  instruction: Place Black Bowl in Cabinet Top Drawer
+- task_id: 40
+  name_zh: 把黑碗放到盘子上
+  instruction: Place Black Bowl on Plate
+- task_id: 41
+  name_zh: 把黑碗放到柜顶
+  instruction: Place Black Bowl on Top of Cabinet
+- task_id: 42
+  name_zh: 把煎锅放到炉灶上
+  instruction: Place Frying Pan on Stove
+- task_id: 43
+  name_zh: 把摩卡壶放到炉灶上
+  instruction: Place Moka Pot on Stove
+- task_id: 44
+  name_zh: 打开炉灶
+  instruction: Turn On Stove
+- task_id: 46
+  name_zh: 关闭柜子下层抽屉
+  instruction: Close Cabinet Bottom Drawer
+- task_id: 48
+  name_zh: 把黑碗放进柜子下层抽屉
+  instruction: Place Black Bowl in Cabinet Bottom Drawer
+- task_id: 49
+  name_zh: 把酒瓶放进柜子下层抽屉
+  instruction: Place Wine Bottle in Cabinet Bottom Drawer
+- task_id: 50
+  name_zh: 把酒瓶放到酒架上
+  instruction: Place Wine Bottle on Wine Rack
+- task_id: 51
+  name_zh: 关闭柜子上层抽屉
+  instruction: Close Cabinet Top Drawer
+- task_id: 52
+  name_zh: 把黑碗放进柜子上层抽屉
+  instruction: Place Black Bowl in Cabinet Top Drawer
+- task_id: 53
+  name_zh: 把黑碗放到盘子上
+  instruction: Place Black Bowl on Plate
+- task_id: 54
+  name_zh: 把黑碗放到柜顶
+  instruction: Place Black Bowl on Top of Cabinet
+- task_id: 55
+  name_zh: 把番茄酱放进柜子上层抽屉
+  instruction: Place Ketchup in Cabinet Top Drawer
+- task_id: 56
+  name_zh: 把右侧摩卡壶放到炉灶上
+  instruction: Place Right Moka Pot on Stove
+- task_id: 57
+  name_zh: 关闭炉灶
+  instruction: Turn Off Stove
+- task_id: 501
+  name_zh: 把刷子放进篮子
+  instruction: Put the Brush in the Basket
+- task_id: 502
+  name_zh: 把杯子放进篮子
+  instruction: Put the Cup in the Basket
+- task_id: 503
+  name_zh: 把杯子放到纸巾盒顶部
+  instruction: Put the Cup on the Top of the Tissue Box
+- task_id: 504
+  name_zh: 把刷子放到纸巾盒顶部
+  instruction: Put the Brush on the Top of the Tissue Box
+- task_id: 505
+  name_zh: 把刷子放到篮子旁边
+  instruction: Put the Brush beside the Basket
+- task_id: 506
+  name_zh: 把杯子放到纸巾盒旁边
+  instruction: Put the Cup beside the Tissue Box
+- task_id: 514
+  name_zh: 把网球放到盘子上
+  instruction: Put the Tennis Ball on the Plate
+- task_id: 757
+  name_zh: 旋转手机 2
+  instruction: Rotate the Phone 2

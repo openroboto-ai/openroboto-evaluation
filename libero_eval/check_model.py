@@ -32,7 +32,7 @@ import struct
 import sys
 import typing
 
-MODEL_FAMILIES = ("openpi", "openvla_oft")
+MODEL_FAMILIES = ("openpi", "openvla_oft", "lingbot_vla_v2")
 
 
 # ----------------------------------------------------------------------------
@@ -65,10 +65,41 @@ def _libero_spec(*, pi05: bool, action_horizon: int, use_quantile_norm: bool) ->
     )
 
 
+def _robodojo_spec(*, pi05: bool, action_horizon: int, use_quantile_norm: bool) -> ConfigSpec:
+    """RoboDojo's dual-arm ARX-X5 joint policy contract."""
+    return ConfigSpec(
+        pi05=pi05,
+        action_horizon=action_horizon,
+        use_quantile_norm=use_quantile_norm,
+        action_dim=32,
+        expert_width=1024,
+        asset_id="arx_x5_sim",
+        state_dim=14,
+        norm_dims={"state": 14, "actions": 14},
+    )
+
+
+def _axis_spec() -> ConfigSpec:
+    """AXIS v0.1's native Franka joint-position policy contract."""
+    return ConfigSpec(
+        pi05=True,
+        action_horizon=10,
+        use_quantile_norm=True,
+        action_dim=32,
+        expert_width=1024,
+        asset_id="axis-v0.1-task501-runtime-v1",
+        state_dim=9,
+        norm_dims={"state": 9, "actions": 9},
+    )
+
+
 CONFIG_SPECS = {
     "pi05_libero": _libero_spec(pi05=True, action_horizon=10, use_quantile_norm=True),
     "pi0_libero": _libero_spec(pi05=False, action_horizon=50, use_quantile_norm=False),
     "pi0_libero_low_mem_finetune": _libero_spec(pi05=False, action_horizon=50, use_quantile_norm=False),
+    "pi05_robodojo": _robodojo_spec(pi05=True, action_horizon=50, use_quantile_norm=True),
+    "pi0_robodojo": _robodojo_spec(pi05=False, action_horizon=50, use_quantile_norm=False),
+    "pi05_axis_joint": _axis_spec(),
 }
 
 ARCHITECTURE_CONFIGS = {
@@ -142,12 +173,188 @@ def detect_model_family(ckpt_dir: pathlib.Path | str) -> str:
         and (root / "model.safetensors.index.json").is_file()
     ):
         return "openvla_oft"
+    if (
+        isinstance(config, dict)
+        and config.get("vlm_family") == "qwen3_vl"
+        and (root / "model.safetensors.index.json").is_file()
+    ):
+        return "lingbot_vla_v2"
     if (root / "model.safetensors").is_file() or (root / "params").is_dir():
         return "openpi"
     raise ValueError(
         "unsupported checkpoint format: expected an openpi model (model.safetensors or params/) "
-        "or OpenVLA-OFT model (model_type=openvla plus model.safetensors.index.json)"
+        "an OpenVLA-OFT model (model_type=openvla plus model.safetensors.index.json), "
+        "or LingBot-VLA 2.0 (vlm_family=qwen3_vl plus model.safetensors.index.json)"
     )
+
+
+_LINGBOT_REQUIRED_WEIGHT_KEYS = {
+    "model.action_in_proj.weight",
+    "model.action_out_proj.weight",
+    "model.action_time_mlp_in.weight",
+    "model.action_time_mlp_out.weight",
+    "model.state_proj.weight",
+    "model.qwenvl_with_expert.qwen_expert.model.layers.0.self_attn.q_proj.weight",
+    "model.qwenvl_with_expert.qwen_expert.model.layers.35.self_attn.q_proj.weight",
+    "model.qwenvl_with_expert.qwenvl.model.visual.patch_embed.proj.weight",
+}
+_LINGBOT_TOTAL_SIZE_RANGE = (20_000_000_000, 35_000_000_000)
+
+
+def _find_lingbot_training_config(root: pathlib.Path) -> pathlib.Path | None:
+    """Find optional training metadata in native and relocatable packages."""
+    release_candidates = (
+        root / "training" / "lingbotvla_cli.yaml",
+        root / "training" / "libero_full.yaml",
+        root / "training" / "libero_full_source.yaml",
+    )
+    for candidate in release_candidates:
+        if candidate.is_file():
+            return candidate
+    current = root
+    for _ in range(4):
+        candidate = current / "lingbotvla_cli.yaml"
+        if candidate.is_file():
+            return candidate
+        if current.parent == current:
+            break
+        current = current.parent
+    return None
+
+
+def check_lingbot_vla_v2_model(ckpt_dir: pathlib.Path | str) -> CheckResult:
+    """Validate a LingBot-VLA 2.0 sharded Hugging Face checkpoint package.
+
+    The check intentionally pins architecture-defining fields while allowing
+    task weights, shard boundaries, robot mapping and dataset paths to differ.
+    Robot mapping and normalization are benchmark protocol inputs and are
+    validated separately by the selected evaluator.
+    """
+    root = pathlib.Path(ckpt_dir)
+    res = CheckResult(str(root), "lingbot-vla-v2", checkpoint_type="pytorch_sharded")
+    if not root.is_dir():
+        res.errors.append(f"checkpoint path is not a directory: {root}")
+        return res
+
+    config = _load_json(root / "config.json", res, "LingBot-VLA config")
+    if config is not None:
+        expected_fields = {
+            "model_type": "lingbotvla",
+            "vlm_family": "qwen3_vl",
+            "action_dim": 55,
+            "max_action_dim": 55,
+            "max_state_dim": 55,
+            "chunk_size": 50,
+            "expert_hidden_size": 768,
+            "token_num_experts": 32,
+            "token_top_k": 4,
+        }
+        for field, expected in expected_fields.items():
+            actual = config.get(field)
+            if actual != expected:
+                res.errors.append(f"config.json {field} must be {expected!r} for LingBot-VLA 2.0, got {actual!r}")
+        architectures = config.get("architectures")
+        if not isinstance(architectures, list) or "LingbotVlaV2Policy" not in architectures:
+            res.errors.append("config.json architectures must include 'LingbotVlaV2Policy'")
+        tokenizer_path = config.get("tokenizer_path")
+        if (
+            not isinstance(tokenizer_path, str)
+            or "qwen3" not in tokenizer_path.lower()
+            or "vl" not in tokenizer_path.lower()
+        ):
+            res.errors.append("config.json tokenizer_path must identify a Qwen3-VL backbone")
+        if config.get("token_moe_layers") != list(range(36)):
+            res.errors.append("config.json token_moe_layers must contain exactly layers 0..35")
+
+    index = _load_json(root / "model.safetensors.index.json", res, "sharded safetensors index")
+    if index is not None:
+        weight_map = index.get("weight_map")
+        if not isinstance(weight_map, dict) or not weight_map:
+            res.errors.append("model.safetensors.index.json must contain a non-empty weight_map")
+        else:
+            missing_keys = sorted(_LINGBOT_REQUIRED_WEIGHT_KEYS - set(weight_map))
+            if missing_keys:
+                res.errors.append(f"LingBot-VLA 2.0 architecture tensors are missing: {missing_keys}")
+            shard_names = sorted(set(weight_map.values()))
+            if not all(isinstance(name, str) and name.endswith(".safetensors") for name in shard_names):
+                res.errors.append("model.safetensors.index.json weight_map contains invalid shard names")
+            else:
+                shard_bytes = 0
+                for name in shard_names:
+                    path = root / name
+                    if not path.is_file():
+                        res.errors.append(f"missing weight shard referenced by index: {name}")
+                    elif _is_lfs_pointer(path):
+                        res.errors.append(f"weight shard {name} is a git-lfs pointer, not the real weights")
+                    else:
+                        shard_bytes += path.stat().st_size
+                metadata = index.get("metadata")
+                total_size = metadata.get("total_size") if isinstance(metadata, dict) else None
+                if not isinstance(total_size, int) or total_size <= 0:
+                    res.errors.append("model.safetensors.index.json metadata.total_size must be a positive integer")
+                else:
+                    lo, hi = _LINGBOT_TOTAL_SIZE_RANGE
+                    if not lo <= total_size <= hi:
+                        res.errors.append(
+                            f"declared tensor bytes {total_size / 1e9:.2f} GB are outside the plausible "
+                            f"LingBot-VLA 2.0 range [{lo / 1e9:.0f}, {hi / 1e9:.0f}] GB"
+                        )
+                    if shard_bytes and not total_size <= shard_bytes <= total_size + 512 * 1024 * 1024:
+                        res.errors.append(
+                            f"weight shards occupy {shard_bytes} bytes but the index declares "
+                            f"{total_size} tensor bytes; "
+                            "the upload may be truncated or inconsistent"
+                        )
+
+    return res
+
+
+def check_lingbot_data_contract(
+    ckpt_dir: pathlib.Path | str,
+    expected_cameras: tuple[str, ...],
+    required_joints: dict[str, int],
+    *,
+    metadata_required: bool = True,
+) -> list[str]:
+    """Validate optional benchmark-facing training metadata.
+
+    LIBERO inference uses an evaluator-owned contract and can therefore accept
+    a standard Hugging Face checkpoint without training metadata. RoboTwin's
+    native upstream server still consumes the package metadata and requires it.
+    """
+    root = pathlib.Path(ckpt_dir)
+    config_path = _find_lingbot_training_config(root)
+    if config_path is None:
+        return ["missing LingBot training data-contract metadata"] if metadata_required else []
+    try:
+        import yaml
+
+        config = yaml.safe_load(config_path.read_text())
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        return [f"cannot read LingBot data contract: {exc}"]
+    data = config.get("data") if isinstance(config, dict) else None
+    if not isinstance(data, dict):
+        return ["lingbotvla_cli.yaml data section must be a mapping"]
+
+    errors = []
+    cameras = data.get("cameras")
+    if cameras != list(expected_cameras):
+        errors.append(f"data.cameras must be {list(expected_cameras)!r}, got {cameras!r}")
+    parsed_joints = {}
+    joints = data.get("joints")
+    if isinstance(joints, list):
+        for entry in joints:
+            try:
+                item = ast.literal_eval(entry) if isinstance(entry, str) else entry
+            except (ValueError, SyntaxError):
+                continue
+            if isinstance(item, dict) and len(item) == 1:
+                parsed_joints.update(item)
+    for joint, minimum_dim in required_joints.items():
+        actual = parsed_joints.get(joint)
+        if not isinstance(actual, int) or actual < minimum_dim:
+            errors.append(f"data.joints must define {joint!r} with dimension >= {minimum_dim}, got {actual!r}")
+    return errors
 
 
 def check_openvla_oft_model(ckpt_dir: pathlib.Path | str) -> CheckResult:
@@ -223,9 +430,7 @@ def check_openvla_oft_model(ckpt_dir: pathlib.Path | str) -> CheckResult:
                 for stat in ("q01", "q99"):
                     array = values.get(stat)
                     if not _finite_number_list(array) or len(array) != dims:
-                        res.errors.append(
-                            f"dataset statistics {suite}.{key}.{stat} must contain {dims} finite numbers"
-                        )
+                        res.errors.append(f"dataset statistics {suite}.{key}.{stat} must contain {dims} finite numbers")
     return res
 
 
@@ -296,8 +501,7 @@ def check_model_for_architectures(
         result = check_model(ckpt_dir, candidate_config)
         if result.ok:
             result.errors.append(
-                f"checkpoint architecture '{architecture}' is not accepted "
-                f"(accepted: {','.join(architectures)})"
+                f"checkpoint architecture '{architecture}' is not accepted (accepted: {','.join(architectures)})"
             )
             return ModelSelection(result, architecture, None)
 
@@ -597,7 +801,8 @@ def _check_jax_params(params_dir: pathlib.Path, spec: ConfigSpec | None, res: Ch
         res,
         "params/ (orbax tree)",
     )
-    if shapes:
+    partitioned_write_shapes = _orbax_uses_partitioned_write_shapes(params_dir, res)
+    if shapes and not partitioned_write_shapes:
         for key, want in _expected_proj_shapes(spec, torch=False).items():
             got = shapes.get(("params", *key))
             if got is not None and got != want:
@@ -613,6 +818,56 @@ def _check_jax_params(params_dir: pathlib.Path, spec: ConfigSpec | None, res: Ch
                 f"params/ holds {size / 1e9:.2f} GB for {total:.2e} parameters — too small even for "
                 "1 byte/param, the array data is truncated"
             )
+    elif partitioned_write_shapes:
+        # Orbax may write local chunks for either partitioned arrays or
+        # replica-parallel writes of fully replicated arrays. `write_shape`
+        # therefore need not be the global tensor shape on a multi-device mesh.
+        # We can still enforce a conservative byte-size truncation guard without
+        # importing JAX/Orbax into the lightweight validator environment.
+        size = _dir_total_bytes(params_dir)
+        if size < int(_PARAM_COUNT_RANGE[0]):
+            res.errors.append(
+                f"params/ is a partitioned Orbax store but holds only {size / 1e9:.2f} GB — "
+                f"smaller than the {_PARAM_COUNT_RANGE[0] / 1e9:.1f} GB minimum plausible "
+                "for this openpi model; array data may be truncated"
+            )
+        res.warnings.append(
+            "params/_METADATA contains per-shard write_shape values; global parameter count "
+            "and tensor shapes are deferred to Orbax restore"
+        )
+
+
+def _orbax_uses_partitioned_write_shapes(params_dir: pathlib.Path, res: CheckResult) -> bool:
+    """Detect meshes where Orbax can record local write chunks instead of global shapes."""
+    sharding_path = params_dir / "_sharding"
+    if not sharding_path.is_file():
+        return False
+    sharding = _load_json(sharding_path, res, "params/_sharding")
+    if not isinstance(sharding, dict):
+        return False
+    for encoded in sharding.values():
+        try:
+            item = json.loads(encoded) if isinstance(encoded, str) else encoded
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(item, dict):
+            continue
+        partition_spec = item.get("partition_spec")
+        if isinstance(partition_spec, list) and any(axis is not None for axis in partition_spec):
+            return True
+        # Orbax replica-parallel serialization splits writes across replicas
+        # even with an empty PartitionSpec. Some tensors remain whole, so it is
+        # also incorrect to recover global shapes by multiplying every chunk.
+        mesh_shape = item.get("shape")
+        if (
+            item.get("sharding_type") == "NamedSharding"
+            and isinstance(mesh_shape, list)
+            and mesh_shape
+            and all(type(size) is int and size > 0 for size in mesh_shape)
+            and math.prod(mesh_shape) > 1
+        ):
+            return True
+    return False
 
 
 def _parse_orbax_tree(metadata: dict) -> tuple[dict | None, dict]:
@@ -719,10 +974,17 @@ def _check_norm_stats(ckpt_dir: pathlib.Path, spec: ConfigSpec, res: CheckResult
 # CLI
 # ----------------------------------------------------------------------------
 def main():
+    from backbones import BACKBONES, resolve_backbone
     from paths import VALIDATOR_ROOT  # local import: keep check_model importable standalone
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", required=True, help="Local checkpoint dir, HF repo id (user/repo), or HF URL")
+    parser.add_argument(
+        "--backbone",
+        default=None,
+        metavar="NAME",
+        help=f"Policy backbone (default: pi0.5; choose from {', '.join(BACKBONES)})",
+    )
     parser.add_argument(
         "--model-family",
         default="auto",
@@ -736,9 +998,9 @@ def main():
     )
     parser.add_argument(
         "--model-architectures",
-        default="pi0.5",
+        default=None,
         metavar="ARCH[,ARCH...]",
-        help="Accepted model architectures (default: pi0.5; e.g. pi0 or pi0,pi0.5; π spellings also work)",
+        help="Deprecated openpi architecture allow-list; use --backbone for new commands",
     )
     parser.add_argument(
         "--config",
@@ -750,11 +1012,15 @@ def main():
     )
     parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
     args = parser.parse_args()
+    backbone_explicit = args.backbone is not None or args.model_architectures is not None or args.model_family != "auto"
 
     from run_eval import resolve_model  # lazy: run_eval imports this module at top level
 
     try:
-        architectures = parse_model_architectures(args.model_architectures)
+        legacy_architectures = (
+            parse_model_architectures(args.model_architectures) if args.model_architectures is not None else None
+        )
+        backbone, architectures = resolve_backbone(args.backbone, legacy_architectures, args.model_family)
     except ValueError as e:
         parser.error(str(e))
 
@@ -763,7 +1029,7 @@ def main():
     except Exception as e:  # unresolvable reference is itself a legality failure
         res = CheckResult(
             checkpoint_dir=str(args.model),
-            config=args.config or ARCHITECTURE_CONFIGS[architectures[0]],
+            config=args.config or (ARCHITECTURE_CONFIGS[architectures[0]] if architectures else backbone.name),
             errors=[f"cannot resolve model to a checkpoint: {e}"],
         )
         selection = ModelSelection(res, None, None)
@@ -774,7 +1040,17 @@ def main():
             res = CheckResult(checkpoint_dir=str(ckpt_dir), config=args.config or "auto", errors=[str(e)])
             selection = ModelSelection(res, None, None)
         else:
-            if args.model_family != "auto" and args.model_family != family:
+            if not backbone_explicit and family != backbone.model_family:
+                backbone = next(item for item in BACKBONES.values() if item.model_family == family)
+                architectures = backbone.legacy_architectures
+            if family != backbone.model_family:
+                res = CheckResult(
+                    checkpoint_dir=str(ckpt_dir),
+                    config=args.config or backbone.name,
+                    errors=[f"requested backbone {backbone.name!r}, detected checkpoint family {family!r}"],
+                )
+                selection = ModelSelection(res, family, None)
+            elif args.model_family != "auto" and args.model_family != family:
                 res = CheckResult(
                     checkpoint_dir=str(ckpt_dir),
                     config=args.config or "auto",
@@ -791,6 +1067,16 @@ def main():
                 else:
                     res = check_openvla_oft_model(ckpt_dir)
                 selection = ModelSelection(res, family, res.config if res.ok else None)
+            elif family == "lingbot_vla_v2":
+                if args.config is not None:
+                    res = CheckResult(
+                        checkpoint_dir=str(ckpt_dir),
+                        config=args.config,
+                        errors=["--config is only valid for openpi checkpoints"],
+                    )
+                else:
+                    res = check_lingbot_vla_v2_model(ckpt_dir)
+                selection = ModelSelection(res, "lingbot-vla-v2", res.config if res.ok else None)
             else:
                 selection = check_model_for_architectures(ckpt_dir, architectures, args.config)
                 res = selection.result

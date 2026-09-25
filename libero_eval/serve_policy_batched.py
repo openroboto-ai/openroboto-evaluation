@@ -228,8 +228,8 @@ def main() -> None:
     logger.info(f"Loading policy: config={args.config} dir={args.dir}")
     policy = _policy_config.create_trained_policy(_config.get_config(args.config), args.dir)
     batched = BatchedPolicy(policy, max_batch=args.max_batch)
-    logger.info(f"Serving on localhost:{args.port} (max_batch={args.max_batch})")
-    BatchedPolicyServer(batched, host="localhost", port=args.port).serve_forever()
+    logger.info(f"Serving on 0.0.0.0:{args.port} (max_batch={args.max_batch})")
+    BatchedPolicyServer(batched, host="0.0.0.0", port=args.port).serve_forever()
 
 
 if __name__ == "__main__":
