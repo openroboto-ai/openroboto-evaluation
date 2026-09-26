@@ -71,6 +71,20 @@ The run stores model identity, definition hashes, actual inference settings,
 per-task successes and trial counts in `summary.json`. Keep this result alongside
 the exact model revision when comparing runs.
 
+## Project-hosted baseline
+
+The reference checkpoint is available at
+[openroboto-ai/pi05-axis-baseline](https://huggingface.co/openroboto-ai/pi05-axis-baseline).
+Its verified inference revision is `55f8b28ed021f7ee0bef02cde114a7b5dcae9d5c`.
+Use that repository and revision with the evaluation command above. The weights
+and normalization files are unchanged; internal training-path records are excluded.
+The model card pins evaluator commit `2f69d117517f8b388d2d01a94964df63f1b6620e`,
+which includes the replay exporter below.
+
+The included 74.67% result is historical `axis_v0.2` performance on training-task
+scenes, not a newly measured AXIS v1.0 result. Hosting a copy does not change an
+existing competition's configured baseline repository or revision.
+
 ## Render training replays
 
 [export_axis_vla_dataset.py](../tools/export_axis_vla_dataset.py) renders expert
