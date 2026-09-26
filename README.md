@@ -44,6 +44,9 @@ AXIS v1.0 uses fixed base scenes; scene randomization is disabled. Repeated tria
 are not new randomized scenes. Its score measures performance on this published
 finite task set, not performance on unseen tasks.
 
+To render training images from expert joint-target trajectories using this same
+runtime, see [Render training replays](docs/axis.md#render-training-replays).
+
 ## Other benchmarks
 
 | Benchmark | Runtime / scope |
@@ -76,6 +79,19 @@ Each run writes `summary.json`, per-task results, logs, and optional recordings 
 its output directory. The summary records the model revision, benchmark identity,
 protocol, and success counts. Invalid checkpoints are rejected before GPU startup;
 worker infrastructure failures are retried rather than submitted as model scores.
+
+Submission size limits use decimal GB: **20 GB for Pi0/Pi0.5, 35 GB for LingBot-VLA
+2.0**. The worker checks the pinned commit's file-size manifest before downloading
+any weights. Oversized submissions are rejected with the measured size and limit;
+they are not requeued for another download. Missing or unavailable size metadata
+blocks weight downloads and remains a retryable infrastructure failure.
+
+The budget includes all files in the submitted repository, including training
+state, duplicate weights and optional backup files. Submit one inference checkpoint.
+The standalone evaluator applies the same limits with an explicit `--backbone`;
+auto-detection initially uses 35 GB and applies the detected model's limit during
+format validation. Explicit `--model-subdir` / ignored paths restrict the remote
+file set counted. Local checkpoint format checks also enforce these limits.
 
 ```bash
 uv sync --locked

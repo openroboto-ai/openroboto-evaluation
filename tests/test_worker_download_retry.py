@@ -94,6 +94,45 @@ class TestDownloadWithRetry(unittest.TestCase):
 
 
 class TestProcessTaskDownloadFailure(unittest.TestCase):
+    def test_oversize_is_terminal_rejection_for_each_base_model(self):
+        for base_model, limit in (("pi0.5", 20_000_000_000), ("lingbot-vla-2.0", 35_000_000_000)):
+            with self.subTest(base_model=base_model), tempfile.TemporaryDirectory() as tmp_str:
+                tmp = pathlib.Path(tmp_str)
+                task = {**TASK, "base_model": base_model}
+                store = StateStore(tmp / "state.json")
+                client = mock.Mock()
+                error = worker.ModelSizeExceeded("u/r@" + TASK["hf_commit"], 48_000_000_000, limit)
+                with ExitStack() as stack:
+                    dl = stack.enter_context(mock.patch.object(worker, "download_model", side_effect=error))
+                    evaluate = stack.enter_context(mock.patch.object(worker, "run_evaluation"))
+                    worker.process_task(task, client, store, _args(tmp, retries=4))
+                dl.assert_called_once()
+                self.assertEqual(dl.call_args.kwargs["max_total_bytes"], limit)
+                evaluate.assert_not_called()
+                client.submit_score.assert_called_once()
+                entry = store.get("t1")
+                self.assertEqual(entry["status"], "submitted")
+                self.assertFalse(entry["payload"]["success"])
+                self.assertEqual(entry["payload"]["error"], str(error))
+                self.assertEqual(worker.classify_queued_task(entry, task), "skip")
+
+    def test_oversize_local_model_rejected_without_evaluation(self):
+        with tempfile.TemporaryDirectory() as tmp_str:
+            tmp = pathlib.Path(tmp_str)
+            model = tmp / "local-model"
+            model.mkdir()
+            with (model / "weights").open("wb") as file:
+                file.truncate(48_000_000_000)
+            task = {**TASK, "hf_repo_id": str(model)}
+            args = _args(tmp, retries=1)
+            args.allow_local_model = True
+            store = StateStore(tmp / "state.json")
+            with mock.patch.object(worker, "run_evaluation") as evaluate:
+                worker.process_task(task, mock.Mock(), store, args)
+            evaluate.assert_not_called()
+            self.assertEqual(store.get("t1")["status"], "submitted")
+            self.assertIn("model size limit exceeded", store.get("t1")["payload"]["error"])
+
     def test_no_failure_report_and_task_requeued(self):
         with tempfile.TemporaryDirectory() as tmp_str:
             tmp = pathlib.Path(tmp_str)

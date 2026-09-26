@@ -197,7 +197,7 @@ def test_http_queue_dispatch_score_and_restart(tmp_path, monkeypatch, override, 
         monkeypatch.setattr(worker, "wait_for_gpu_health", lambda: True)
         monkeypatch.setattr(worker, "_setup_logger", lambda _: tmp_path / "worker.log")
         monkeypatch.setattr(worker, "_install_stderr_logging", lambda: None)
-        monkeypatch.setattr(worker, "download_with_retry", lambda *_: None)
+        monkeypatch.setattr(worker, "download_with_retry", lambda *_, **__: None)
         monkeypatch.setattr(worker.subprocess, "Popen", launch)
         worker.stop_event.clear()
         worker.main()

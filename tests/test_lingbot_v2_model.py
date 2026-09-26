@@ -107,6 +107,15 @@ def _make_checkpoint(root: pathlib.Path) -> pathlib.Path:
 
 
 class TestLingbotV2Checkpoint(unittest.TestCase):
+    def test_valid_weights_with_stale_extra_files_exceeding_budget_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = _make_checkpoint(pathlib.Path(tmp))
+            with (checkpoint / "old-weights.safetensors").open("wb") as file:
+                file.truncate(24_000_000_000)
+            result = check_lingbot_vla_v2_model(checkpoint)
+            self.assertFalse(result.ok)
+            self.assertIn("model size limit exceeded", "\n".join(result.errors))
+
     def test_accepts_official_nested_package_contract(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)

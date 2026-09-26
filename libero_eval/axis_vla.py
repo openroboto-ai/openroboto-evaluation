@@ -1,4 +1,4 @@
-"""Runtime-aligned training artifact and OpenPI transforms for AXIS v0.1.
+"""Runtime-aligned training artifact and OpenPI transforms for native AXIS.
 
 The benchmark receives native 9D Franka joint observations and emits absolute
 9D joint-position targets.  This module deliberately keeps that contract

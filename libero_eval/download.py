@@ -37,6 +37,41 @@ OFFICIAL_ENDPOINT = "https://huggingface.co"
 DEFAULT_MIRROR_ENDPOINT = "https://hf-mirror.com"
 DEFAULT_STRATEGIES = "hfd-mirror,hfd,hub"
 
+# Decimal GB, for a single inference submission including ancillary files.
+# OpenPI has ~3.35B (JAX) / ~3.62B (PyTorch) parameters: FP32 fits below 15 GB.
+# LingBot-VLA 2.0's official FP32 tensor payload is ~25.5 GB. Leave packaging
+# headroom, but reject optimizer states, duplicate checkpoints and FP64 exports
+# that exceed these budgets. These are admission limits, not format validation.
+MODEL_MAX_BYTES = {"openpi": 20_000_000_000, "lingbot_vla_v2": 35_000_000_000}
+
+
+class ModelSizeExceeded(ValueError):
+    """A pinned submission exceeds its byte budget; reject rather than requeue."""
+
+    def __init__(self, source: str, total_bytes: int, max_bytes: int):
+        self.total_bytes = total_bytes
+        self.max_bytes = max_bytes
+        super().__init__(
+            f"model size limit exceeded for {source}: {total_bytes} bytes ({total_bytes / 1e9:.2f} GB) "
+            f"> {max_bytes} bytes ({max_bytes / 1e9:g} GB); "
+            "submit one inference checkpoint without optimizer states or duplicate weights"
+        )
+
+
+def check_local_model_size(root: pathlib.Path, max_bytes: int | None) -> None:
+    """Check logical file sizes, including sparse weights; ignore downloader metadata."""
+    if max_bytes is None:
+        return
+    total = 0
+    for path in root.rglob("*"):
+        if path.relative_to(root).parts[0] in (".cache", ".hfd", ".git"):
+            continue
+        if path.is_file():
+            total += path.stat().st_size
+    if total > max_bytes:
+        raise ModelSizeExceeded(str(root), total, max_bytes)
+
+
 # 策略名 -> (use_hfd, use_mirror)。hub 策略即"没有 hfd 预取步骤的同一条路径"。
 _STRATEGY_TABLE: dict[str, tuple[bool, bool]] = {
     "hfd-mirror": (True, True),
@@ -113,6 +148,7 @@ def download_model(
     allow_patterns: list[str] | None = None,
     ignore_patterns: list[str] | None = None,
     optional_patterns: list[str] | None = None,
+    max_total_bytes: int | None = None,
     log=print,
 ) -> pathlib.Path:
     """按策略链下载 repo 到 local_dir,返回 local_dir;全部失败抛 DownloadError。
@@ -125,6 +161,9 @@ def download_model(
     hfd 会把它们从下载清单排除，然后对其余固定 commit 文件逐个做
     size/hash 校验。若旧版 hfd 仍因可选文件失败，同一校验也可作为安全回退。
     必需权重绝不因此跳过校验。
+    max_total_bytes 非空时，各策略必须先取得固定 commit 的完整文件大小清单。
+    统计 allow/ignore 选择范围内所有文件（包括 optional 文件），超限直接拒绝；
+    取不到可信大小时不下载权重，按基础设施失败回退/重试。
     """
     names = (
         strategies
@@ -132,6 +171,11 @@ def download_model(
         else parse_strategies(os.environ.get("MODEL_DOWNLOAD_STRATEGIES", DEFAULT_STRATEGIES))
     )
     local_dir = pathlib.Path(local_dir).resolve()
+    if max_total_bytes is not None:
+        if type(max_total_bytes) is not int or max_total_bytes <= 0:
+            raise ValueError("max_total_bytes must be a positive integer")
+        if not revision or not COMMIT_HASH_RE.fullmatch(revision):
+            raise ValueError("size-limited model downloads require a full 40-char hex commit hash")
     # 镜像-only 策略不能在开跑前仍然硬依赖官方端点，否则“使用镜像”只是
     # 下载数据走镜像，预检照样会在被墙的 huggingface.co 上白等超时。
     first_use_mirror = _STRATEGY_TABLE[names[0]][1]
@@ -156,6 +200,18 @@ def download_model(
         # validator/镜像侧故障，避免把第三方镜像异常错误归因给 miner。
         failure_official = not use_mirror
         try:
+            if max_total_bytes is not None:
+                _check_remote_model_size(
+                    repo_id,
+                    revision,
+                    repo_type,
+                    endpoint,
+                    use_mirror,
+                    max_total_bytes,
+                    allow_patterns=allow_patterns,
+                    ignore_patterns=ignore_patterns,
+                    log=log,
+                )
             if use_hfd and not allow_patterns and not ignore_patterns:
                 try:
                     if optional_patterns:
@@ -256,7 +312,7 @@ def download_model(
                     )
             log(f"[download] strategy '{name}' OK in {time.monotonic() - t0:.0f}s -> {local_dir}")
             return local_dir
-        except DownloadInterrupted:
+        except (DownloadInterrupted, ModelSizeExceeded):
             raise
         except Exception as e:  # noqa: BLE001 - 每个策略的失败都要兜住并汇总
             msg = f"{type(e).__name__}: {e}"
@@ -279,6 +335,44 @@ def download_model(
         f"{headline}:\n{detail}",
         permanent=task_permanent,
     )
+
+
+def _check_remote_model_size(
+    repo_id: str,
+    revision: str,
+    repo_type: str,
+    endpoint: str,
+    use_mirror: bool,
+    max_bytes: int,
+    *,
+    allow_patterns: list[str] | None = None,
+    ignore_patterns: list[str] | None = None,
+    log=print,
+) -> None:
+    """Read metadata only. Missing/invalid metadata must never authorize a download."""
+    from huggingface_hub import HfApi
+
+    info = HfApi(endpoint=endpoint, token=False if use_mirror else None).repo_info(
+        repo_id=repo_id,
+        repo_type=repo_type,
+        revision=revision,
+        files_metadata=True,
+    )
+    if info.sha != revision:
+        raise OSError(f"size precheck resolved commit {info.sha}, expected {revision}")
+    entries = [
+        item for item in (info.siblings or []) if _matches_patterns(item.rfilename, allow_patterns, ignore_patterns)
+    ]
+    if not entries:
+        raise OSError("size precheck received an empty file manifest")
+    total = 0
+    for item in entries:
+        if type(item.size) is not int or item.size < 0:
+            raise OSError(f"size precheck has no valid byte size for {item.rfilename}")
+        total += item.size
+    log(f"[download] size precheck: {repo_id}@{revision}, {total} bytes, limit {max_bytes} bytes")
+    if total > max_bytes:
+        raise ModelSizeExceeded(f"{repo_id}@{revision}", total, max_bytes)
 
 
 def _preflight_repo_check(

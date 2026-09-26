@@ -12,6 +12,20 @@ import check_model
 
 
 class ReplicaParallelCheckpointTests(unittest.TestCase):
+    def test_stale_orbax_blobs_cannot_bypass_submission_size_limit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            blobs = root / "params" / "ocdbt.process_0" / "d"
+            blobs.mkdir(parents=True)
+            # Re-uploading into the same repo may retain past OCDBT blobs while
+            # the live manifest still restores an ordinary FP32 Pi0.5 model.
+            for name in ("current", "old"):
+                with (blobs / name).open("wb") as file:
+                    file.truncate(12_440_000_000)
+            result = check_model.check_model(root, "pi05_axis_joint")
+            self.assertFalse(result.ok)
+            self.assertIn("model size limit exceeded", "\n".join(result.errors))
+
     def check_store(self, mesh_shape, byte_size):
         with tempfile.TemporaryDirectory() as temporary:
             params = pathlib.Path(temporary)

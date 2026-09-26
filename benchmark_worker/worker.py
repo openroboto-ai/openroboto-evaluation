@@ -53,6 +53,8 @@ from benchmark_worker.scoring import (
 )
 from benchmark_worker.state import StateStore
 from libero_eval.download import COMMIT_HASH_RE, DownloadError, DownloadInterrupted, download_model, parse_strategies
+from libero_eval.download import MODEL_MAX_BYTES, ModelSizeExceeded, check_local_model_size
+from libero_eval.backbones import parse_backbone
 from libero_eval.gpu_health import GPU_CHECK_INTERVAL, check_gpu_health
 
 RUN_EVAL = VALIDATOR_ROOT / "libero_eval" / "run_eval.py"
@@ -604,7 +606,9 @@ def resolve_evaluator_source_commit(explicit: str | None = None) -> str:
     return head
 
 
-def download_with_retry(ref: str, revision: str | None, model_dir: pathlib.Path, args) -> None:
+def download_with_retry(
+    ref: str, revision: str | None, model_dir: pathlib.Path, args, *, max_total_bytes: int | None = None
+) -> None:
     """下载模型,对失败做有上限的原地重试。
 
     网络/镜像故障重试若干次,耗尽后由调用方清缓存并重新排队。仓库缺文件、
@@ -621,6 +625,7 @@ def download_with_retry(ref: str, revision: str | None, model_dir: pathlib.Path,
                 revision=revision,
                 strategies=args.download_strategies,
                 optional_patterns=MODEL_OPTIONAL_ARTIFACT_PATTERNS,
+                max_total_bytes=max_total_bytes,
                 log=logger.info,
             )
             if _stopping():
@@ -1345,13 +1350,15 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
     try:
         # Validate the queue contract before downloading a potentially large
         # checkpoint. run_evaluation validates again at its direct-call boundary.
-        select_base_model(task, selected_benchmark)
+        base_model = select_base_model(task, selected_benchmark)
+        max_total_bytes = MODEL_MAX_BYTES[parse_backbone(base_model).model_family]
         _report_progress(client, task_id, "downloading", {}, worker_id)
         ref, revision, model_dir = resolve_model(task, args.download_dir, args.allow_local_model)
         if ref:
             stage = "downloading"
             logger.info(f"Downloading model {ref} at {revision or 'main'} to {model_dir}")
-            download_with_retry(ref, revision, model_dir, args)
+            download_with_retry(ref, revision, model_dir, args, max_total_bytes=max_total_bytes)
+        check_local_model_size(model_dir, max_total_bytes)
         stage = "evaluating"
         _report_progress(client, task_id, "prechecking", {}, worker_id)
         logger.info(f"Evaluating model {ref} at {revision}")
@@ -1379,6 +1386,9 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
             f"{task_id} ({_model_label(task)}): attempt interrupted; artifacts preserved at {out_dir}, task requeued"
         )
         return
+    except ModelSizeExceeded as e:
+        error = str(e)
+        logger.error(f"{task_id} ({_model_label(task)}): {error}; reporting task rejected")
     except DownloadError as e:
         _schedule_clean_retry(
             store,

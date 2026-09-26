@@ -342,7 +342,7 @@ def test_http_rotation_waits_then_evaluates_and_reports_new_version_without_rest
         monkeypatch.setattr(worker, "wait_for_gpu_health", lambda: True)
         monkeypatch.setattr(worker, "_setup_logger", lambda _: tmp_path / "worker.log")
         monkeypatch.setattr(worker, "_install_stderr_logging", lambda: None)
-        monkeypatch.setattr(worker, "download_with_retry", lambda *_: None)
+        monkeypatch.setattr(worker, "download_with_retry", lambda *_, **__: None)
         monkeypatch.setattr(worker.subprocess, "Popen", launch)
         worker.stop_event.clear()
         worker.main()

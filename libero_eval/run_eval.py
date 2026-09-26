@@ -51,6 +51,7 @@ from check_model import (
     parse_model_architectures,
 )
 from download import COMMIT_HASH_RE, DEFAULT_STRATEGIES, DownloadError, download_model, parse_strategies
+from download import MODEL_MAX_BYTES, ModelSizeExceeded, check_local_model_size
 from gpu_health import check_gpu_availability, check_gpu_health
 from lingbot_runtime import (
     DEFAULT_LINGBOT_DATA_CONTRACT,
@@ -135,6 +136,7 @@ def resolve_model(
     repo_type: str = "model",
     subdir: str | None = None,
     ignore_patterns: list[str] | None = None,
+    model_family: str = "auto",
 ) -> pathlib.Path:
     """Resolve a model reference (local path / HF repo id / HF URL) to a local checkpoint dir.
 
@@ -156,9 +158,13 @@ def resolve_model(
         if not normalized_subdir or normalized_subdir == ".":
             raise ValueError("--model-subdir must name a checkpoint directory")
 
+    # Auto-detection happens after download; use the largest supported submission
+    # budget until the family-specific format check applies its tighter limit.
+    max_total_bytes = max(MODEL_MAX_BYTES.values()) if model_family == "auto" else MODEL_MAX_BYTES.get(model_family)
     local = pathlib.Path(model).expanduser()
     if local.exists():
         root = local.resolve() / normalized_subdir if normalized_subdir else local.resolve()
+        check_local_model_size(root, max_total_bytes)
         return _find_checkpoint_root(root)
 
     # Not a local path -> treat as Hugging Face reference.
@@ -196,6 +202,7 @@ def resolve_model(
         repo_type=repo_type,
         allow_patterns=allow_patterns,
         ignore_patterns=ignore_patterns,
+        max_total_bytes=max_total_bytes,
     )
     root = local_dir / normalized_subdir if normalized_subdir else local_dir
     return _find_checkpoint_root(root)
@@ -1491,6 +1498,7 @@ def main():
                 commit_id=args.commit_id,
                 repo_type=args.model_repo_type,
                 subdir=args.model_subdir,
+                model_family=backbone.model_family,
             )
             from robotwin_backend import run as run_robotwin
 
@@ -1504,6 +1512,8 @@ def main():
                 ROBOTWIN_VENV_PY,
                 pathlib.Path(args.qwen3_vl_path).expanduser().resolve(),
             )
+        except ModelSizeExceeded as e:
+            _reject_model(str(e))
         except DownloadError as e:
             sys.exit(f"[run_eval] model download failed: {e}")
         except (FileNotFoundError, RuntimeError, TimeoutError, ValueError) as e:
@@ -1542,6 +1552,7 @@ def main():
                         repo_type=args.model_repo_type,
                         subdir=args.model_subdir.replace("{seed}", str(seed)),
                         ignore_patterns=[f"{args.model_subdir.replace('{seed}', str(seed))}/train_state/**"],
+                        model_family=backbone.model_family,
                     )
                     for seed in eval_seeds
                 }
@@ -1554,10 +1565,13 @@ def main():
                     repo_type=args.model_repo_type,
                     subdir=args.model_subdir,
                     ignore_patterns=[f"{args.model_subdir}/train_state/**"] if args.model_subdir else None,
+                    model_family=backbone.model_family,
                 )
             from robodojo_backend import run as run_robodojo
 
             return_code = run_robodojo(args, checkpoint_input, model_architectures, gpus, ROBODOJO_DIR)
+        except ModelSizeExceeded as e:
+            _reject_model(str(e))
         except DownloadError as e:
             sys.exit(f"[run_eval] model download failed: {e}")
         except (FileNotFoundError, RuntimeError, ValueError) as e:
@@ -1609,6 +1623,7 @@ def main():
             commit_id=args.commit_id,
             repo_type=args.model_repo_type,
             subdir=args.model_subdir,
+            model_family=backbone.model_family if backbone_explicit or is_axis else "auto",
         )
     except DownloadError as e:
         # 基础设施失败(网络/镜像/Hub),与"模型本身不合法"区分开

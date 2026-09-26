@@ -125,6 +125,23 @@ raise SystemExit(1)
         self.assertEqual(seen["revision"], SHA)
         self.assertEqual(ckpt.name, f"u__r@{SHA[:12]}")
 
+    def test_family_limit_reaches_downloader(self):
+        for family, limit in (("openpi", 20_000_000_000), ("lingbot_vla_v2", 35_000_000_000), ("auto", 35_000_000_000)):
+            with self.subTest(family=family), tempfile.TemporaryDirectory() as td:
+                root = pathlib.Path(td)
+                with mock.patch.object(run_eval, "download_model") as dl:
+                    with mock.patch.object(run_eval, "_find_checkpoint_root", return_value=root):
+                        run_eval.resolve_model("u/r", root, commit_id=SHA, model_family=family)
+                self.assertEqual(dl.call_args.kwargs["max_total_bytes"], limit)
+
+    def test_local_oversize_rejected_before_resolving_checkpoint(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            with (root / "weights").open("wb") as file:
+                file.truncate(48_000_000_000)
+            with self.assertRaisesRegex(ValueError, "model size limit exceeded"):
+                run_eval.resolve_model(str(root), DL, model_family="openpi")
+
     def test_local_path_is_used_as_is(self):
         # 本地目录不下载,commit id 仅由调用方记录(worker 传任务的 hf_commit)。
         with tempfile.TemporaryDirectory() as td:

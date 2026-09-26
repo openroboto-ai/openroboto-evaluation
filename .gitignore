@@ -73,7 +73,6 @@ __pycache__/
 /tools/check_axis_training_target.py
 /tools/classify_axis_catalog.py
 /tools/collect_axis_control_training.py
-/tools/export_axis_vla_dataset.py
 /tools/merge_axis_vla_datasets.py
 /tools/plan_axis_extension.py
 /tools/prepare_axis_condition_demo.py

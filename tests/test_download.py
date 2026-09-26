@@ -38,6 +38,143 @@ def _hub_error(cls, msg="x"):
     return cls(msg, response=httpx.Response(404, request=httpx.Request("GET", "http://x")))
 
 
+class TestModelSizePrecheck(unittest.TestCase):
+    SHA = "a" * 40
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+        self.api = self.enterContext(mock.patch("huggingface_hub.HfApi"))
+        self.enterContext(mock.patch.object(download, "_preflight_repo_check"))
+        self.hfd = self.enterContext(mock.patch.object(download, "_run_hfd"))
+        self.snapshot = self.enterContext(mock.patch.object(download, "_snapshot"))
+        self.enterContext(mock.patch.object(download, "_verify_local_snapshot"))
+
+    def manifest(self, files, sha=SHA):
+        return SimpleNamespace(sha=sha, siblings=[SimpleNamespace(rfilename=name, size=size) for name, size in files])
+
+    def run_download(self, limit=20_000_000_000, **kwargs):
+        return download_model(
+            "u/r",
+            self.root,
+            revision=self.SHA,
+            max_total_bytes=limit,
+            strategies=kwargs.pop("strategies", ["hfd-mirror", "hub"]),
+            log=lambda *_: None,
+            **kwargs,
+        )
+
+    def test_48gb_rejected_before_any_weights_for_both_models_and_every_strategy(self):
+        for limit in download.MODEL_MAX_BYTES.values():
+            for strategy in download._STRATEGY_TABLE:
+                with self.subTest(limit=limit, strategy=strategy):
+                    self.api.return_value.repo_info.return_value = self.manifest([
+                        ("model-1.safetensors", 24_000_000_000),
+                        ("model-2.safetensors", 24_000_000_000),
+                    ])
+                    with self.assertRaises(download.ModelSizeExceeded) as ctx:
+                        self.run_download(limit, strategies=[strategy, "hub"])
+                    self.assertEqual(ctx.exception.total_bytes, 48_000_000_000)
+                    self.assertEqual(ctx.exception.max_bytes, limit)
+                    self.assertIn(self.SHA, str(ctx.exception))
+        self.hfd.assert_not_called()
+        self.snapshot.assert_not_called()
+
+    def test_exact_limit_allowed_one_byte_over_rejected(self):
+        self.api.return_value.repo_info.return_value = self.manifest([("model.safetensors", 20_000_000_000)])
+        self.run_download(strategies=["hub"])
+        self.snapshot.assert_called_once()
+        self.snapshot.reset_mock()
+        self.api.return_value.repo_info.return_value = self.manifest([("model.safetensors", 20_000_000_001)])
+        with self.assertRaises(download.ModelSizeExceeded):
+            self.run_download(strategies=["hub"])
+        self.snapshot.assert_not_called()
+
+    def test_normal_fp32_checkpoints_allowed_with_pinned_metadata(self):
+        for family, size in (("openpi", 13_500_000_000), ("lingbot_vla_v2", 25_503_630_044)):
+            with self.subTest(family=family):
+                self.api.return_value.repo_info.return_value = self.manifest([("weights", size)])
+                self.run_download(download.MODEL_MAX_BYTES[family], strategies=["hfd-mirror"])
+                self.api.return_value.repo_info.assert_called_with(
+                    repo_id="u/r",
+                    repo_type="model",
+                    revision=self.SHA,
+                    files_metadata=True,
+                )
+        self.assertEqual(self.hfd.call_count, 2)
+        self.api.assert_called_with(endpoint=download._mirror_endpoint(), token=False)
+
+    def test_accumulated_orbax_blobs_and_optional_backups_count(self):
+        for extra in ("params/ocdbt.process_0/d/old", "weights.bak", "train_state/optimizer"):
+            with self.subTest(extra=extra):
+                self.api.return_value.repo_info.return_value = self.manifest([
+                    ("params/ocdbt.process_0/d/current", 12_440_000_000),
+                    (extra, 12_440_000_000),
+                ])
+                with self.assertRaises(download.ModelSizeExceeded):
+                    self.run_download(optional_patterns=["*.bak"])
+        self.hfd.assert_not_called()
+
+    def test_unknown_invalid_or_empty_manifest_never_downloads_weights(self):
+        manifests = [self.manifest([("weights", size)]) for size in (None, -1, True, "100")]
+        manifests += [self.manifest([]), self.manifest([("weights", 1)], sha="b" * 40)]
+        for manifest in manifests:
+            with self.subTest(manifest=manifest):
+                self.api.return_value.repo_info.return_value = manifest
+                with self.assertRaises(DownloadError) as ctx:
+                    self.run_download()
+                self.assertFalse(ctx.exception.permanent)
+        self.hfd.assert_not_called()
+        self.snapshot.assert_not_called()
+
+    def test_manifest_network_failure_falls_back_before_downloading(self):
+        self.api.return_value.repo_info.side_effect = [
+            ConnectionError("mirror unavailable"),
+            self.manifest([("weights", 13_500_000_000)]),
+        ]
+        self.run_download()
+        self.hfd.assert_not_called()
+        self.snapshot.assert_called_once()
+        self.assertEqual(self.snapshot.call_args.args[3], OFFICIAL_ENDPOINT)
+
+    def test_all_metadata_endpoints_unavailable_is_retryable_without_weights(self):
+        self.api.return_value.repo_info.side_effect = ConnectionError("offline")
+        with self.assertRaises(DownloadError) as ctx:
+            self.run_download()
+        self.assertFalse(ctx.exception.permanent)
+        self.hfd.assert_not_called()
+        self.snapshot.assert_not_called()
+
+    def test_explicit_subdir_and_ignored_training_state_define_selected_budget(self):
+        self.api.return_value.repo_info.return_value = self.manifest([
+            ("ckpt/params/weights", 13_500_000_000),
+            ("ckpt/train_state/optimizer", 50_000_000_000),
+            ("other_ckpt/weights", 50_000_000_000),
+        ])
+        self.run_download(allow_patterns=["ckpt/**"], ignore_patterns=["ckpt/train_state/**"])
+        self.snapshot.assert_called_once()
+
+    def test_size_limit_requires_pinned_commit(self):
+        with self.assertRaisesRegex(ValueError, "commit hash"):
+            download_model("u/r", self.root, revision="main", max_total_bytes=20_000_000_000)
+        self.api.assert_not_called()
+
+
+class TestLocalModelSize(unittest.TestCase):
+    def test_sparse_files_use_logical_bytes_and_metadata_does_not_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            with (root / "weights").open("wb") as file:
+                file.truncate(20_000_000_000)
+            (root / ".hfd").mkdir()
+            (root / ".hfd/console.log").write_bytes(b"progress")
+            download.check_local_model_size(root, 20_000_000_000)
+            (root / "extra").write_bytes(b"x")
+            with self.assertRaises(download.ModelSizeExceeded):
+                download.check_local_model_size(root, 20_000_000_000)
+
+
 class TestParseStrategies(unittest.TestCase):
     def test_valid_order_preserved(self):
         self.assertEqual(parse_strategies("hub,hfd-mirror,hfd"), ["hub", "hfd-mirror", "hfd"])

@@ -32,6 +32,11 @@ import struct
 import sys
 import typing
 
+try:
+    from .download import MODEL_MAX_BYTES, ModelSizeExceeded, check_local_model_size
+except ImportError:  # Standalone script / evaluator's flat imports.
+    from download import MODEL_MAX_BYTES, ModelSizeExceeded, check_local_model_size
+
 MODEL_FAMILIES = ("openpi", "openvla_oft", "lingbot_vla_v2")
 
 
@@ -198,7 +203,7 @@ _LINGBOT_REQUIRED_WEIGHT_KEYS = {
     "model.qwenvl_with_expert.qwen_expert.model.layers.35.self_attn.q_proj.weight",
     "model.qwenvl_with_expert.qwenvl.model.visual.patch_embed.proj.weight",
 }
-_LINGBOT_TOTAL_SIZE_RANGE = (20_000_000_000, 35_000_000_000)
+_LINGBOT_TOTAL_SIZE_RANGE = (20_000_000_000, MODEL_MAX_BYTES["lingbot_vla_v2"])
 
 
 def _find_lingbot_training_config(root: pathlib.Path) -> pathlib.Path | None:
@@ -234,6 +239,12 @@ def check_lingbot_vla_v2_model(ckpt_dir: pathlib.Path | str) -> CheckResult:
     res = CheckResult(str(root), "lingbot-vla-v2", checkpoint_type="pytorch_sharded")
     if not root.is_dir():
         res.errors.append(f"checkpoint path is not a directory: {root}")
+        return res
+
+    try:
+        check_local_model_size(root, MODEL_MAX_BYTES["lingbot_vla_v2"])
+    except ModelSizeExceeded as exc:
+        res.errors.append(str(exc))
         return res
 
     config = _load_json(root / "config.json", res, "LingBot-VLA config")
@@ -521,6 +532,12 @@ def check_model(ckpt_dir: pathlib.Path | str, config: str = "pi05_libero") -> Ch
 
     if not ckpt_dir.is_dir():
         res.errors.append(f"checkpoint path is not a directory: {ckpt_dir}")
+        return res
+
+    try:
+        check_local_model_size(ckpt_dir, MODEL_MAX_BYTES["openpi"])
+    except ModelSizeExceeded as exc:
+        res.errors.append(str(exc))
         return res
 
     spec = CONFIG_SPECS.get(config)
@@ -1025,7 +1042,12 @@ def main():
         parser.error(str(e))
 
     try:
-        ckpt_dir = resolve_model(args.model, pathlib.Path(args.download_dir), commit_id=args.commit_id)
+        ckpt_dir = resolve_model(
+            args.model,
+            pathlib.Path(args.download_dir),
+            commit_id=args.commit_id,
+            model_family=backbone.model_family if backbone_explicit else "auto",
+        )
     except Exception as e:  # unresolvable reference is itself a legality failure
         res = CheckResult(
             checkpoint_dir=str(args.model),

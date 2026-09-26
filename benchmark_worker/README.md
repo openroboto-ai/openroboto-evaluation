@@ -27,6 +27,15 @@ Invalid checkpoints fail before GPU startup. GPU/runtime infrastructure failures
 are retried without charging partial scores to the submitted model. Progress,
 per-task results and model identities are preserved for resumption and audit.
 
+Before downloading weights, the worker checks the exact HF commit's complete
+file-size manifest: `pi0.5` submissions may occupy at most **20 GB** and
+`lingbot-vla-2.0` at most **35 GB** (decimal GB). All repository files count,
+including optimizer states, duplicate checkpoints and optional backups. Exceeding
+the limit produces a terminal `success=false` rejection with the measured size
+and limit, without running an evaluator or requeueing the download. An unavailable
+or incomplete size manifest blocks downloading and is retried as infrastructure
+failure. Local submissions and existing caches also receive a size check.
+
 ## Optional AXIS version preparation
 
 Provide `WORKER_KEY`, `--axis-selector-root /path/to/pinned-selector` and
