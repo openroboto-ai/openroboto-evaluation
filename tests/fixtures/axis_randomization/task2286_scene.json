@@ -1,0 +1,646 @@
+{
+  "task_id": 2286,
+  "task_name": "Put the Camera on the Tray",
+  "attempt_id": 2206084,
+  "scene": {
+    "mode": "kujiale_procedural_library",
+    "library_file": "config/scenes/kujiale_mujoco_v2.json",
+    "library_sha256": "a4837522ea0bae2624832e22c0d65d69da0990f2e87c84b29e49a4f38705a110",
+    "selection": "stable_task_attempt_variant_mixed_radix_v2",
+    "table_geometry_policy": "four_leg_apron_visual_with_preserved_collision_surface",
+    "table_placement": {
+      "mode": "fixed_body_frame",
+      "reference_body": "franka/",
+      "center_offset_xy_in_reference_frame_m": [
+        0.35,
+        0.0
+      ],
+      "full_size_m": [
+        1.4,
+        1.2,
+        0.05
+      ],
+      "object_center_policy": "require_inside_fixed_footprint"
+    },
+    "library_id": "kujiale_mujoco_composed_v2",
+    "scene_seed": 1305347163,
+    "scene_base_seed": 1305347163,
+    "scene_base_index": 7323,
+    "scene_variant_offset": 0,
+    "scene_index": 7323,
+    "recipe_count": 8640,
+    "recipe_sha256": "aeeeb08e89c09519a6a294aa142766fe8c946d903ebcc61174038eabda6e8de3",
+    "materialized_fixture_sha256": "c4deea2a99da4e0329db4ffd897f9dab7ea9fa7b48a48b378406c62fbac729fd",
+    "geometry_index": 123,
+    "geometry_recipe_count": 1440,
+    "component_indices": {
+      "backdrop": 3,
+      "left": 3,
+      "right": 2,
+      "floor": 0,
+      "theme": 5
+    },
+    "component_selection": {
+      "backdrop": "horizontal_strata_031",
+      "left": "console",
+      "right": "plant",
+      "floor": "bordered_runner",
+      "theme": "warm_walnut"
+    },
+    "geometry_validation_scope": "module_slots_and_declared_workspace_keepout",
+    "workspace_keepout": [
+      [
+        -1.15,
+        1.05
+      ],
+      [
+        -1.0,
+        1.0
+      ],
+      [
+        0.02,
+        2.35
+      ]
+    ],
+    "selected_variant": {
+      "id": "recipe_07323_83fa9b8be9",
+      "description": "Composed Kujiale-inspired room: backdrop=horizontal_strata_031, left=console, right=plant, floor=bordered_runner, theme=warm_walnut",
+      "source_scene_ids": [
+        "020",
+        "022"
+      ],
+      "surface_asset_ids": {
+        "table": [
+          "dark_wood",
+          "rosewood_veneer1",
+          "wood_table",
+          "wood_table_worn",
+          "rectangular_parquet"
+        ],
+        "floor": [
+          "wood_floor",
+          "laminate_floor_02",
+          "large_floor_tiles_02",
+          "terrazzo_tiles"
+        ],
+        "wall": [
+          "white_plaster_02",
+          "grey_plaster",
+          "plastered_wall_05",
+          "painted_plaster_wall"
+        ]
+      },
+      "table_style": {
+        "mode": "four_leg_apron",
+        "frame_material": "wood",
+        "edge_material": "trim",
+        "foot_material": "dark",
+        "top_skin_thickness": 0.013,
+        "edge_thickness": 0.014,
+        "leg_half_width": [
+          0.047,
+          0.047
+        ],
+        "leg_inset": [
+          0.11,
+          0.11
+        ],
+        "apron_height": 0.078,
+        "apron_thickness": 0.032,
+        "foot_height": 0.012
+      },
+      "materials": {
+        "accent_a": {
+          "reflectance": 0.0,
+          "shininess": 0.2,
+          "specular": 0.12,
+          "emission": 0.015,
+          "rgba": [
+            0.62,
+            0.17,
+            0.09,
+            1.0
+          ]
+        },
+        "accent_b": {
+          "reflectance": 0.0,
+          "shininess": 0.2,
+          "specular": 0.12,
+          "emission": 0.015,
+          "rgba": [
+            0.12,
+            0.28,
+            0.36,
+            1.0
+          ]
+        },
+        "ceramic": {
+          "reflectance": 0.0,
+          "shininess": 0.36,
+          "specular": 0.28,
+          "rgba": [
+            0.68,
+            0.52,
+            0.35,
+            1.0
+          ]
+        },
+        "dark": {
+          "reflectance": 0.0,
+          "shininess": 0.42,
+          "specular": 0.4,
+          "rgba": [
+            0.025,
+            0.02,
+            0.018,
+            1.0
+          ]
+        },
+        "fabric": {
+          "reflectance": 0.0,
+          "shininess": 0.04,
+          "specular": 0.03,
+          "rgba": [
+            0.57,
+            0.45,
+            0.34,
+            1.0
+          ]
+        },
+        "glass": {
+          "reflectance": 0.0,
+          "shininess": 0.55,
+          "specular": 0.25,
+          "emission": 0.06,
+          "rgba": [
+            0.22,
+            0.4,
+            0.48,
+            0.42
+          ]
+        },
+        "greenery": {
+          "reflectance": 0.0,
+          "shininess": 0.08,
+          "specular": 0.05,
+          "rgba": [
+            0.08,
+            0.24,
+            0.13,
+            1.0
+          ]
+        },
+        "light": {
+          "reflectance": 0.0,
+          "shininess": 0.2,
+          "specular": 0.1,
+          "emission": 0.12,
+          "rgba": [
+            1.0,
+            0.62,
+            0.32,
+            1.0
+          ]
+        },
+        "stone": {
+          "reflectance": 0.0,
+          "shininess": 0.22,
+          "specular": 0.18,
+          "rgba": [
+            0.42,
+            0.37,
+            0.32,
+            1.0
+          ]
+        },
+        "trim": {
+          "reflectance": 0.0,
+          "shininess": 0.42,
+          "specular": 0.36,
+          "rgba": [
+            0.55,
+            0.36,
+            0.12,
+            1.0
+          ]
+        },
+        "upholstery": {
+          "reflectance": 0.0,
+          "shininess": 0.06,
+          "specular": 0.05,
+          "rgba": [
+            0.18,
+            0.12,
+            0.09,
+            1.0
+          ]
+        },
+        "wall_alt": {
+          "reflectance": 0.0,
+          "shininess": 0.1,
+          "specular": 0.07,
+          "rgba": [
+            0.22,
+            0.14,
+            0.1,
+            1.0
+          ]
+        },
+        "wall_main": {
+          "reflectance": 0.0,
+          "shininess": 0.08,
+          "specular": 0.05,
+          "rgba": [
+            0.64,
+            0.57,
+            0.49,
+            1.0
+          ]
+        },
+        "wood": {
+          "reflectance": 0.0,
+          "shininess": 0.28,
+          "specular": 0.22,
+          "rgba": [
+            0.32,
+            0.14,
+            0.055,
+            1.0
+          ]
+        }
+      },
+      "fixtures": [
+        {
+          "name": "backdrop_horizontal_strata_031_stratum_1",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.31,
+            0.0,
+            0.29
+          ],
+          "size": [
+            0.025,
+            2.02,
+            0.23
+          ],
+          "material": "wall_main"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_stratum_2",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.31,
+            0.0,
+            0.79
+          ],
+          "size": [
+            0.025,
+            2.02,
+            0.23
+          ],
+          "material": "wall_alt"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_stratum_3",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.31,
+            0.0,
+            1.29
+          ],
+          "size": [
+            0.025,
+            2.02,
+            0.23
+          ],
+          "material": "wall_main"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_stratum_4",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.31,
+            0.0,
+            1.79
+          ],
+          "size": [
+            0.025,
+            2.02,
+            0.23
+          ],
+          "material": "wall_alt"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_stratum_5",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.31,
+            0.0,
+            2.29
+          ],
+          "size": [
+            0.025,
+            2.02,
+            0.23
+          ],
+          "material": "wall_main"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_reveal_1",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.26,
+            0.0,
+            0.54
+          ],
+          "size": [
+            0.03,
+            2.02,
+            0.012
+          ],
+          "material": "trim"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_reveal_2",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.26,
+            0.0,
+            1.04
+          ],
+          "size": [
+            0.03,
+            2.02,
+            0.012
+          ],
+          "material": "trim"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_reveal_3",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.26,
+            0.0,
+            1.54
+          ],
+          "size": [
+            0.03,
+            2.02,
+            0.012
+          ],
+          "material": "trim"
+        },
+        {
+          "name": "backdrop_horizontal_strata_031_reveal_4",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -2.26,
+            0.0,
+            2.04
+          ],
+          "size": [
+            0.03,
+            2.02,
+            0.012
+          ],
+          "material": "trim"
+        },
+        {
+          "name": "left_console_top",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.58,
+            -1.55,
+            0.7
+          ],
+          "size": [
+            0.25,
+            0.5,
+            0.035
+          ],
+          "material": "wood"
+        },
+        {
+          "name": "left_console_leg_a",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.58,
+            -1.91,
+            0.36
+          ],
+          "size": [
+            0.18,
+            0.035,
+            0.34
+          ],
+          "material": "dark"
+        },
+        {
+          "name": "left_console_leg_b",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.58,
+            -1.19,
+            0.36
+          ],
+          "size": [
+            0.18,
+            0.035,
+            0.34
+          ],
+          "material": "dark"
+        },
+        {
+          "name": "right_plant_pot",
+          "type": "cylinder",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.58,
+            1.55,
+            0.24
+          ],
+          "size": [
+            0.22,
+            0.22
+          ],
+          "material": "ceramic"
+        },
+        {
+          "name": "right_plant_stem",
+          "type": "cylinder",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.58,
+            1.55,
+            0.65
+          ],
+          "size": [
+            0.035,
+            0.3
+          ],
+          "material": "greenery"
+        },
+        {
+          "name": "right_plant_leaf_1",
+          "type": "sphere",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.58,
+            1.55,
+            0.96
+          ],
+          "size": [
+            0.18
+          ],
+          "material": "greenery"
+        },
+        {
+          "name": "right_plant_leaf_2",
+          "type": "sphere",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.48,
+            1.42,
+            0.82
+          ],
+          "size": [
+            0.15
+          ],
+          "material": "greenery"
+        },
+        {
+          "name": "right_plant_leaf_3",
+          "type": "sphere",
+          "frame": "table_xy_floor",
+          "pos": [
+            -1.68,
+            1.68,
+            0.84
+          ],
+          "size": [
+            0.16
+          ],
+          "material": "greenery"
+        },
+        {
+          "name": "floor_bordered_runner_runner",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -0.4,
+            0.0,
+            0.008
+          ],
+          "size": [
+            1.45,
+            0.72,
+            0.008
+          ],
+          "material": "fabric"
+        },
+        {
+          "name": "floor_bordered_runner_border_l",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -0.4,
+            -0.7,
+            0.01
+          ],
+          "size": [
+            1.45,
+            0.02,
+            0.01
+          ],
+          "material": "trim"
+        },
+        {
+          "name": "floor_bordered_runner_border_r",
+          "type": "box",
+          "frame": "table_xy_floor",
+          "pos": [
+            -0.4,
+            0.7,
+            0.01
+          ],
+          "size": [
+            1.45,
+            0.02,
+            0.01
+          ],
+          "material": "trim"
+        }
+      ],
+      "recipe_index": 7323,
+      "recipe_count": 8640,
+      "geometry_index": 123,
+      "geometry_recipe_count": 1440,
+      "component_indices": {
+        "backdrop": 3,
+        "left": 3,
+        "right": 2,
+        "floor": 0,
+        "theme": 5
+      },
+      "component_selection": {
+        "backdrop": "horizontal_strata_031",
+        "left": "console",
+        "right": "plant",
+        "floor": "bordered_runner",
+        "theme": "warm_walnut"
+      },
+      "materialized_fixture_sha256": "c4deea2a99da4e0329db4ffd897f9dab7ea9fa7b48a48b378406c62fbac729fd",
+      "recipe_sha256": "aeeeb08e89c09519a6a294aa142766fe8c946d903ebcc61174038eabda6e8de3"
+    }
+  },
+  "randomization_config": {
+    "table_material_seed": 1783638504,
+    "floor_material_seed": 1945766535,
+    "wall_material_seed": 2372349106,
+    "texture": {
+      "surface_material_samples": {
+        "table": {
+          "sha256": "e700a99972e3c9bb523b9cfaf436d0d77a9b65df3d3d347c980e4bf5b4ae22b4",
+          "material": [
+            0.05937213762427433,
+            0.37711302549889997,
+            0.13959613034337748
+          ],
+          "source_asset_id": "rectangular_parquet"
+        },
+        "floor": {
+          "sha256": "f531c86b4b1a22a608cd9f8cd827e94e5c5c6185b25cb2f3e35e439b853f2045",
+          "material": [
+            0.15865499687678633,
+            0.2476607986521783,
+            0.11786159512923507
+          ],
+          "source_asset_id": "wood_floor"
+        },
+        "wall": {
+          "sha256": "d1991e16da6d4e88581d68fc3ae6e06b3491bac524b9bad9d9c66eaefc534aeb",
+          "material": [
+            0.19652440992838316,
+            0.34057403792472085,
+            0.1740550608091527
+          ],
+          "source_asset_id": "plastered_wall_05"
+        }
+      }
+    }
+  },
+  "source_metadata_path": "AXIS-Render-Robosuite/data/franka500_axis4090_2_batch21_recovery_canary_20260801/worker_runs/task_2286_attempt_2206084_variant_000/episode_metadata/task_2286_franka_put_the_camera_on_the_tray/task_2286_attempt_2206084_franka_variant_000/camera_fixed/replica_000/metadata.json",
+  "source_metadata_sha256": "a59f396e370a640f5b92a198f33b7ee34158ecd668a2cc998b31c219dae3e4f4"
+}

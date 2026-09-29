@@ -1,0 +1,6293 @@
+{
+  "archive": "axis_v20260928.33.tar.zst",
+  "bindings_canonical_sha256": "eee03eb4d73e6825e7ea2ee5f02dff07cebc93fec9bbb7561263227a77921736",
+  "bytes": 58377905,
+  "changed_image_pairs": 760,
+  "changed_image_task_ids": [
+    501,
+    502,
+    503,
+    504,
+    505,
+    506,
+    507,
+    508,
+    509,
+    510,
+    511,
+    512,
+    513,
+    514,
+    515,
+    516,
+    517,
+    518,
+    1012,
+    1086,
+    1087,
+    1088,
+    1089,
+    1090,
+    1091,
+    1350,
+    1351,
+    1455,
+    1784,
+    1785,
+    1786,
+    1787,
+    1788,
+    1789,
+    2236,
+    2237,
+    2238,
+    2239
+  ],
+  "extracted_json_files_byte_equal": 24664,
+  "fresh_native_instances": 1955,
+  "invariants": {
+    "unchanged_camera_poses_and_material_samples": true,
+    "unchanged_instance_order": true,
+    "unchanged_physical_states": true,
+    "unchanged_task_payload_except_visual_mode": true
+  },
+  "manifest_canonical_sha256": "9ea1b4f7f5ad35d1b34a8c70417b6a576d0063cf1e2931a57dc4982f9bd964c2",
+  "name": "axis_v20260928.33",
+  "native_archive_replays": [
+    {
+      "exact_native_replay": true,
+      "task_id": 501
+    },
+    {
+      "exact_native_replay": true,
+      "task_id": 757
+    },
+    {
+      "exact_native_replay": true,
+      "task_id": 2236
+    }
+  ],
+  "parent_validation_canonical_sha256": "27bd07af0c3e1a6baf3bb80d6f201e1e2f1fbdfb2a537107136f8472d3780b5b",
+  "policy_evaluation": "No checkpoint evaluated in this build; native validation is not a policy score.",
+  "protocol_revision": "axis_v20260928.33_official_components_native_mujoco_v2",
+  "randomization_manifest_canonical_sha256": "b11d2233a45c8cee5bc8133ecbc4ce8a4d6f6463c1e3f83917710f3d29f9a213",
+  "sha256": "086819150738addaddd9474e75f4374f55728dd227e1988dabbab84f8a10297d",
+  "status": "runtime-ready",
+  "tasks": {
+    "1000": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1001": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1002": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1003": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1004": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1005": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1006": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1007": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1012": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1013": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1014": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1015": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1016": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1017": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1018": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1019": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1020": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1021": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1022": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1023": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1024": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1025": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1026": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1027": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1028": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1029": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1030": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1032": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1033": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1034": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1035": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1036": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1037": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1038": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1039": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1040": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1041": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1042": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1043": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1044": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1045": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1046": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1047": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1048": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1049": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1050": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1051": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1052": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1053": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1054": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1055": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1056": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1057": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1058": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1059": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1060": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1061": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1062": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1063": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1064": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1065": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1066": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1067": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1068": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1069": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1070": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1071": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1072": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1073": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1074": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1075": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1076": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1077": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1078": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1079": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1080": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1081": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1082": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1083": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1084": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1085": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1086": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1087": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1088": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1089": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1090": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1091": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1092": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1093": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1094": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1095": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1096": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1097": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1105": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1106": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1107": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1108": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1109": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1111": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1112": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1113": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1114": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1116": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1137": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1138": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1139": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1140": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1141": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1142": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1148": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1149": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1150": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1151": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1152": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1153": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1164": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1175": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1176": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1177": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1178": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1179": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1180": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1181": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1182": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1183": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1184": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1185": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1186": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1187": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1188": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1189": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1190": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1191": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1192": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1193": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1194": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1195": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1196": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1197": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1198": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1204": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1205": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1206": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1207": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1208": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1209": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1222": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1223": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1224": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1225": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1226": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1227": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1228": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1229": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1230": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1231": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1232": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1233": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1234": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1235": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1236": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1237": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1238": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1239": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1240": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1241": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1242": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1243": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1244": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1245": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1246": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1247": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1248": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1249": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1250": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1251": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1252": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1255": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1256": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1257": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1258": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1267": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1268": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1269": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1270": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1271": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1272": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1273": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1274": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1276": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1277": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1278": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1279": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1280": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1281": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1282": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1283": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1284": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1285": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1286": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1288": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1289": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1290": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1291": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1292": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1293": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1294": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1295": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1296": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1297": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1298": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1299": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1300": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1301": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1302": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1303": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1304": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1305": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1306": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1307": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1308": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1309": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1310": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1311": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1312": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1313": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1314": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1315": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1316": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1317": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1318": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1319": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1320": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1321": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1322": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1323": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1324": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1325": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1326": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1327": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1328": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1329": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1330": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1331": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1332": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1333": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1334": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1335": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1337": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1338": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1339": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1340": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1341": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1342": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1343": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1344": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1345": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1346": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1347": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1348": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1350": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1351": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1352": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1353": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1354": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1355": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1356": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1357": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1394": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1395": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1396": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1397": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1398": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1399": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1400": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1401": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1402": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1403": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1404": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1405": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1406": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1407": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1408": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1409": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1410": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1411": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1412": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1413": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1414": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1415": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1416": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1417": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1418": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1419": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1420": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1421": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1422": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1423": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1424": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1425": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1426": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1427": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1428": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1435": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1436": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1437": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1438": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1439": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1440": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1441": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1442": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1443": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1444": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1445": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1446": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1447": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1448": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1449": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1450": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1451": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1452": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1455": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1456": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1458": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1459": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1460": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1461": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1462": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1463": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1464": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1465": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1466": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1467": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1468": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1469": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1470": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1471": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1472": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1473": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1474": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1475": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1476": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1477": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1478": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1479": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1480": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1481": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1482": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1483": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1484": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1485": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1486": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1487": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1488": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1489": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1492": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1494": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1495": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1496": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1497": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1498": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1499": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1500": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1501": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1502": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1503": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1504": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1505": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1506": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1507": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1508": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1509": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1510": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1511": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1512": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1513": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1514": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1515": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1516": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1517": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1518": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1519": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1520": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1521": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1522": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1523": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1524": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1525": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1526": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1527": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1528": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1557": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1558": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1559": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1560": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1561": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1562": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1584": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1585": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1586": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1587": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1588": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1589": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1590": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1591": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1592": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1593": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1594": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1595": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1596": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1597": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1598": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1599": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1600": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1601": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1602": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1603": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1604": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1605": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1606": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1607": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1608": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1609": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1610": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1611": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1612": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1613": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1620": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1621": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1622": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1623": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1624": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1625": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1628": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1629": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1630": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1631": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1632": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1633": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1634": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1635": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1636": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1637": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1638": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1639": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1640": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1641": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1642": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1643": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1644": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1645": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1646": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1647": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1648": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1649": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1650": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1651": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1688": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1689": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1690": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1692": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1693": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1694": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1695": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1696": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1697": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1698": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1699": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1700": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1701": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1702": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1703": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1704": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1705": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1706": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1707": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1708": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1709": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1710": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1711": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1712": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1713": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1714": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1715": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1716": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1717": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1718": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1719": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1720": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1721": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1722": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1724": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1725": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1726": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1727": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1728": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1729": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1730": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1731": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1732": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1733": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1735": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1736": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1737": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1738": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1739": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1740": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1741": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1742": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1743": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1744": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1745": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1746": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1747": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1754": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1755": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1756": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1757": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1758": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1759": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1760": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1761": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1762": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1763": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1764": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1765": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1766": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1767": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1768": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1769": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1770": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1771": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1772": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1773": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1774": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1775": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1776": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1777": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1778": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1779": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1780": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1781": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1783": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1784": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1785": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1786": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1787": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1788": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1789": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1790": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1791": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1792": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1793": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1794": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1795": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1796": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1797": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1798": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1799": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1800": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1801": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1802": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1803": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1804": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1805": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1806": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1807": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1808": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1809": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1810": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1811": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1812": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1813": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1814": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1815": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1816": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1817": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1818": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1819": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1832": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1833": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1834": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1835": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1836": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1837": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1838": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1839": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1840": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1841": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1842": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1843": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1844": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1845": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1846": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1847": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1848": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1850": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1851": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1852": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1853": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1854": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1856": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1857": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1858": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1859": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1860": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1861": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1862": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1863": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1864": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1865": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1866": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1867": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1868": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1869": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1870": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1871": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1872": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1874": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1875": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1876": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1877": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1878": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1879": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1881": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1882": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1883": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1884": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1885": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1886": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1887": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1888": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1889": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1890": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1891": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1892": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1893": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1894": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1895": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1896": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1897": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1898": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1899": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1900": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1901": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1902": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1903": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1904": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1908": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1909": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1910": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1911": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1912": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1913": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1914": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1915": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1916": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1917": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1918": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1919": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1920": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1921": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1922": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1923": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1924": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1925": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1928": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1929": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1930": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1931": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1932": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1933": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1934": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1935": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1936": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1937": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1938": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1945": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1946": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1947": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1948": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1949": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1950": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1953": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1954": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1955": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1956": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1957": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1958": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1959": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1960": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1961": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1962": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1963": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1964": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1965": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1966": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1967": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1968": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1969": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1970": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1971": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1972": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1973": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1974": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1975": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1976": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1977": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1978": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1979": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1980": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1981": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1982": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1983": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1984": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1985": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1986": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1987": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1988": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1993": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1994": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1995": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1997": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "1998": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "1999": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2000": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2001": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2002": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2003": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2004": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2005": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2006": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2007": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2008": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2009": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2010": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2011": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2012": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2013": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2014": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2015": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2016": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2023": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2024": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2025": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2026": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2027": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2028": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2034": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2035": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2036": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2037": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2038": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2039": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2088": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2089": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2090": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2091": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2092": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2093": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2094": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2095": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2096": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2097": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2098": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2099": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2142": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2143": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2144": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2145": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2146": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2147": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2163": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2164": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2165": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2166": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2167": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2168": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2169": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2170": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2171": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2173": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2174": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2205": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2206": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2207": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2208": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2209": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2210": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2211": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2212": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2213": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2214": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2215": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2216": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2217": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2218": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2219": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2220": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2221": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2222": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2223": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2224": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2225": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2226": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2227": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2228": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2229": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2230": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2231": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2232": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2233": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2234": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2235": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2236": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2237": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2238": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2239": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2240": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2241": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2242": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2243": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2244": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2245": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2246": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2247": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2248": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2249": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2250": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2251": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2252": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2253": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2254": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2255": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2256": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2257": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2258": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2259": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2260": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2261": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2262": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2263": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2264": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2265": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2266": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2267": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2268": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2269": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2270": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2271": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2272": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2273": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2274": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2275": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2278": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2279": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2280": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2282": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2284": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2285": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2286": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2287": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2288": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2289": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2290": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2291": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2292": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2293": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2294": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2295": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2296": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2297": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2298": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2299": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2300": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2301": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2302": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2303": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2306": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2307": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2308": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2309": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2310": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2311": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2312": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2313": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2314": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2330": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2331": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2332": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2334": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2335": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2336": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2338": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2339": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2341": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2344": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2345": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2346": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2347": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2348": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2349": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2350": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2351": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2352": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "2353": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2354": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2355": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2356": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2357": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2358": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2359": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2660": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2661": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "2662": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "501": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "502": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "503": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "504": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "505": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "506": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "507": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "508": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "509": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "510": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "511": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "512": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "513": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "514": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "515": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "516": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "517": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "518": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "519": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "520": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "521": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "522": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "523": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "524": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "525": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "526": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "527": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "528": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "529": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "530": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "531": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "532": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "533": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "534": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "535": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "536": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "550": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "551": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "552": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "553": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "554": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "555": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "556": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "557": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "637": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "638": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "639": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "640": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "641": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "642": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "649": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "650": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "651": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "652": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "653": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "654": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "661": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "662": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "663": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "664": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "665": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "666": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "667": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "668": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "669": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "670": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "671": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "672": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "674": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "675": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "676": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "677": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "678": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "679": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "680": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "681": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "682": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "683": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "684": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "685": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "694": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "695": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "696": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "697": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "698": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "699": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "706": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "707": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "708": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "709": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "710": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "711": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "712": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "713": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "714": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "715": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "716": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "717": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "718": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "719": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "720": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "721": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "722": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "723": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "725": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "727": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "728": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "729": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "730": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "731": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "732": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "733": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "735": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "737": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "738": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "739": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "740": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "741": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "742": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "743": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "744": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "745": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "746": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "747": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "748": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "749": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "750": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "751": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "752": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "753": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "754": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "755": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "756": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "757": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "758": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "759": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "760": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "761": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "763": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "764": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "765": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "768": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "769": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "770": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "771": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "772": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "773": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "774": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "775": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "776": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "777": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "778": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "779": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "786": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "787": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "788": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "789": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "790": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "791": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "792": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "793": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "794": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "795": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "796": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "797": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "799": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "800": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "801": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "802": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "803": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "804": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "805": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "806": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "807": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "808": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "809": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "810": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "811": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "812": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "813": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "814": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "815": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "818": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "828": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "829": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "830": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "831": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "832": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "833": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "837": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "838": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "839": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "840": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "841": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "842": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "843": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "844": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "845": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "848": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "849": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "850": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "851": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "852": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "853": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "854": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "855": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "856": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "857": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "858": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "859": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "862": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "863": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "864": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "865": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "866": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "867": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "868": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "874": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "875": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "876": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "877": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "878": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "879": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "880": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "881": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "882": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "883": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "884": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "885": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "886": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "887": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "888": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "889": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "890": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "891": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "892": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "894": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "895": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "896": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "897": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "898": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "899": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "900": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "901": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "902": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "903": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "904": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "905": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "918": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "919": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "920": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "921": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "922": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "923": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "925": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "926": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "927": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "928": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "929": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "930": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "937": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "938": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "939": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "940": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "941": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "942": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "943": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "944": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "945": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "946": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "947": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "948": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "949": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "950": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "951": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "952": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "953": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "954": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "960": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "961": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "962": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "963": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "964": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "965": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "966": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "967": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "968": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "969": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "970": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "971": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "972": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "973": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "974": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "975": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "976": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "977": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "978": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "979": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "980": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "981": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "982": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "983": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "984": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "985": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "986": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "987": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "988": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "989": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "990": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "991": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "992": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "993": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "994": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "995": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "996": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "997": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "998": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "999": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    }
+  },
+  "unchanged_path_reuse": {
+    "changed_task_ids": [
+      501,
+      502,
+      503,
+      504,
+      505,
+      506,
+      507,
+      508,
+      509,
+      510,
+      511,
+      512,
+      513,
+      514,
+      515,
+      516,
+      517,
+      518,
+      1012,
+      1086,
+      1087,
+      1088,
+      1089,
+      1090,
+      1091,
+      1350,
+      1351,
+      1455,
+      1784,
+      1785,
+      1786,
+      1787,
+      1788,
+      1789,
+      2236,
+      2237,
+      2238,
+      2239
+    ],
+    "fresh_native_instances": 1955,
+    "fresh_native_unchanged_task_probes": 1195,
+    "parent_validation_canonical_sha256": "27bd07af0c3e1a6baf3bb80d6f201e1e2f1fbdfb2a537107136f8472d3780b5b",
+    "reused_unchanged_instances": 22705,
+    "rule": "All changed source-frame paths revalidated for every variant. Other paths retain identical inputs and execution; one fresh reset/render/repeat per task must equal the entire old record."
+  },
+  "validated_instances": 24660,
+  "validation_canonical_sha256": "00899e32d24194f2dd96183c8988e0f6e610873a87411cde06ab5cc645ad5b61",
+  "public_export_note": "Removed host-specific provenance paths from validation evidence and archive owner metadata. All task payloads, randomization manifests, bindings and numeric validation results are unchanged."
+}

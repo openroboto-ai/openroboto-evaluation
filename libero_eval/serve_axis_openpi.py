@@ -32,6 +32,7 @@ class DeterministicAxisPolicy:
         action_dim: int,
         policy_samples: int = 1,
         sample_reduction: str = "mean",
+        numerical_runtime: dict | None = None,
     ) -> None:
         if type(policy_samples) is not int or not 1 <= policy_samples <= 16:
             raise ValueError("policy_samples must be an integer between 1 and 16")
@@ -43,6 +44,7 @@ class DeterministicAxisPolicy:
         self._action_dim = int(action_dim)
         self._policy_samples = policy_samples
         self._sample_reduction = sample_reduction
+        self._numerical_runtime = numerical_runtime
 
     @property
     def metadata(self) -> dict:
@@ -51,6 +53,7 @@ class DeterministicAxisPolicy:
             "axis_policy_seed": self._seed,
             "axis_policy_samples": self._policy_samples,
             "axis_sample_reduction": self._sample_reduction,
+            "axis_numerical_runtime": self._numerical_runtime,
             "axis_noise_derivation": (
                 "sha256(seed,task_id,trial,inference_call)+numpy-pcg64-v1; "
                 "sample 0 uses the legacy address, additional samples append ':sample:N'"
@@ -117,6 +120,16 @@ def main() -> None:
 
     checkpoint = args.checkpoint.expanduser().resolve()
 
+    from axis_jax_runtime import axis_jax_runtime_metadata, configure_axis_jax_environment
+
+    numerical_runtime = None
+    if not (checkpoint / "model.safetensors").is_file():
+        # Also enforce the contract when this server is launched directly.
+        # The OpenPI imports below import JAX, so configuration must precede them.
+        configure_axis_jax_environment(os.environ)
+        numerical_runtime = axis_jax_runtime_metadata()
+        logging.info("AXIS JAX numerical runtime: %s", numerical_runtime)
+
     from axis_openpi_sources import bind_openpi_sources
 
     bind_openpi_sources(args.openpi_root)
@@ -137,6 +150,7 @@ def main() -> None:
         action_dim=config.model.action_dim,
         policy_samples=args.policy_samples,
         sample_reduction=args.sample_reduction,
+        numerical_runtime=numerical_runtime,
     )
     hostname = socket.gethostname()
     logging.info("Creating AXIS policy server (host: %s, port: %d, seed: %d)", hostname, args.port, args.seed)

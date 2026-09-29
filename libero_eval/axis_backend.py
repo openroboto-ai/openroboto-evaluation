@@ -19,15 +19,17 @@ from axis_runtime import (
     canonical_json_sha256,
     load_manifest,
     task_specs,
+    task_trial_count,
 )
 from axis_sampling import sample_tasks
 from axis_progress import report_axis_progress
 from axis_model_input import AXIS_PI05_DISCRETE_STATE_INPUT, model_uses_discrete_state
+from axis_release import AXIS_CURRENT_NAME, prepare_release
 
 
 AXIS_TASK_SCRIPT = pathlib.Path(__file__).resolve().parent / "axis_task.py"
 VALIDATOR_ROOT = pathlib.Path(__file__).resolve().parents[1]
-AXIS_BENCHMARKS = (AXIS_V1_NAME, "axis")
+AXIS_BENCHMARKS = (AXIS_CURRENT_NAME, AXIS_V1_NAME, "axis")
 AXIS_RENDERER_BACKEND = "osmesa"
 
 
@@ -40,16 +42,26 @@ def _manifest_path(benchmark: str, override: str | None = None) -> pathlib.Path:
         raise ValueError("--axis-manifest requires --benchmark axis; named releases cannot be overridden")
     if benchmark not in AXIS_BENCHMARKS:
         raise ValueError(f"unsupported Axis benchmark {benchmark!r}; choose from {list(AXIS_BENCHMARKS)}")
+    if benchmark == AXIS_CURRENT_NAME:
+        return prepare_release()
     return AXIS_V1_CONFIG_PATH
 
 
 def apply_manifest_defaults(args: Any) -> None:
     """Resolve benchmark defaults before downloads, GPU reservations or model checks."""
+    path = _manifest_path(args.benchmark, args.axis_manifest)
     manifest = load_manifest(
-        _manifest_path(args.benchmark, args.axis_manifest),
+        path,
         expected_name=None if args.benchmark == "axis" else args.benchmark,
     )
     args.axis_loaded_manifest = manifest
+    args.axis_resolved_manifest = path
+    if args.benchmark == AXIS_CURRENT_NAME:
+        randomization = path.with_name("randomization.json")
+        override = getattr(args, "axis_randomization_manifest", None)
+        if override is not None and pathlib.Path(override).resolve() != randomization:
+            raise ValueError("named AXIS releases cannot override the randomization manifest")
+        args.axis_randomization_manifest = str(randomization)
     if getattr(args, "axis_sample_size", None) is not None or getattr(args, "axis_sampling_seed", None) is not None:
         # Freeze the draw before downloads, policy startup and any model scores.
         _selected_task_ids(args, manifest)
@@ -148,7 +160,7 @@ def _task_command(
         "--port",
         str(port),
         "--num-trials",
-        str(args.num_trials),
+        str(getattr(args, "axis_trials_by_task", {}).get(task_id, args.num_trials)),
         "--replan-steps",
         str(args.axis_replan_steps),
         "--policy-seed",
@@ -225,6 +237,15 @@ def _summary(results: dict[int, dict[str, Any]], metadata: dict[str, Any]) -> di
     episodes = sum(int(result.get("num_trials", 0)) for result in results.values())
     successes = sum(int(result.get("num_successes", 0)) for result in results.values())
     failed_tasks = sum(result.get("status") != "ok" for result in results.values())
+    episode_rate = successes / episodes if episodes else 0.0
+    score_reduction = metadata.get("score_reduction", "episode_mean")
+    if score_reduction not in {"episode_mean", "task_mean"}:
+        raise ValueError(f"Unsupported AXIS score reduction: {score_reduction}")
+    rate = episode_rate
+    if score_reduction == "task_mean":
+        # A missing/failed task must never improve the score by disappearing.
+        complete = bool(results) and not failed_tasks and all(r.get("num_trials", 0) > 0 for r in results.values())
+        rate = sum(r["num_successes"] / r["num_trials"] for r in results.values()) / len(results) if complete else None
     return {
         **metadata,
         "tasks": {str(task_id): result for task_id, result in sorted(results.items())},
@@ -232,13 +253,14 @@ def _summary(results: dict[int, dict[str, Any]], metadata: dict[str, Any]) -> di
         "failed_tasks": failed_tasks,
         "total_episodes": episodes,
         "total_successes": successes,
-        "overall_success_rate": successes / episodes if episodes else 0.0,
+        "overall_success_rate": rate,
+        "episode_success_rate": episode_rate,
         "suites": {
             metadata["benchmark"]: {
                 "tasks": len(results),
                 "episodes": episodes,
                 "successes": successes,
-                "success_rate": successes / episodes if episodes else 0.0,
+                "success_rate": rate,
             }
         },
     }
@@ -256,7 +278,9 @@ def run(
 ) -> int:
     if not axis_python.is_file():
         raise FileNotFoundError(f"AXIS runtime is missing: {axis_python}; run bash setup_axis.sh")
-    manifest_path = _manifest_path(args.benchmark, getattr(args, "axis_manifest", None))
+    manifest_path = getattr(args, "axis_resolved_manifest", None) or _manifest_path(
+        args.benchmark, getattr(args, "axis_manifest", None)
+    )
     manifest = getattr(args, "axis_loaded_manifest", None) or load_manifest(
         manifest_path, expected_name=None if args.benchmark == "axis" else args.benchmark
     )
@@ -288,6 +312,7 @@ def run(
         args.num_trials = int(manifest["protocol"]["default_trials_per_task"])
     if args.num_trials < 1:
         raise ValueError("--num-trials must be at least 1")
+    args.axis_trials_by_task = {tid: task_trial_count(task_specs(manifest)[tid], args.num_trials) for tid in selected}
     if manifest["protocol"]["randomization"]:
         if getattr(args, "axis_randomization_manifest", None) is None:
             raise ValueError("custom randomized Axis manifests require explicit --axis-randomization-manifest")
@@ -342,7 +367,7 @@ def run(
     progress_path = getattr(args, "progress_file", None)
     # Environment-only smoke checks must not advertise completed model trials.
     progress_path = pathlib.Path(progress_path).resolve() if progress_path and not args.dry_run else None
-    with report_axis_progress(progress_path, benchmark, selected, args.num_trials) as record_progress:
+    with report_axis_progress(progress_path, benchmark, selected, args.axis_trials_by_task) as record_progress:
         try:
             if args.dry_run:
                 for index, task_id in enumerate(selected):
@@ -455,6 +480,11 @@ def run(
             if servers and stop_servers is not None:
                 stop_servers(servers)
 
+    numerical_runtime = None
+    if checkpoint is not None and not args.axis_policy_port and not (checkpoint / "model.safetensors").is_file():
+        from axis_jax_runtime import axis_jax_runtime_metadata
+
+        numerical_runtime = axis_jax_runtime_metadata()
     summary = _summary(
         results,
         {
@@ -463,6 +493,7 @@ def run(
             "renderer_backend": AXIS_RENDERER_BACKEND,
             "manifest_canonical_sha256": canonical_json_sha256(manifest),
             "evaluator_source_git_commit": args.evaluator_source_git_commit,
+            "numerical_runtime": numerical_runtime,
             "dry_run": bool(args.dry_run),
             "model": None if checkpoint is None else str(args.model),
             "model_family": None if checkpoint is None else args.model_family,
@@ -475,7 +506,16 @@ def run(
             "gripper_mode": gripper_mode,
             "policy_samples": policy_samples,
             "sample_reduction": sample_reduction,
-            "num_trials_per_task": 0 if args.dry_run else args.num_trials,
+            "num_trials_per_task": (
+                0
+                if args.dry_run
+                else next(iter(set(args.axis_trials_by_task.values())))
+                if len(set(args.axis_trials_by_task.values())) == 1
+                else None
+            ),
+            "requested_trials_per_randomized_task": args.num_trials,
+            "trials_by_task": {str(tid): count for tid, count in args.axis_trials_by_task.items()},
+            "score_reduction": manifest["protocol"].get("score_reduction", "episode_mean"),
             "randomization": bool(manifest["protocol"]["randomization"]),
             "randomization_seed": (args.axis_randomization_seed if manifest["protocol"]["randomization"] else None),
             "gpus": gpus,

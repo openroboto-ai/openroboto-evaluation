@@ -203,6 +203,12 @@ def successful_payload_incomplete_reason(payload: dict) -> str:
 
     task_ids = []
     expected_trials = payload.get("expected_trials_per_task")
+    if profile.randomization_manifest_path is not None:
+        seed = payload.get("init_seed")
+        if type(seed) is not int or not 0 <= seed < 2**32:
+            return "randomized AXIS score is missing its queue seed"
+        if expected_trials != profile.expected_trials_per_task:
+            return "randomized AXIS trial count differs from the frozen profile"
     for entry in per_task:
         if not isinstance(entry, dict) or not isinstance(entry.get("task_id"), str):
             return "per_task_scores contains a malformed task record"

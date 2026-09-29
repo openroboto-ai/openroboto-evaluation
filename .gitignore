@@ -14,7 +14,8 @@ hf_models*/
 *.pth
 
 # 外部依赖 checkout(openpi、LIBERO-PRO,由 setup.sh 克隆或手动符号链接)
-third_party/
+!third_party/
+third_party/*
 
 # benchmark_worker 运行时状态与日志
 benchmark_worker_state.json*
@@ -56,6 +57,7 @@ __pycache__/
 # Publish reviewed user documentation, not the internal research/operations archive.
 /docs/*
 !/docs/axis.md
+!/docs/axis_v2_randomization.md
 !/docs/init_state_randomization.md
 !/docs/robodojo.md
 !/docs/robotwin.md
@@ -110,3 +112,14 @@ __pycache__/
 /tests/test_axis_training_target.py
 /tests/test_axis_upstream_evidence.py
 /tests/test_real_world_evidence.py
+
+# Historical experiments remain local; the public tree contains current runtime releases only.
+/configs/benchmarks/axis_v1.1-official/
+/configs/benchmarks/axis_v20260928.31-official.tar.zst
+/configs/benchmarks/axis-official-audit-20260928/
+/configs/benchmarks/axis-selector-official-*.json
+/configs/benchmarks/axis_v2.0-evaluation-20260929.*
+/libero_eval/axis_canary.py
+/libero_eval/serve_axis_canary.py
+/libero_eval/axis_training_initialization.py
+/tests/test_axis_training_initialization.py

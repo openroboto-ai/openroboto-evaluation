@@ -218,18 +218,19 @@ class AxisInputs:
 
     def __call__(self, data: dict[str, Any]) -> dict[str, Any]:
         image = _parse_image(data["observation/image"])
+        wrist = _parse_image(data["observation/wrist_image"]) if "observation/wrist_image" in data else None
         state = np.asarray(data["observation/state"], dtype=np.float32)
         if state.shape != (ACTION_DIM,) or not np.isfinite(state).all():
             raise ValueError(f"AXIS observation/state must contain {ACTION_DIM} finite values, got {state.shape}")
         result: dict[str, Any] = {
             "image": {
                 "base_0_rgb": image,
-                "left_wrist_0_rgb": np.zeros_like(image),
+                "left_wrist_0_rgb": wrist if wrist is not None else np.zeros_like(image),
                 "right_wrist_0_rgb": np.zeros_like(image),
             },
             "image_mask": {
                 "base_0_rgb": np.True_,
-                "left_wrist_0_rgb": np.False_,
+                "left_wrist_0_rgb": np.bool_(wrist is not None),
                 "right_wrist_0_rgb": np.False_,
             },
             "state": state,

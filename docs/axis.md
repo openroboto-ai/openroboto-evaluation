@@ -1,16 +1,16 @@
-# AXIS v1.0 evaluation protocol
+# AXIS V2.0 evaluation protocol
+
+The current release uses [combined randomization](axis_v2_randomization.md)
+in native MuJoCo. The V1.0 base-scene bundle remains available as source material
+for task import, fixed controls and training replay exports.
 
 ## Current benchmark
 
-`axis_v1.0` is defined by [axis_v1.0.yaml](../configs/benchmarks/axis_v1.0.yaml).
-The YAML pins [axis_v1.0.json](../configs/benchmarks/axis_v1.0.json) and its
-[30 task snapshots](../configs/benchmarks/axis_v1.0-tasks/). Task IDs, instructions,
-initial scenes and success predicates are frozen together.
-
-For a new release, select tasks in the YAML's `tasks` list; its length is the task count. The JSON
-stores the frozen definitions and protocol, and the task directory contains each
-scene, initial state and success checker. Future 40- or 50-task releases use their
-own versioned YAML, JSON and snapshots; published versions are immutable.
+`axis_v2.0` contains 30 tasks and their frozen randomized instances in
+[the release bundle](../configs/benchmarks/axis_v2.0.tar.zst).
+Its [receipt](../configs/benchmarks/axis_v2.0-release.json) pins the archive
+and manifest hashes. The named CLI verifies and unpacks it into `.cache/axis/releases/axis_v2.0`.
+Task IDs, instructions, randomization components and success predicates are frozen together.
 
 | Parameter | Value |
 |---|---|
@@ -22,11 +22,12 @@ own versioned YAML, JSON and snapshots; published versions are immutable.
 | Gripper decoding | Continuous |
 | Policy seed | 20260907 |
 | Pi0.5 state tokens | Enabled for every submission |
-| Scene randomization | Disabled |
+| Scene randomization | All supported components combined |
+| Environment seed | Queue-provided; explicit seed for independent comparisons |
 | Renderer | OSMesa |
 
 The evaluator invokes each frozen task's success checker; it does not infer success
-from a model response. The current fixed scenes permit task-specific optimization.
+from a model response. Frozen public instances still permit task-specific optimization.
 Publishing the evaluator does not make this protocol an unseen-task test.
 
 ## Checkpoint contract
@@ -46,14 +47,14 @@ before policy startup.
 ## Run
 
 Install with `bash setup.sh` followed by `bash setup_axis.sh`. The latter requires
-system OSMesa libraries and verifies the frozen base task bundle.
+system OSMesa libraries and verifies the current randomized bundle.
 
 ```bash
 uv run python libero_eval/run_eval.py \
   --model /path/to/checkpoint --commit-id local \
-  --backbone pi0.5 --benchmark axis_v1.0 \
+  --backbone pi0.5 --benchmark axis_v2.0 --axis-randomization-seed 20260928 \
   --num-trials 20 --gpus 0 --workers-per-gpu 1 \
-  --output-dir eval_runs/axis-v1-run
+  --output-dir eval_runs/axis-v2-run
 ```
 
 Remote repositories require their exact 40-character commit. For a smoke test,
@@ -63,27 +64,56 @@ Use `OPENPI_DIR` and `AXIS_RUNTIME_DIR` to point to separately installed runtime
 To check the released definitions without a GPU or model:
 
 ```bash
-uv run python tools/verify_axis_release.py \
-  --manifest configs/benchmarks/axis_v1.0.yaml
+uv run python -c 'from libero_eval.axis_release import prepare_release; print(prepare_release())'
 ```
 
 The run stores model identity, definition hashes, actual inference settings,
 per-task successes and trial counts in `summary.json`. Keep this result alongside
 the exact model revision when comparing runs.
 
+## JAX numerical reproducibility
+
+Native AXIS JAX servers use `axis-jax-deterministic-no-disk-cache-v1`, recorded in
+the managed evaluator summary's `numerical_runtime` and the server handshake's
+`axis_numerical_runtime`. Both the evaluator launcher and direct
+`serve_axis_openpi.py` entry point enforce this configuration before importing JAX:
+
+- Disable persistent JAX executable caches and XLA autotune caches, ignoring
+  inherited cache paths and XLA flags.
+- Disable live autotuning with `--xla_gpu_autotune_level=0` and require
+  deterministic GPU operations.
+- Retain in-process JIT reuse. Each fresh policy process must compile again;
+  default kernels may also be slower than tuned kernels.
+
+This addresses a measured RTX 4090 discrepancy: identical model weights, seed
+and scenes scored 547/600 with an older autotune cache and 552/600 with a fresh
+cache. Deterministic-operation flags alone did not isolate those stored choices.
+Scores from the old cache-dependent runtime must be reevaluated together before
+comparison with this runtime; changing runtime does not preserve an old score.
+The analysis tool rejects comparisons mixing recorded numerical runtime policies,
+including a new policy with an unrecorded legacy policy.
+
+This is not a cross-hardware guarantee. Keep the checkpoint, evaluator, OpenPI,
+JAX/jaxlib, CUDA libraries, simulator, CPU/rendering environment and GPU model
+fixed when testing exact replay. RTX 4090 versus RTX 5090 equivalence requires
+separate measurement; the same seed or container does not establish it. Compare
+per-episode outcomes, terminal steps and checker values, not only the total score.
+PyTorch checkpoints and external policy servers are outside this JAX contract;
+their evaluator summary records `numerical_runtime: null`.
+
+See [XLA determinism](https://openxla.org/xla/determinism) and
+[cuBLAS reproducibility](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility)
+for the distinction between deterministic execution and numerical portability.
+
 ## Project-hosted baseline
 
 The reference checkpoint is available at
 [openroboto-ai/pi05-axis-baseline](https://huggingface.co/openroboto-ai/pi05-axis-baseline).
 Its verified inference revision is `55f8b28ed021f7ee0bef02cde114a7b5dcae9d5c`.
-Use that repository and revision with the evaluation command above. The weights
-and normalization files are unchanged; internal training-path records are excluded.
-The model card pins evaluator commit `2f69d117517f8b388d2d01a94964df63f1b6620e`,
-which includes the replay exporter below.
-
-The included 74.67% result is historical `axis_v0.2` performance on training-task
-scenes, not a newly measured AXIS v1.0 result. Hosting a copy does not change an
-existing competition's configured baseline repository or revision.
+The weights and normalization files are unchanged.
+The model card pins evaluator commit `2f69d117517f8b388d2d01a94964df63f1b6620e`.
+Its historical result is not a newly measured V2.0 randomized score.
+Publishing this evaluator does not change a competition's configured baseline.
 
 ## Render training replays
 

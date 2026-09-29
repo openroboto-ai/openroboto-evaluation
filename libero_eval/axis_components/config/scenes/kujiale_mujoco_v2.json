@@ -1,0 +1,347 @@
+{
+  "schema_version": "axis_kujiale_combinatorial_scene_v2",
+  "library_id": "kujiale_mujoco_composed_v2",
+  "source_reference": {
+    "workspace": "axis-training",
+    "showcase_scene_ids": ["003", "004", "008", "020", "022", "031", "032", "033"],
+    "design_policy": "Runtime composition of lightweight MuJoCo-native visual modules; no USD or MDL is interpreted at render time."
+  },
+  "theme_axis": "theme",
+  "axis_order": ["backdrop", "left", "right", "floor", "theme"],
+  "workspace_keepout": [[-1.15, 1.05], [-1.0, 1.0], [0.02, 2.35]],
+  "material_roles": {
+    "wall_main": {"reflectance": 0.0, "shininess": 0.08, "specular": 0.05},
+    "wall_alt": {"reflectance": 0.0, "shininess": 0.10, "specular": 0.07},
+    "trim": {"reflectance": 0.0, "shininess": 0.42, "specular": 0.36},
+    "dark": {"reflectance": 0.0, "shininess": 0.42, "specular": 0.40},
+    "wood": {"reflectance": 0.0, "shininess": 0.28, "specular": 0.22},
+    "upholstery": {"reflectance": 0.0, "shininess": 0.06, "specular": 0.05},
+    "fabric": {"reflectance": 0.0, "shininess": 0.04, "specular": 0.03},
+    "glass": {"reflectance": 0.0, "shininess": 0.55, "specular": 0.25, "emission": 0.06},
+    "stone": {"reflectance": 0.0, "shininess": 0.22, "specular": 0.18},
+    "accent_a": {"reflectance": 0.0, "shininess": 0.20, "specular": 0.12, "emission": 0.015},
+    "accent_b": {"reflectance": 0.0, "shininess": 0.20, "specular": 0.12, "emission": 0.015},
+    "ceramic": {"reflectance": 0.0, "shininess": 0.36, "specular": 0.28},
+    "greenery": {"reflectance": 0.0, "shininess": 0.08, "specular": 0.05},
+    "light": {"reflectance": 0.0, "shininess": 0.20, "specular": 0.10, "emission": 0.12}
+  },
+  "themes": [
+    {
+      "id": "nordic_daylight",
+      "source_scene_ids": ["003", "032"],
+      "surface_asset_ids": {
+        "table": ["fine_grained_wood", "plywood", "stained_pine", "laminate_floor_03", "wood_table_001"],
+        "floor": ["marble_01", "interior_tiles", "large_floor_tiles_02", "terrazzo_tiles"],
+        "wall": ["white_plaster_02", "white_plaster_rough_01", "white_plaster_rough_02", "painted_plaster_wall"]
+      },
+      "table_style": {"mode": "four_leg_apron", "frame_material": "wood", "edge_material": "trim", "foot_material": "dark", "top_skin_thickness": 0.012, "edge_thickness": 0.012, "leg_half_width": [0.042, 0.042], "leg_inset": [0.115, 0.115], "apron_height": 0.065, "apron_thickness": 0.028, "foot_height": 0.010},
+      "palette": {
+        "wall_main": [0.86, 0.84, 0.78, 1.0], "wall_alt": [0.67, 0.64, 0.57, 1.0], "trim": [0.61, 0.45, 0.25, 1.0], "dark": [0.035, 0.04, 0.045, 1.0],
+        "wood": [0.58, 0.36, 0.16, 1.0], "upholstery": [0.23, 0.24, 0.22, 1.0], "fabric": [0.72, 0.68, 0.60, 1.0], "glass": [0.30, 0.52, 0.68, 0.42],
+        "stone": [0.58, 0.57, 0.54, 1.0], "accent_a": [0.16, 0.36, 0.42, 1.0], "accent_b": [0.74, 0.48, 0.18, 1.0], "ceramic": [0.78, 0.72, 0.62, 1.0],
+        "greenery": [0.10, 0.30, 0.20, 1.0], "light": [1.0, 0.78, 0.48, 1.0]
+      }
+    },
+    {
+      "id": "warm_walnut",
+      "source_scene_ids": ["020", "022"],
+      "surface_asset_ids": {
+        "table": ["dark_wood", "rosewood_veneer1", "wood_table", "wood_table_worn", "rectangular_parquet"],
+        "floor": ["wood_floor", "laminate_floor_02", "large_floor_tiles_02", "terrazzo_tiles"],
+        "wall": ["white_plaster_02", "grey_plaster", "plastered_wall_05", "painted_plaster_wall"]
+      },
+      "table_style": {"mode": "four_leg_apron", "frame_material": "wood", "edge_material": "trim", "foot_material": "dark", "top_skin_thickness": 0.013, "edge_thickness": 0.014, "leg_half_width": [0.047, 0.047], "leg_inset": [0.110, 0.110], "apron_height": 0.078, "apron_thickness": 0.032, "foot_height": 0.012},
+      "palette": {
+        "wall_main": [0.64, 0.57, 0.49, 1.0], "wall_alt": [0.22, 0.14, 0.10, 1.0], "trim": [0.55, 0.36, 0.12, 1.0], "dark": [0.025, 0.02, 0.018, 1.0],
+        "wood": [0.32, 0.14, 0.055, 1.0], "upholstery": [0.18, 0.12, 0.09, 1.0], "fabric": [0.57, 0.45, 0.34, 1.0], "glass": [0.22, 0.40, 0.48, 0.42],
+        "stone": [0.42, 0.37, 0.32, 1.0], "accent_a": [0.62, 0.17, 0.09, 1.0], "accent_b": [0.12, 0.28, 0.36, 1.0], "ceramic": [0.68, 0.52, 0.35, 1.0],
+        "greenery": [0.08, 0.24, 0.13, 1.0], "light": [1.0, 0.62, 0.32, 1.0]
+      }
+    },
+    {
+      "id": "gallery_neutral",
+      "source_scene_ids": ["004", "008"],
+      "surface_asset_ids": {
+        "table": ["plywood", "grey_cartago_02", "rosewood_veneer1", "wood_table_worn", "granite_tile_02"],
+        "floor": ["grey_cartago_02", "granite_tile_02", "slate_floor", "marble_tiles", "mixed_stone_tiles"],
+        "wall": ["white_plaster_02", "grey_plaster_02", "painted_plaster_wall", "plastered_wall_03"]
+      },
+      "table_style": {"mode": "four_leg_apron", "frame_material": "wood", "edge_material": "trim", "foot_material": "dark", "top_skin_thickness": 0.012, "edge_thickness": 0.012, "leg_half_width": [0.047, 0.047], "leg_inset": [0.110, 0.110], "apron_height": 0.080, "apron_thickness": 0.033, "foot_height": 0.012},
+      "palette": {
+        "wall_main": [0.78, 0.77, 0.74, 1.0], "wall_alt": [0.42, 0.43, 0.44, 1.0], "trim": [0.48, 0.35, 0.22, 1.0], "dark": [0.06, 0.06, 0.065, 1.0],
+        "wood": [0.42, 0.25, 0.12, 1.0], "upholstery": [0.16, 0.16, 0.17, 1.0], "fabric": [0.66, 0.64, 0.59, 1.0], "glass": [0.32, 0.46, 0.58, 0.42],
+        "stone": [0.52, 0.52, 0.52, 1.0], "accent_a": [0.62, 0.10, 0.07, 1.0], "accent_b": [0.08, 0.24, 0.46, 1.0], "ceramic": [0.76, 0.69, 0.55, 1.0],
+        "greenery": [0.08, 0.26, 0.18, 1.0], "light": [1.0, 0.74, 0.46, 1.0]
+      }
+    },
+    {
+      "id": "jade_luxe",
+      "source_scene_ids": ["022", "031"],
+      "surface_asset_ids": {
+        "table": ["dark_wood", "fine_grained_wood", "granite_tile", "grey_cartago_02", "terrazzo_tiles"],
+        "floor": ["slate_floor", "granite_tile_02", "marble_01", "terrazzo_tiles"],
+        "wall": ["white_plaster_02", "grey_plaster", "blue_plaster_wall", "painted_plaster_wall"]
+      },
+      "table_style": {"mode": "four_leg_apron", "frame_material": "wood", "edge_material": "trim", "foot_material": "dark", "top_skin_thickness": 0.012, "edge_thickness": 0.016, "leg_half_width": [0.045, 0.045], "leg_inset": [0.110, 0.110], "apron_height": 0.070, "apron_thickness": 0.030, "foot_height": 0.012},
+      "palette": {
+        "wall_main": [0.70, 0.68, 0.60, 1.0], "wall_alt": [0.07, 0.20, 0.19, 1.0], "trim": [0.58, 0.40, 0.13, 1.0], "dark": [0.025, 0.035, 0.034, 1.0],
+        "wood": [0.36, 0.20, 0.08, 1.0], "upholstery": [0.06, 0.16, 0.15, 1.0], "fabric": [0.58, 0.55, 0.44, 1.0], "glass": [0.20, 0.50, 0.52, 0.42],
+        "stone": [0.44, 0.48, 0.43, 1.0], "accent_a": [0.08, 0.42, 0.38, 1.0], "accent_b": [0.72, 0.54, 0.16, 1.0], "ceramic": [0.76, 0.68, 0.48, 1.0],
+        "greenery": [0.06, 0.32, 0.18, 1.0], "light": [1.0, 0.72, 0.40, 1.0]
+      }
+    },
+    {
+      "id": "terracotta_studio",
+      "source_scene_ids": ["003", "020"],
+      "surface_asset_ids": {
+        "table": ["terrazzo_tiles", "painted_concrete_02", "linoleum_brown", "plywood", "stained_pine"],
+        "floor": ["interior_tiles", "floor_tiles_06", "marble_01", "concrete_floor_02"],
+        "wall": ["clay_plaster", "painted_plaster_wall", "white_plaster_02", "brick_wall_001"]
+      },
+      "table_style": {"mode": "four_leg_apron", "frame_material": "wood", "edge_material": "wood", "foot_material": "dark", "top_skin_thickness": 0.015, "edge_thickness": 0.018, "leg_half_width": [0.055, 0.055], "leg_inset": [0.100, 0.100], "apron_height": 0.095, "apron_thickness": 0.040, "foot_height": 0.012},
+      "palette": {
+        "wall_main": [0.72, 0.60, 0.50, 1.0], "wall_alt": [0.42, 0.18, 0.12, 1.0], "trim": [0.34, 0.16, 0.08, 1.0], "dark": [0.05, 0.035, 0.03, 1.0],
+        "wood": [0.46, 0.24, 0.10, 1.0], "upholstery": [0.30, 0.12, 0.08, 1.0], "fabric": [0.66, 0.50, 0.37, 1.0], "glass": [0.28, 0.46, 0.58, 0.42],
+        "stone": [0.55, 0.44, 0.37, 1.0], "accent_a": [0.70, 0.26, 0.12, 1.0], "accent_b": [0.08, 0.34, 0.34, 1.0], "ceramic": [0.72, 0.42, 0.22, 1.0],
+        "greenery": [0.10, 0.28, 0.12, 1.0], "light": [1.0, 0.67, 0.38, 1.0]
+      }
+    },
+    {
+      "id": "industrial_cool",
+      "source_scene_ids": ["031", "033"],
+      "surface_asset_ids": {
+        "table": ["blue_metal_plate", "metal_plate_02", "rough_concrete", "rubber_tiles", "slate_floor_03"],
+        "floor": ["concrete_floor", "concrete_floor_02", "slate_floor_03", "large_grey_tiles"],
+        "wall": ["concrete_wall_003", "grey_plaster_03", "dark_brick_wall", "painted_concrete"]
+      },
+      "table_style": {"mode": "four_leg_apron", "frame_material": "dark", "edge_material": "wood", "foot_material": "dark", "top_skin_thickness": 0.011, "edge_thickness": 0.010, "leg_half_width": [0.035, 0.035], "leg_inset": [0.120, 0.120], "apron_height": 0.050, "apron_thickness": 0.025, "foot_height": 0.014},
+      "palette": {
+        "wall_main": [0.48, 0.49, 0.50, 1.0], "wall_alt": [0.16, 0.17, 0.18, 1.0], "trim": [0.24, 0.25, 0.26, 1.0], "dark": [0.025, 0.028, 0.03, 1.0],
+        "wood": [0.39, 0.23, 0.11, 1.0], "upholstery": [0.12, 0.14, 0.16, 1.0], "fabric": [0.42, 0.43, 0.44, 1.0], "glass": [0.24, 0.42, 0.58, 0.42],
+        "stone": [0.38, 0.40, 0.42, 1.0], "accent_a": [0.12, 0.32, 0.58, 1.0], "accent_b": [0.82, 0.55, 0.10, 1.0], "ceramic": [0.58, 0.60, 0.62, 1.0],
+        "greenery": [0.08, 0.24, 0.14, 1.0], "light": [0.76, 0.86, 1.0, 1.0]
+      }
+    }
+  ],
+  "modules": {
+    "backdrop": {
+      "slot_bounds": [[-2.40, -2.10], [-2.10, 2.10], [0.05, 2.60]],
+      "options": [
+        {
+          "id": "panel_rhythm_003",
+          "fixtures": [
+            {"name": "panel_1", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, -1.64, 1.35], "size": [0.025, 0.38, 1.10], "material": "wall_main"},
+            {"name": "panel_2", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, -0.82, 1.35], "size": [0.025, 0.38, 1.10], "material": "wall_alt"},
+            {"name": "panel_3", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, 0.00, 1.35], "size": [0.025, 0.38, 1.10], "material": "wall_main"},
+            {"name": "panel_4", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, 0.82, 1.35], "size": [0.025, 0.38, 1.10], "material": "wall_alt"},
+            {"name": "panel_5", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, 1.64, 1.35], "size": [0.025, 0.38, 1.10], "material": "wall_main"},
+            {"name": "seam_1", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, -1.23, 1.35], "size": [0.020, 0.012, 1.10], "material": "trim"},
+            {"name": "seam_2", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, -0.41, 1.35], "size": [0.020, 0.012, 1.10], "material": "trim"},
+            {"name": "seam_3", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, 0.41, 1.35], "size": [0.020, 0.012, 1.10], "material": "trim"},
+            {"name": "seam_4", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, 1.23, 1.35], "size": [0.020, 0.012, 1.10], "material": "trim"}
+          ]
+        },
+        {
+          "id": "gallery_portal_004",
+          "fixtures": [
+            {"name": "portal_back", "type": "box", "frame": "table_xy_floor", "pos": [-2.31, 0.00, 1.38], "size": [0.025, 0.69, 1.05], "material": "dark"},
+            {"name": "left_wing", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, -1.43, 1.35], "size": [0.025, 0.65, 1.10], "material": "wall_alt"},
+            {"name": "right_wing", "type": "box", "frame": "table_xy_floor", "pos": [-2.30, 1.43, 1.35], "size": [0.025, 0.65, 1.10], "material": "wall_alt"},
+            {"name": "portal_top", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 2.46], "size": [0.040, 0.82, 0.055], "material": "trim"},
+            {"name": "portal_left", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, -0.78, 1.36], "size": [0.040, 0.055, 1.07], "material": "trim"},
+            {"name": "portal_right", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.78, 1.36], "size": [0.040, 0.055, 1.07], "material": "trim"}
+          ]
+        },
+        {
+          "id": "recessed_niche_022",
+          "fixtures": [
+            {"name": "niche_wall", "type": "box", "frame": "table_xy_floor", "pos": [-2.33, 0.00, 1.35], "size": [0.020, 2.00, 1.10], "material": "wall_main"},
+            {"name": "niche_back", "type": "box", "frame": "table_xy_floor", "pos": [-2.29, 0.00, 1.48], "size": [0.020, 0.78, 0.72], "material": "wall_alt"},
+            {"name": "niche_top", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 2.22], "size": [0.030, 0.84, 0.045], "material": "trim"},
+            {"name": "niche_left", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, -0.81, 1.48], "size": [0.030, 0.045, 0.76], "material": "trim"},
+            {"name": "niche_right", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.81, 1.48], "size": [0.030, 0.045, 0.76], "material": "trim"},
+            {"name": "niche_plinth", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 0.72], "size": [0.030, 0.84, 0.045], "material": "stone"}
+          ]
+        },
+        {
+          "id": "vertical_slat_020",
+          "fixtures": [
+            {"name": "slat_back", "type": "box", "frame": "table_xy_floor", "pos": [-2.34, 0.00, 1.35], "size": [0.015, 2.02, 1.10], "material": "wall_alt"},
+            {"name": "slat_1", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -1.76, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_2", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -1.32, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_3", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -0.88, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_4", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -0.44, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_5", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_6", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.44, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_7", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.88, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_8", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 1.32, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "slat_9", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 1.76, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"}
+          ]
+        },
+        {
+          "id": "horizontal_strata_031",
+          "fixtures": [
+            {"name": "stratum_1", "type": "box", "frame": "table_xy_floor", "pos": [-2.31, 0.00, 0.29], "size": [0.025, 2.02, 0.23], "material": "wall_main"},
+            {"name": "stratum_2", "type": "box", "frame": "table_xy_floor", "pos": [-2.31, 0.00, 0.79], "size": [0.025, 2.02, 0.23], "material": "wall_alt"},
+            {"name": "stratum_3", "type": "box", "frame": "table_xy_floor", "pos": [-2.31, 0.00, 1.29], "size": [0.025, 2.02, 0.23], "material": "wall_main"},
+            {"name": "stratum_4", "type": "box", "frame": "table_xy_floor", "pos": [-2.31, 0.00, 1.79], "size": [0.025, 2.02, 0.23], "material": "wall_alt"},
+            {"name": "stratum_5", "type": "box", "frame": "table_xy_floor", "pos": [-2.31, 0.00, 2.29], "size": [0.025, 2.02, 0.23], "material": "wall_main"},
+            {"name": "reveal_1", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 0.54], "size": [0.030, 2.02, 0.012], "material": "trim"},
+            {"name": "reveal_2", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 1.04], "size": [0.030, 2.02, 0.012], "material": "trim"},
+            {"name": "reveal_3", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 1.54], "size": [0.030, 2.02, 0.012], "material": "trim"},
+            {"name": "reveal_4", "type": "box", "frame": "table_xy_floor", "pos": [-2.26, 0.00, 2.04], "size": [0.030, 2.02, 0.012], "material": "trim"}
+          ]
+        },
+        {
+          "id": "window_triptych_032",
+          "fixtures": [
+            {"name": "window_back", "type": "box", "frame": "table_xy_floor", "pos": [-2.34, 0.00, 1.53], "size": [0.015, 1.68, 0.78], "material": "dark"},
+            {"name": "glass_left", "type": "box", "frame": "table_xy_floor", "pos": [-2.29, -1.10, 1.53], "size": [0.025, 0.47, 0.72], "material": "glass"},
+            {"name": "glass_mid", "type": "box", "frame": "table_xy_floor", "pos": [-2.29, 0.00, 1.53], "size": [0.025, 0.47, 0.72], "material": "glass"},
+            {"name": "glass_right", "type": "box", "frame": "table_xy_floor", "pos": [-2.29, 1.10, 1.53], "size": [0.025, 0.47, 0.72], "material": "glass"},
+            {"name": "frame_v1", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, -1.65, 1.53], "size": [0.030, 0.025, 0.82], "material": "trim"},
+            {"name": "frame_v2", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, -0.55, 1.53], "size": [0.030, 0.025, 0.82], "material": "trim"},
+            {"name": "frame_v3", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, 0.55, 1.53], "size": [0.030, 0.025, 0.82], "material": "trim"},
+            {"name": "frame_v4", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, 1.65, 1.53], "size": [0.030, 0.025, 0.82], "material": "trim"},
+            {"name": "frame_bottom", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, 0.00, 0.76], "size": [0.030, 1.68, 0.035], "material": "trim"},
+            {"name": "frame_top", "type": "box", "frame": "table_xy_floor", "pos": [-2.24, 0.00, 2.30], "size": [0.030, 1.68, 0.035], "material": "trim"}
+          ]
+        },
+        {
+          "id": "fluted_concrete_033",
+          "fixtures": [
+            {"name": "flute_back", "type": "box", "frame": "table_xy_floor", "pos": [-2.34, 0.00, 1.35], "size": [0.015, 2.02, 1.10], "material": "dark"},
+            {"name": "flute_1", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -1.80, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"},
+            {"name": "flute_2", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -1.20, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"},
+            {"name": "flute_3", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -0.60, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"},
+            {"name": "flute_4", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"},
+            {"name": "flute_5", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.60, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"},
+            {"name": "flute_6", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 1.20, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"},
+            {"name": "flute_7", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 1.80, 1.35], "size": [0.045, 0.22, 1.05], "material": "stone"}
+          ]
+        },
+        {
+          "id": "display_grid_008",
+          "fixtures": [
+            {"name": "grid_back", "type": "box", "frame": "table_xy_floor", "pos": [-2.34, 0.00, 1.35], "size": [0.015, 2.02, 1.10], "material": "wall_alt"},
+            {"name": "grid_v1", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -1.60, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "grid_v2", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, -0.80, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "grid_v3", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "grid_v4", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.80, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "grid_v5", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 1.60, 1.35], "size": [0.035, 0.035, 1.10], "material": "wood"},
+            {"name": "grid_h1", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 0.24], "size": [0.035, 1.65, 0.035], "material": "dark"},
+            {"name": "grid_h2", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 0.92], "size": [0.035, 1.65, 0.035], "material": "wood"},
+            {"name": "grid_h3", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 1.60], "size": [0.035, 1.65, 0.035], "material": "dark"},
+            {"name": "grid_h4", "type": "box", "frame": "table_xy_floor", "pos": [-2.27, 0.00, 2.38], "size": [0.035, 1.65, 0.035], "material": "wood"}
+          ]
+        }
+      ]
+    },
+    "left": {
+      "slot_bounds": [[-2.00, -1.20], [-2.10, -1.05], [0.02, 1.40]],
+      "options": [
+        {"id": "bench", "fixtures": [
+          {"name": "seat", "type": "box", "frame": "table_xy_floor", "pos": [-1.55, -1.55, 0.34], "size": [0.28, 0.48, 0.15], "material": "upholstery"},
+          {"name": "base", "type": "box", "frame": "table_xy_floor", "pos": [-1.55, -1.55, 0.13], "size": [0.22, 0.42, 0.11], "material": "dark"}
+        ]},
+        {"id": "console", "fixtures": [
+          {"name": "top", "type": "box", "frame": "table_xy_floor", "pos": [-1.58, -1.55, 0.70], "size": [0.25, 0.50, 0.035], "material": "wood"},
+          {"name": "leg_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.58, -1.91, 0.36], "size": [0.18, 0.035, 0.34], "material": "dark"},
+          {"name": "leg_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.58, -1.19, 0.36], "size": [0.18, 0.035, 0.34], "material": "dark"}
+        ]},
+        {"id": "lounge_chair", "fixtures": [
+          {"name": "seat", "type": "box", "frame": "table_xy_floor", "pos": [-1.55, -1.55, 0.40], "size": [0.32, 0.37, 0.09], "material": "upholstery"},
+          {"name": "back", "type": "box", "frame": "table_xy_floor", "pos": [-1.83, -1.55, 0.72], "size": [0.075, 0.37, 0.30], "material": "upholstery"},
+          {"name": "arm_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.55, -1.96, 0.50], "size": [0.31, 0.045, 0.20], "material": "dark"},
+          {"name": "arm_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.55, -1.14, 0.50], "size": [0.31, 0.045, 0.20], "material": "dark"}
+        ]},
+        {"id": "pedestal", "fixtures": [
+          {"name": "base", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, -1.55, 0.38], "size": [0.22, 0.36], "material": "stone"},
+          {"name": "vase", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, -1.55, 0.86], "size": [0.11, 0.16], "material": "ceramic"},
+          {"name": "orb", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.58, -1.55, 1.12], "size": [0.13], "material": "accent_a"}
+        ]},
+        {"id": "cabinet", "fixtures": [
+          {"name": "body", "type": "box", "frame": "table_xy_floor", "pos": [-1.60, -1.55, 0.38], "size": [0.30, 0.48, 0.32], "material": "wood"},
+          {"name": "top", "type": "box", "frame": "table_xy_floor", "pos": [-1.60, -1.55, 0.73], "size": [0.32, 0.50, 0.035], "material": "trim"},
+          {"name": "door_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.285, -1.78, 0.40], "size": [0.012, 0.20, 0.25], "material": "wall_alt"},
+          {"name": "door_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.285, -1.32, 0.40], "size": [0.012, 0.20, 0.25], "material": "wall_alt"}
+        ]},
+        {"id": "bookcase", "fixtures": [
+          {"name": "post_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, -1.96, 0.66], "size": [0.045, 0.045, 0.62], "material": "dark"},
+          {"name": "post_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, -1.14, 0.66], "size": [0.045, 0.045, 0.62], "material": "dark"},
+          {"name": "shelf_1", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, -1.55, 0.18], "size": [0.25, 0.45, 0.035], "material": "wood"},
+          {"name": "shelf_2", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, -1.55, 0.64], "size": [0.25, 0.45, 0.035], "material": "wood"},
+          {"name": "shelf_3", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, -1.55, 1.10], "size": [0.25, 0.45, 0.035], "material": "wood"}
+        ]}
+      ]
+    },
+    "right": {
+      "slot_bounds": [[-2.00, -1.20], [1.05, 2.10], [0.02, 1.40]],
+      "options": [
+        {"id": "round_table", "fixtures": [
+          {"name": "base", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.055], "size": [0.18, 0.035], "material": "dark"},
+          {"name": "stem", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.29], "size": [0.045, 0.20], "material": "dark"},
+          {"name": "top", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.52], "size": [0.30, 0.035], "material": "wood"},
+          {"name": "orb", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.72], "size": [0.13], "material": "accent_b"}
+        ]},
+        {"id": "plant", "fixtures": [
+          {"name": "pot", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.24], "size": [0.22, 0.22], "material": "ceramic"},
+          {"name": "stem", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.65], "size": [0.035, 0.30], "material": "greenery"},
+          {"name": "leaf_1", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.58, 1.55, 0.96], "size": [0.18], "material": "greenery"},
+          {"name": "leaf_2", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.48, 1.42, 0.82], "size": [0.15], "material": "greenery"},
+          {"name": "leaf_3", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.68, 1.68, 0.84], "size": [0.16], "material": "greenery"}
+        ]},
+        {"id": "open_shelf", "fixtures": [
+          {"name": "post_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, 1.15, 0.62], "size": [0.045, 0.045, 0.60], "material": "dark"},
+          {"name": "post_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, 1.95, 0.62], "size": [0.045, 0.045, 0.60], "material": "dark"},
+          {"name": "shelf_1", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, 1.55, 0.18], "size": [0.25, 0.44, 0.035], "material": "wood"},
+          {"name": "shelf_2", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, 1.55, 0.62], "size": [0.25, 0.44, 0.035], "material": "wood"},
+          {"name": "shelf_3", "type": "box", "frame": "table_xy_floor", "pos": [-1.72, 1.55, 1.06], "size": [0.25, 0.44, 0.035], "material": "wood"},
+          {"name": "vase", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.55, 1.55, 0.82], "size": [0.10, 0.15], "material": "ceramic"}
+        ]},
+        {"id": "ottomans", "fixtures": [
+          {"name": "ottoman_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.62, 1.32, 0.27], "size": [0.27, 0.22, 0.24], "material": "upholstery"},
+          {"name": "ottoman_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.50, 1.82, 0.23], "size": [0.24, 0.20, 0.20], "material": "fabric"},
+          {"name": "plinth", "type": "box", "frame": "table_xy_floor", "pos": [-1.58, 1.57, 0.055], "size": [0.31, 0.48, 0.025], "material": "dark"}
+        ]},
+        {"id": "sculpture", "fixtures": [
+          {"name": "pedestal", "type": "box", "frame": "table_xy_floor", "pos": [-1.60, 1.55, 0.42], "size": [0.25, 0.34, 0.40], "material": "stone"},
+          {"name": "sculpture_low", "type": "cylinder", "frame": "table_xy_floor", "pos": [-1.60, 1.55, 0.91], "size": [0.15, 0.08], "material": "trim"},
+          {"name": "sculpture_a", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.60, 1.43, 1.12], "size": [0.13], "material": "accent_a"},
+          {"name": "sculpture_b", "type": "sphere", "frame": "table_xy_floor", "pos": [-1.60, 1.68, 1.10], "size": [0.11], "material": "accent_b"}
+        ]},
+        {"id": "sideboard", "fixtures": [
+          {"name": "body", "type": "box", "frame": "table_xy_floor", "pos": [-1.60, 1.55, 0.39], "size": [0.30, 0.48, 0.33], "material": "wall_alt"},
+          {"name": "top", "type": "box", "frame": "table_xy_floor", "pos": [-1.60, 1.55, 0.75], "size": [0.32, 0.50, 0.035], "material": "wood"},
+          {"name": "handle_a", "type": "box", "frame": "table_xy_floor", "pos": [-1.285, 1.37, 0.43], "size": [0.012, 0.09, 0.018], "material": "trim"},
+          {"name": "handle_b", "type": "box", "frame": "table_xy_floor", "pos": [-1.285, 1.73, 0.43], "size": [0.012, 0.09, 0.018], "material": "trim"}
+        ]}
+      ]
+    },
+    "floor": {
+      "slot_bounds": [[-1.90, 1.10], [-1.60, 1.60], [0.0, 0.02]],
+      "allow_workspace_underlap": true,
+      "options": [
+        {"id": "full_rug", "fixtures": [
+          {"name": "rug", "type": "box", "frame": "table_xy_floor", "pos": [-0.35, 0.00, 0.008], "size": [1.40, 1.50, 0.008], "material": "fabric"}
+        ]},
+        {"id": "bordered_runner", "fixtures": [
+          {"name": "runner", "type": "box", "frame": "table_xy_floor", "pos": [-0.40, 0.00, 0.008], "size": [1.45, 0.72, 0.008], "material": "fabric"},
+          {"name": "border_l", "type": "box", "frame": "table_xy_floor", "pos": [-0.40, -0.70, 0.010], "size": [1.45, 0.020, 0.010], "material": "trim"},
+          {"name": "border_r", "type": "box", "frame": "table_xy_floor", "pos": [-0.40, 0.70, 0.010], "size": [1.45, 0.020, 0.010], "material": "trim"}
+        ]},
+        {"id": "twin_mats", "fixtures": [
+          {"name": "mat_l", "type": "box", "frame": "table_xy_floor", "pos": [-0.35, -0.95, 0.008], "size": [1.35, 0.43, 0.008], "material": "fabric"},
+          {"name": "mat_r", "type": "box", "frame": "table_xy_floor", "pos": [-0.35, 0.95, 0.008], "size": [1.35, 0.43, 0.008], "material": "accent_b"}
+        ]},
+        {"id": "stone_island", "fixtures": [
+          {"name": "island", "type": "box", "frame": "table_xy_floor", "pos": [-0.45, 0.00, 0.009], "size": [1.42, 1.52, 0.009], "material": "stone"},
+          {"name": "inlay", "type": "box", "frame": "table_xy_floor", "pos": [-0.42, 0.00, 0.014], "size": [1.22, 1.32, 0.004], "material": "wall_alt"}
+        ]},
+        {"id": "round_inlay", "fixtures": [
+          {"name": "disc", "type": "cylinder", "frame": "table_xy_floor", "pos": [-0.35, 0.00, 0.008], "size": [1.45, 0.008], "material": "stone"}
+        ]}
+      ]
+    }
+  }
+}

@@ -1,0 +1,2809 @@
+{
+  "table/blue_metal_plate": {
+    "material_variant_id": "polyhaven_tabletop_blue_metal_plate",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "blue_metal_plate_1k.jpg",
+    "sha256": "a0162bffce47d4a35613a12af22571b28c18412dc5805cbb69eac343554ef750",
+    "bytes": 395923,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "blue_metal_plate",
+    "source_url": "https://polyhaven.com/a/blue_metal_plate",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/blue_metal_plate/blue_metal_plate_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "a906d0e554596fb76c6969f2f644c5e6",
+    "source_bytes": 395923,
+    "material": [
+      0.42,
+      0.78,
+      0.7
+    ],
+    "base_material": [
+      0.42,
+      0.78,
+      0.7
+    ]
+  },
+  "table/dark_wood": {
+    "material_variant_id": "polyhaven_tabletop_dark_wood",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "dark_wood_1k.jpg",
+    "sha256": "d68da31655bf47024af893156a6a01a6c95bb60f55d97e2dc9bdd47be320e5b5",
+    "bytes": 754754,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "dark_wood",
+    "source_url": "https://polyhaven.com/a/dark_wood",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_wood/dark_wood_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "47fa883f1bb33acc5711245f64b75975",
+    "source_bytes": 754754,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/fine_grained_wood": {
+    "material_variant_id": "polyhaven_tabletop_fine_grained_wood",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "fine_grained_wood_1k.jpg",
+    "sha256": "d171f45ef01bc6e239b00dfaa4961bcd27f7d8e93e3962da3bd3d0ce703d802c",
+    "bytes": 336305,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "fine_grained_wood",
+    "source_url": "https://polyhaven.com/a/fine_grained_wood",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_col_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "3db9decdde678e087e67ff99d30c0a73",
+    "source_bytes": 336305,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/granite_tile": {
+    "material_variant_id": "polyhaven_tabletop_granite_tile",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "granite_tile_1k.jpg",
+    "sha256": "9df48b66055588708d446e69f37ea6146b8d5d3df54cd1ff088ec688acdca95c",
+    "bytes": 676597,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "granite_tile",
+    "source_url": "https://polyhaven.com/a/granite_tile",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile/granite_tile_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "5dfd6dbdb5c0b22ca04505c6209cea9f",
+    "source_bytes": 676597,
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "table/granite_tile_02": {
+    "material_variant_id": "polyhaven_tabletop_granite_tile_02",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "granite_tile_02_1k.jpg",
+    "sha256": "e1cfc5e6de6282f677cbffa736db8e56ea0983464599659164666d7900db7137",
+    "bytes": 681382,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "granite_tile_02",
+    "source_url": "https://polyhaven.com/a/granite_tile_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_02/granite_tile_02_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "dcd35361cc662397271f2c93e5c285df",
+    "source_bytes": 681382,
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "table/grey_cartago_02": {
+    "material_variant_id": "polyhaven_tabletop_grey_cartago_02",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "grey_cartago_02_1k.jpg",
+    "sha256": "abd903b9d568671e93bb5f95695188f260508ac5375bd1efa8b1f0801d693059",
+    "bytes": 773994,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "grey_cartago_02",
+    "source_url": "https://polyhaven.com/a/grey_cartago_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_cartago_02/grey_cartago_02_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "2be34492e594f079ab6f8c656f9b595c",
+    "source_bytes": 773994,
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "table/laminate_floor_03": {
+    "material_variant_id": "polyhaven_tabletop_laminate_floor_03",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "laminate_floor_03_1k.jpg",
+    "sha256": "ce2813cdc714fc5a2d816c9b79a0b4aece71c8d5bf56db52331cf413d950eae3",
+    "bytes": 701368,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "laminate_floor_03",
+    "source_url": "https://polyhaven.com/a/laminate_floor_03",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/laminate_floor_03/laminate_floor_03_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "9ad312ee93c5374713fcc14fa98e87e6",
+    "source_bytes": 701368,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/linoleum_brown": {
+    "material_variant_id": "polyhaven_tabletop_linoleum_brown",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "linoleum_brown_1k.jpg",
+    "sha256": "8947b927043fafc668d6b90454aee18edd37e6f49dc8f87253ca3693ef94f3a4",
+    "bytes": 684269,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "linoleum_brown",
+    "source_url": "https://polyhaven.com/a/linoleum_brown",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/linoleum_brown/linoleum_brown_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "7190f0ce07f9ffe75c1ffec89651390d",
+    "source_bytes": 684269,
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "table/metal_plate_02": {
+    "material_variant_id": "polyhaven_tabletop_metal_plate_02",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "metal_plate_02_1k.jpg",
+    "sha256": "6e80877d0e9d5973d96298c6091df7ace906b0a6760afc4f3592e4855f3f1d4c",
+    "bytes": 625917,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "metal_plate_02",
+    "source_url": "https://polyhaven.com/a/metal_plate_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "531b7e067dc537e0b3c7962175e04ffd",
+    "source_bytes": 625917,
+    "material": [
+      0.42,
+      0.78,
+      0.7
+    ],
+    "base_material": [
+      0.42,
+      0.78,
+      0.7
+    ]
+  },
+  "table/painted_concrete_02": {
+    "material_variant_id": "polyhaven_tabletop_painted_concrete_02",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "painted_concrete_02_1k.jpg",
+    "sha256": "0f033e1befb147e75140b9af8ce48eaf07cb5d3650c5efe669704aae17c34f18",
+    "bytes": 464745,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "painted_concrete_02",
+    "source_url": "https://polyhaven.com/a/painted_concrete_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_concrete_02/painted_concrete_02_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "f43a3fad6f643e46622e903cb559112c",
+    "source_bytes": 464745,
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "table/plywood": {
+    "material_variant_id": "polyhaven_tabletop_plywood",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "plywood_1k.jpg",
+    "sha256": "800905650fc6cab2fe7c77c41851f8ea89669f1287ad5ce67c48f435654c0af8",
+    "bytes": 882059,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "plywood",
+    "source_url": "https://polyhaven.com/a/plywood",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plywood/plywood_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "8032b768029adffbbfb223dd890102de",
+    "source_bytes": 882059,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/rectangular_parquet": {
+    "material_variant_id": "polyhaven_tabletop_rectangular_parquet",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "rectangular_parquet_1k.jpg",
+    "sha256": "e700a99972e3c9bb523b9cfaf436d0d77a9b65df3d3d347c980e4bf5b4ae22b4",
+    "bytes": 632054,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "rectangular_parquet",
+    "source_url": "https://polyhaven.com/a/rectangular_parquet",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rectangular_parquet/rectangular_parquet_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "0bc19d29a3601d7ad9e57c733ed93f33",
+    "source_bytes": 632054,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/rosewood_veneer1": {
+    "material_variant_id": "polyhaven_tabletop_rosewood_veneer1",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "rosewood_veneer1_1k.jpg",
+    "sha256": "b4d36340d33b5bc8ff46864992d53ba3fbc92956ad3cc28d6b2acfa107801be0",
+    "bytes": 836142,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "rosewood_veneer1",
+    "source_url": "https://polyhaven.com/a/rosewood_veneer1",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rosewood_veneer1/rosewood_veneer1_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "dc521e4adac8d21b4439bb920fbe0682",
+    "source_bytes": 836142,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/rough_concrete": {
+    "material_variant_id": "polyhaven_tabletop_rough_concrete",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "rough_concrete_1k.jpg",
+    "sha256": "dd7fc03e152eb8c2fd511248aa2e9bf7428a645bd0e0b74ac1d887ad136cb0bc",
+    "bytes": 1042065,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "rough_concrete",
+    "source_url": "https://polyhaven.com/a/rough_concrete",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rough_concrete/rough_concrete_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "82909f2db1e0453500703ae54e806f5c",
+    "source_bytes": 1042065,
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "table/rubber_tiles": {
+    "material_variant_id": "polyhaven_tabletop_rubber_tiles",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "rubber_tiles_1k.jpg",
+    "sha256": "07c66caf17f14b1eae8a60bfd11a3b00a88af0101d51aab370609a2f13bb8c04",
+    "bytes": 351085,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "rubber_tiles",
+    "source_url": "https://polyhaven.com/a/rubber_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rubber_tiles/rubber_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "2a2cc9b5e06639c7fb6cc26c263c00ff",
+    "source_bytes": 351085,
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "table/slate_floor_03": {
+    "material_variant_id": "polyhaven_tabletop_slate_floor_03",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "slate_floor_03_1k.jpg",
+    "sha256": "9d2394a0d382e0570ea080dc810c0a15984c5494dc0fe03e4eddefd3cc49cffc",
+    "bytes": 677347,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "slate_floor_03",
+    "source_url": "https://polyhaven.com/a/slate_floor_03",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/slate_floor_03/slate_floor_03_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "c918b0472995e9d836adbeb5d768338c",
+    "source_bytes": 677347,
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "table/stained_pine": {
+    "material_variant_id": "polyhaven_tabletop_stained_pine",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "stained_pine_1k.jpg",
+    "sha256": "bab73315eb57f942a98e3201ef7f00515f3a4c5b74bb9aba9c00007a3029e594",
+    "bytes": 652040,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "stained_pine",
+    "source_url": "https://polyhaven.com/a/stained_pine",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stained_pine/stained_pine_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "0f76353622e3183fd46bdd7d46c1d305",
+    "source_bytes": 652040,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/terrazzo_tiles": {
+    "material_variant_id": "polyhaven_tabletop_terrazzo_tiles",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "terrazzo_tiles_1k.jpg",
+    "sha256": "462e3e719cda0472a33152523cf5ca2fc660e1c5869348be1609ba3dca12a2ef",
+    "bytes": 1166107,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "terrazzo_tiles",
+    "source_url": "https://polyhaven.com/a/terrazzo_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/terrazzo_tiles/terrazzo_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "12c27a579c2ed49de854b8a86e33647b",
+    "source_bytes": 1166107,
+    "material": [
+      0.12,
+      0.52,
+      0.3
+    ],
+    "base_material": [
+      0.12,
+      0.52,
+      0.3
+    ]
+  },
+  "table/wood_table": {
+    "material_variant_id": "polyhaven_tabletop_wood_table",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "wood_table_1k.jpg",
+    "sha256": "f81642ae141958feac6c5acac03e2aeb6cfe049dff301d0627e3c17f2dc5c7a5",
+    "bytes": 987969,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "wood_table",
+    "source_url": "https://polyhaven.com/a/wood_table",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table/wood_table_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "45af5766b300f7e940ee8984c5fabd4f",
+    "source_bytes": 987969,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/wood_table_001": {
+    "material_variant_id": "polyhaven_tabletop_wood_table_001",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "wood_table_001_1k.jpg",
+    "sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+    "bytes": 215573,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "wood_table_001",
+    "source_url": "https://polyhaven.com/a/wood_table_001",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "56652a7339b16a76afad20d3585f66ea",
+    "source_bytes": 215573,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "table/wood_table_worn": {
+    "material_variant_id": "polyhaven_tabletop_wood_table_worn",
+    "material_family": "polyhaven_tabletop",
+    "texture_variation": "image",
+    "texture_bank_id": "axis_curated_tabletop_1k_v1",
+    "texture_file": "wood_table_worn_1k.jpg",
+    "sha256": "092ab3465a6a24b24d092ea86865f332c3bd239b8eb2fd664b70357082031a3f",
+    "bytes": 761543,
+    "pixel_width": 1024,
+    "pixel_height": 1024,
+    "image_mode": "RGB",
+    "image_format": "JPEG",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "wood_table_worn",
+    "source_url": "https://polyhaven.com/a/wood_table_worn",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_worn/wood_table_worn_diff_1k.jpg",
+    "license": "CC0",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "8c71f701f70fef34b87fb7c8742ad0a5",
+    "source_bytes": 761543,
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "floor/concrete_floor": {
+    "material_variant_id": "polyhaven_textures_0152_concrete_floor",
+    "material_family": "polyhaven_concrete",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0152_textures_concrete_floor.jpg",
+    "sha256": "1c572c96fba812a3ee0505c980fdbdf6ed3233ae16d89f14459aba4ef0194470",
+    "bytes": 14647,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "concrete_floor",
+    "asset_id": "concrete_floor",
+    "label": "Concrete Floor",
+    "source_url": "https://polyhaven.com/a/concrete_floor",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor/concrete_floor_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "99b94da291a4f038fa6af93c3993cbec",
+    "source_bytes": 927975,
+    "categories": [
+      "outdoor",
+      "man made",
+      "floor",
+      "plaster-concrete",
+      "concrete"
+    ],
+    "tags": [
+      "rough",
+      "concrete",
+      "floor",
+      "old",
+      "brown",
+      "wall",
+      "dirty",
+      "cement",
+      "worn"
+    ],
+    "date_published": 1675036800,
+    "authors": {
+      "eye-candy.xyz": "All"
+    },
+    "dimensions": [
+      2079.9996852874756,
+      2079.9996852874756
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "floor/concrete_floor_02": {
+    "material_variant_id": "polyhaven_textures_0154_concrete_floor_02",
+    "material_family": "polyhaven_concrete",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0154_textures_concrete_floor_02.jpg",
+    "sha256": "e0e50584856d9ae7376625813b027567a7f20f916b8aae5de590fd8891b06b38",
+    "bytes": 23875,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "concrete_floor_02",
+    "asset_id": "concrete_floor_02",
+    "label": "Concrete Floor 02",
+    "source_url": "https://polyhaven.com/a/concrete_floor_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "1cfee53d2f82fa59726ab7ae6a2e8c09",
+    "source_bytes": 776097,
+    "categories": [
+      "concrete",
+      "plaster-concrete",
+      "dirty",
+      "man made",
+      "outdoor",
+      "indoor",
+      "wall",
+      "floor"
+    ],
+    "tags": [
+      "rough",
+      "moss",
+      "plain"
+    ],
+    "date_published": 1536018406,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "floor/floor_tiles_06": {
+    "material_variant_id": "polyhaven_textures_0258_floor_tiles_06",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0258_textures_floor_tiles_06.jpg",
+    "sha256": "7b460e5ec68cf19c50386a7e12e0a2ba60c7de059d97dafffb26b2f15660683d",
+    "bytes": 13719,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "floor_tiles_06",
+    "asset_id": "floor_tiles_06",
+    "label": "Floor Tiles 06",
+    "source_url": "https://polyhaven.com/a/floor_tiles_06",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/floor_tiles_06/floor_tiles_06_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "a911ad8dc31e4f49a7cf782a114f7aa6",
+    "source_bytes": 356257,
+    "categories": [
+      "floor",
+      "indoor",
+      "clean",
+      "man made"
+    ],
+    "tags": [
+      "marble",
+      "tiles",
+      "checkerboard",
+      "checkered",
+      "floor",
+      "tiled",
+      "square tiles",
+      "dirty"
+    ],
+    "date_published": 1538356638,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      3000,
+      3000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/granite_tile_02": {
+    "material_variant_id": "polyhaven_textures_0278_granite_tile_02",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0278_textures_granite_tile_02.jpg",
+    "sha256": "96b7108556cf48e50b3430d75a6492e264fae4d14ccb369e0d7ee768c2e23e32",
+    "bytes": 10431,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "granite_tile_02",
+    "asset_id": "granite_tile_02",
+    "label": "Granite Tile 02",
+    "source_url": "https://polyhaven.com/a/granite_tile_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/granite_tile_02/granite_tile_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "dcd35361cc662397271f2c93e5c285df",
+    "source_bytes": 681382,
+    "categories": [
+      "floor",
+      "man made"
+    ],
+    "tags": [
+      "home decor",
+      "tiled",
+      "decorative tiles",
+      "grid",
+      "interior",
+      "square tiles",
+      "stone tile",
+      "flooring",
+      "decor",
+      "multicoloured",
+      "rectangular",
+      "modern design",
+      "luxury"
+    ],
+    "date_published": 1734998400,
+    "authors": {
+      "Charlotte Baglioni": "All"
+    },
+    "dimensions": [
+      1879.9999952316284,
+      1879.9999952316284
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/grey_cartago_02": {
+    "material_variant_id": "polyhaven_textures_0305_grey_cartago_02",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0305_textures_grey_cartago_02.jpg",
+    "sha256": "a4968630b9ab51b355dfd28fb6a386580660b00b78b6f1d3a7865e8ba16b7c07",
+    "bytes": 20290,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "grey_cartago_02",
+    "asset_id": "grey_cartago_02",
+    "label": "Grey Cartago 02",
+    "source_url": "https://polyhaven.com/a/grey_cartago_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_cartago_02/grey_cartago_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "2be34492e594f079ab6f8c656f9b595c",
+    "source_bytes": 773994,
+    "categories": [
+      "floor",
+      "man made"
+    ],
+    "tags": [
+      "tiles",
+      "grey",
+      "cartago",
+      "stones",
+      "smooth",
+      "hard",
+      "modern",
+      "durable",
+      "patio",
+      "courtyard",
+      "durable flooring",
+      "waterproof tiles"
+    ],
+    "date_published": 1710460800,
+    "authors": {
+      "Jenelle van Heerden": "Processing",
+      "Lucas S\u00e1nchez Ros": "Photography"
+    },
+    "dimensions": [
+      1700.0000476837158,
+      1700.0000476837158
+    ],
+    "max_resolution": [
+      16384,
+      16384
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/interior_tiles": {
+    "material_variant_id": "polyhaven_textures_0331_interior_tiles",
+    "material_family": "polyhaven_tiles",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0331_textures_interior_tiles.jpg",
+    "sha256": "560dfeb7e53adf0d6e78fae502da06199ea2264ee28fcbeb6f565313f42dbd7d",
+    "bytes": 15680,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "interior_tiles",
+    "asset_id": "interior_tiles",
+    "label": "Interior Tiles",
+    "source_url": "https://polyhaven.com/a/interior_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/interior_tiles/interior_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "94ba3714450bb6bbe6a57c9a26e8dac5",
+    "source_bytes": 694562,
+    "categories": [
+      "floor",
+      "man made",
+      "tiles"
+    ],
+    "tags": [
+      "tiles",
+      "tiled",
+      "floor",
+      "indoor flooring",
+      "grout lines",
+      "square tiles",
+      "ceramic",
+      "ceramic tiles",
+      "beige",
+      "squares",
+      "speckle"
+    ],
+    "date_published": 1763337600,
+    "authors": {
+      "Charlotte Baglioni": "All"
+    },
+    "dimensions": [
+      1899.9998569488525,
+      1899.9998569488525
+    ],
+    "max_resolution": [
+      16384,
+      16384
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.52,
+      0.3
+    ],
+    "base_material": [
+      0.12,
+      0.52,
+      0.3
+    ]
+  },
+  "floor/laminate_floor_02": {
+    "material_variant_id": "polyhaven_textures_0346_laminate_floor_02",
+    "material_family": "polyhaven_wood",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0346_textures_laminate_floor_02.jpg",
+    "sha256": "e5e7dd021440bbe64ec5e73281f8012aee145b8c57e22ac947d5b85f5a09e249",
+    "bytes": 9966,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "laminate_floor_02",
+    "asset_id": "laminate_floor_02",
+    "label": "Laminate Floor 02",
+    "source_url": "https://polyhaven.com/a/laminate_floor_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/laminate_floor_02/laminate_floor_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "34ab81c5882c1083028ffa71d40fe44d",
+    "source_bytes": 721641,
+    "categories": [
+      "floor",
+      "man made",
+      "indoor",
+      "clean",
+      "wood"
+    ],
+    "tags": [
+      "even",
+      "flat",
+      "wooden",
+      "floor",
+      "laminate",
+      "smooth",
+      "tiles",
+      "brown",
+      "wood",
+      "planks"
+    ],
+    "date_published": 1669680000,
+    "authors": {
+      "Dario Barresi": "Processing",
+      "Charlotte Baglioni": "photography"
+    },
+    "dimensions": [
+      1699.9999284744263,
+      1700.0000476837158
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "floor/large_floor_tiles_02": {
+    "material_variant_id": "polyhaven_textures_0348_large_floor_tiles_02",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0348_textures_large_floor_tiles_02.jpg",
+    "sha256": "4cfb6e168510027a3bdc7f88930221a5a96bab30313a27c87050b9280d9888f2",
+    "bytes": 17296,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "large_floor_tiles_02",
+    "asset_id": "large_floor_tiles_02",
+    "label": "Large Floor Tiles 02",
+    "source_url": "https://polyhaven.com/a/large_floor_tiles_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_floor_tiles_02/large_floor_tiles_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "929f604bfe0f38041afdcf4676a9f777",
+    "source_bytes": 557814,
+    "categories": [
+      "floor",
+      "man made",
+      "outdoor",
+      "dirty"
+    ],
+    "tags": [
+      "tiles",
+      "flat",
+      "large",
+      "square",
+      "even"
+    ],
+    "date_published": 1559876840,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      3000,
+      3000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/large_grey_tiles": {
+    "material_variant_id": "polyhaven_textures_0349_large_grey_tiles",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0349_textures_large_grey_tiles.jpg",
+    "sha256": "5a21e45b8e1b2ec11679ededa6fccc574ec1bb13a54c78173c01ae46059f9b8f",
+    "bytes": 16070,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "large_grey_tiles",
+    "asset_id": "large_grey_tiles",
+    "label": "Large Grey Tiles",
+    "source_url": "https://polyhaven.com/a/large_grey_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_grey_tiles/large_grey_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "33a074b6f6d9b306eabd905fcf111fc6",
+    "source_bytes": 445476,
+    "categories": [
+      "floor",
+      "man made",
+      "outdoor",
+      "dirty"
+    ],
+    "tags": [
+      "grey",
+      "tiles",
+      "large",
+      "uneven",
+      "weathered",
+      "damaged"
+    ],
+    "date_published": 1560299295,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      3000,
+      3000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/marble_01": {
+    "material_variant_id": "polyhaven_textures_0363_marble_01",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0363_textures_marble_01.jpg",
+    "sha256": "b08893905fd97516a4691b7d90842d1c3c47b4336ee6b57a8bb3dc0f47da192d",
+    "bytes": 8539,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "marble_01",
+    "asset_id": "marble_01",
+    "label": "Marble 01",
+    "source_url": "https://polyhaven.com/a/marble_01",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/marble_01/marble_01_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "04325ced5018eb8a2e598a4ef69cb176",
+    "source_bytes": 305029,
+    "categories": [
+      "floor",
+      "man made",
+      "indoor",
+      "clean",
+      "wall"
+    ],
+    "tags": [
+      "marble",
+      "smooth",
+      "even",
+      "tiles"
+    ],
+    "date_published": 1540420244,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1500,
+      1500
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/marble_tiles": {
+    "material_variant_id": "polyhaven_textures_0374_marble_tiles",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0374_textures_marble_tiles.jpg",
+    "sha256": "4e40e7fc04d9847e39da1379ae92cd5857bd0de7eab4f3284c1cc1a1b72e3f38",
+    "bytes": 31669,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "marble_tiles",
+    "asset_id": "marble_tiles",
+    "label": "Marble Tiles",
+    "source_url": "https://polyhaven.com/a/marble_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/marble_tiles/marble_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "8a023d7399c685ab7b539b05a433bc89",
+    "source_bytes": 957660,
+    "categories": [
+      "floor",
+      "man made",
+      "outdoor",
+      "dirty"
+    ],
+    "tags": [
+      "floor",
+      "tiles",
+      "marble",
+      "dirty",
+      "ceramic",
+      "decorative",
+      "consistent",
+      "square",
+      "waterproof tiles"
+    ],
+    "date_published": 1708992000,
+    "authors": {
+      "Charlotte Baglioni": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/mixed_stone_tiles": {
+    "material_variant_id": "polyhaven_textures_0389_mixed_stone_tiles",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0389_textures_mixed_stone_tiles.jpg",
+    "sha256": "c62ce1d9bdca3f248a68f300e957537f8f7f2ac29ce520036fbe5167c2d17813",
+    "bytes": 24022,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "mixed_stone_tiles",
+    "asset_id": "mixed_stone_tiles",
+    "label": "Mixed Stone Tiles",
+    "source_url": "https://polyhaven.com/a/mixed_stone_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/mixed_stone_tiles/mixed_stone_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "7e7fd18fbf11915bc9aaf2b58ea435c1",
+    "source_bytes": 1148942,
+    "categories": [
+      "floor",
+      "man made"
+    ],
+    "tags": [
+      "tiles",
+      "floor",
+      "embedded pebble",
+      "stone embedded",
+      "tiled",
+      "square tiles",
+      "pebble finish ",
+      "mixed stone",
+      "speckled tiles ",
+      "speckled "
+    ],
+    "date_published": 1736985600,
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      1800.0000715255737,
+      1800.0000715255737
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/slate_floor": {
+    "material_variant_id": "polyhaven_textures_0648_slate_floor",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0648_textures_slate_floor.jpg",
+    "sha256": "bade1514b8a9b1fa22a7cc8e80e188d26878a9b4e9efd40662835f3f4525c12e",
+    "bytes": 9707,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "slate_floor",
+    "asset_id": "slate_floor",
+    "label": "Slate Floor",
+    "source_url": "https://polyhaven.com/a/slate_floor",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/slate_floor/slate_floor_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "33760bd0e0668f1ff92086a6cd9c38af",
+    "source_bytes": 707276,
+    "categories": [
+      "floor",
+      "man made"
+    ],
+    "tags": [
+      "slates",
+      "slate",
+      "shiny",
+      "coated",
+      "polished",
+      "reflective",
+      "stone",
+      "flooring",
+      "interior design",
+      "stone tile"
+    ],
+    "date_published": 1690416000,
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      2289.9999618530273,
+      2290.0002002716064
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/slate_floor_03": {
+    "material_variant_id": "polyhaven_textures_0650_slate_floor_03",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0650_textures_slate_floor_03.jpg",
+    "sha256": "b5ac4281baf814a79d0bd97a4168b3e492f9ce5983981334680138c4901995bd",
+    "bytes": 13446,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "slate_floor_03",
+    "asset_id": "slate_floor_03",
+    "label": "Slate Floor 03",
+    "source_url": "https://polyhaven.com/a/slate_floor_03",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/slate_floor_03/slate_floor_03_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "c918b0472995e9d836adbeb5d768338c",
+    "source_bytes": 677347,
+    "categories": [
+      "floor",
+      "man made",
+      "indoor"
+    ],
+    "tags": [
+      "slates",
+      "slate",
+      "floor",
+      "rustic architecture",
+      "vintage",
+      "stone floor",
+      "rustic",
+      "mosaic",
+      "stone",
+      "stone tile"
+    ],
+    "date_published": 1751500800,
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "floor/terrazzo_tiles": {
+    "material_variant_id": "polyhaven_textures_0700_terrazzo_tiles",
+    "material_family": "polyhaven_tiles",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0700_textures_terrazzo_tiles.jpg",
+    "sha256": "b330e859e49d6502cb99f8ddcf55165db340f08bad58d672cb10abd63391c056",
+    "bytes": 19347,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "terrazzo_tiles",
+    "asset_id": "terrazzo_tiles",
+    "label": "Terrazzo Tiles",
+    "source_url": "https://polyhaven.com/a/terrazzo_tiles",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/terrazzo_tiles/terrazzo_tiles_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "12c27a579c2ed49de854b8a86e33647b",
+    "source_bytes": 1166107,
+    "categories": [
+      "tiles"
+    ],
+    "tags": [
+      "floor",
+      "home decor",
+      "flooring",
+      "terrazzo",
+      "decorative tiles",
+      "speckled tiles ",
+      "speckled ",
+      "square tiles",
+      "tiled",
+      "interior",
+      "grid"
+    ],
+    "date_published": 1746489600,
+    "authors": {
+      "Amal Kumar": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      16384,
+      16384
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.52,
+      0.3
+    ],
+    "base_material": [
+      0.12,
+      0.52,
+      0.3
+    ]
+  },
+  "floor/wood_floor": {
+    "material_variant_id": "polyhaven_textures_0728_wood_floor",
+    "material_family": "polyhaven_wood",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0728_textures_wood_floor.jpg",
+    "sha256": "f531c86b4b1a22a608cd9f8cd827e94e5c5c6185b25cb2f3e35e439b853f2045",
+    "bytes": 10760,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "wood_floor",
+    "asset_id": "wood_floor",
+    "label": "Wood Floor",
+    "source_url": "https://polyhaven.com/a/wood_floor",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_floor/wood_floor_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "b7e927d2bf2f8f103820ff3890c8407c",
+    "source_bytes": 734493,
+    "categories": [
+      "floor",
+      "wood",
+      "man made",
+      "clean"
+    ],
+    "tags": [
+      "wood",
+      "floor",
+      "wooden",
+      "wooden flooring ",
+      "grain",
+      "wood grain",
+      "interior design",
+      "interior",
+      "flooring"
+    ],
+    "date_published": 1698105600,
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      1699.9996900558472,
+      1699.9996900558472
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.08,
+      0.32,
+      0.18
+    ],
+    "base_material": [
+      0.08,
+      0.32,
+      0.18
+    ]
+  },
+  "wall/blue_plaster_wall": {
+    "material_variant_id": "polyhaven_textures_0044_blue_plaster_wall",
+    "material_family": "polyhaven_wall",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0044_textures_blue_plaster_wall.jpg",
+    "sha256": "e3fcbca2c364cd91d15b36ede08fdefb69895c3c90bdba955f4c72183c4a1c03",
+    "bytes": 6542,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "blue_plaster_wall",
+    "asset_id": "blue_plaster_wall",
+    "label": "Blue Plaster Wall",
+    "source_url": "https://polyhaven.com/a/blue_plaster_wall",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/blue_plaster_wall/blue_plaster_wall_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "88f91871d26d251b544530f6f121c39b",
+    "source_bytes": 593044,
+    "categories": [
+      "outdoor",
+      "wall",
+      "plaster-concrete"
+    ],
+    "tags": [
+      "rough",
+      "painted",
+      "cracking paint",
+      "cracks",
+      "bumpy",
+      "cracking",
+      "plaster",
+      "blue",
+      "plastering",
+      "painted concrete",
+      "chalky"
+    ],
+    "date_published": 1781481600,
+    "authors": {
+      "Dimitrios Savva": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/brick_wall_001": {
+    "material_variant_id": "polyhaven_textures_0058_brick_wall_001",
+    "material_family": "polyhaven_brick",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0058_textures_brick_wall_001.jpg",
+    "sha256": "7fbf411ad6a47de2fffb1fedbdd4cc54080299ba5cc3248fee7f4f4d41e9f0cf",
+    "bytes": 21281,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "brick_wall_001",
+    "asset_id": "brick_wall_001",
+    "label": "Brick Wall 001",
+    "source_url": "https://polyhaven.com/a/brick_wall_001",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_diffuse_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "955d2d4500eb549be0f2873305782798",
+    "source_bytes": 574381,
+    "categories": [
+      "brick",
+      "man made",
+      "outdoor",
+      "indoor",
+      "clean",
+      "wall"
+    ],
+    "tags": [
+      "red",
+      "rough",
+      "industrial",
+      "plain",
+      "baked"
+    ],
+    "date_published": 1615640913,
+    "authors": {
+      "Rob Tuytel": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "dimensions": [
+      3000,
+      3000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "wall/clay_plaster": {
+    "material_variant_id": "polyhaven_textures_0109_clay_plaster",
+    "material_family": "polyhaven_wall",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0109_textures_clay_plaster.jpg",
+    "sha256": "14f75493e34cdad8694dc798bef3b6590d98cad2731631a4cf5dad0f397db2ca",
+    "bytes": 3366,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "clay_plaster",
+    "asset_id": "clay_plaster",
+    "label": "Clay Plaster",
+    "source_url": "https://polyhaven.com/a/clay_plaster",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/clay_plaster/clay_plaster_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "aab6ac83dcf134a370279825de143c26",
+    "source_bytes": 354209,
+    "categories": [
+      "wall",
+      "man made",
+      "plaster-concrete",
+      "outdoor"
+    ],
+    "tags": [
+      "rough",
+      "wall",
+      "plaster",
+      "plastered",
+      "cracked",
+      "exterior",
+      "cracks",
+      "scratched",
+      "uneven",
+      "clay",
+      "coarse"
+    ],
+    "date_published": 1703116800,
+    "authors": {
+      "Amal Kumar": "All"
+    },
+    "dimensions": [
+      1999.9996423721313,
+      1999.9996423721313
+    ],
+    "max_resolution": [
+      16384,
+      16384
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/concrete_wall_003": {
+    "material_variant_id": "polyhaven_textures_0177_concrete_wall_003",
+    "material_family": "polyhaven_concrete",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0177_textures_concrete_wall_003.jpg",
+    "sha256": "457b04aee8a42ea9d842ebd7347f81eaff989522120d43071e3d34d005b9e7b2",
+    "bytes": 18890,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "concrete_wall_003",
+    "asset_id": "concrete_wall_003",
+    "label": "Concrete Wall 003",
+    "source_url": "https://polyhaven.com/a/concrete_wall_003",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_003/concrete_wall_003_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "1277cc6bcfc8e4f074f9852fbf19b2d3",
+    "source_bytes": 264756,
+    "categories": [
+      "man made",
+      "wall",
+      "concrete",
+      "plaster",
+      "outdoor",
+      "dirty",
+      "plaster-concrete"
+    ],
+    "tags": [
+      "worn",
+      "painted",
+      "discolored",
+      "dirty",
+      "yellow",
+      "white",
+      "weathered",
+      "cracked",
+      "scratched",
+      "chipped",
+      "rough"
+    ],
+    "date_published": 1629763200,
+    "authors": {
+      "Dimitrios Savva": "Photography",
+      "Rico Cilliers": "Processing"
+    },
+    "dimensions": [
+      3000,
+      3000.000238418579
+    ],
+    "max_resolution": [
+      16384,
+      16384
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "wall/dark_brick_wall": {
+    "material_variant_id": "polyhaven_textures_0209_dark_brick_wall",
+    "material_family": "polyhaven_brick",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0209_textures_dark_brick_wall.jpg",
+    "sha256": "62c28d49e1a16c9ca28312b6b3b7b95630c777899afdc763f81bd4f4e81e2eaf",
+    "bytes": 23313,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "dark_brick_wall",
+    "asset_id": "dark_brick_wall",
+    "label": "Dark Brick Wall",
+    "source_url": "https://polyhaven.com/a/dark_brick_wall",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_brick_wall/dark_brick_wall_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "b1e82a72dddf31ae97c3b0b8fab0e690",
+    "source_bytes": 917619,
+    "categories": [
+      "outdoor",
+      "man made",
+      "wall",
+      "brick"
+    ],
+    "tags": [
+      "rough",
+      "uneven",
+      "wall",
+      "dry",
+      "bricks",
+      "brick",
+      "dark"
+    ],
+    "date_published": 1671667200,
+    "authors": {
+      "Dario Barresi": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "dimensions": [
+      1049.9998331069946,
+      1049.9999523162842
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "wall/grey_plaster": {
+    "material_variant_id": "polyhaven_textures_0307_grey_plaster",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0307_textures_grey_plaster.jpg",
+    "sha256": "ce238d4ab383756e264e79b954d6d6767b23d9cd7ac65b8f9dea20d6a66fad3a",
+    "bytes": 17363,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "grey_plaster",
+    "asset_id": "grey_plaster",
+    "label": "Grey Plaster",
+    "source_url": "https://polyhaven.com/a/grey_plaster",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_plaster/grey_plaster_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "42d2ffe5338fcc0065e28076cbe15eba",
+    "source_bytes": 704079,
+    "categories": [
+      "plaster",
+      "outdoor",
+      "indoor",
+      "man made",
+      "wall",
+      "floor",
+      "plaster-concrete"
+    ],
+    "tags": [
+      "moss",
+      "plain",
+      "bare"
+    ],
+    "date_published": 1529359200,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/grey_plaster_02": {
+    "material_variant_id": "polyhaven_textures_0308_grey_plaster_02",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0308_textures_grey_plaster_02.jpg",
+    "sha256": "5ae2454eb6b00c85adb09a16ac90e504b2c003d414affa5cf0c8c2e8f39c4d0f",
+    "bytes": 18564,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "grey_plaster_02",
+    "asset_id": "grey_plaster_02",
+    "label": "Grey Plaster 02",
+    "source_url": "https://polyhaven.com/a/grey_plaster_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_plaster_02/grey_plaster_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "fe17ee482114c15690c2bc853c572bbc",
+    "source_bytes": 772312,
+    "categories": [
+      "plaster",
+      "outdoor",
+      "indoor",
+      "man made",
+      "dirty",
+      "wall",
+      "floor",
+      "plaster-concrete",
+      "collection: the_shed"
+    ],
+    "tags": [
+      "rough",
+      "worn",
+      "cracked"
+    ],
+    "date_published": 1529359200,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/grey_plaster_03": {
+    "material_variant_id": "polyhaven_textures_0309_grey_plaster_03",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0309_textures_grey_plaster_03.jpg",
+    "sha256": "5fb30305ffd80cd45254033d9c57f6ba1fbe5d9c2ddaa10dd4bb8a21332e9ff6",
+    "bytes": 11526,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "grey_plaster_03",
+    "asset_id": "grey_plaster_03",
+    "label": "Grey Plaster 03",
+    "source_url": "https://polyhaven.com/a/grey_plaster_03",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_plaster_03/grey_plaster_03_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "9c46bc51a016ff7e58769a7fdea0c0c9",
+    "source_bytes": 486612,
+    "categories": [
+      "plaster",
+      "outdoor",
+      "indoor",
+      "man made",
+      "dirty",
+      "wall",
+      "floor",
+      "plaster-concrete"
+    ],
+    "tags": [
+      "rough",
+      "grey",
+      "uneven"
+    ],
+    "date_published": 1575595854,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/painted_concrete": {
+    "material_variant_id": "polyhaven_textures_0433_painted_concrete",
+    "material_family": "polyhaven_concrete",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0433_textures_painted_concrete.jpg",
+    "sha256": "e1780e81744ac6f020d704cb63546b9dac5a0ba3b22c944d55590c181f969c35",
+    "bytes": 21004,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "painted_concrete",
+    "asset_id": "painted_concrete",
+    "label": "Painted Concrete",
+    "source_url": "https://polyhaven.com/a/painted_concrete",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_concrete/painted_concrete_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "57cc093c9a4226186da0149c2d759055",
+    "source_bytes": 995059,
+    "categories": [
+      "floor",
+      "indoor",
+      "plaster-concrete",
+      "concrete"
+    ],
+    "tags": [
+      "weathered",
+      "worn",
+      "dirty",
+      "damaged",
+      "chipped",
+      "cracked",
+      "stained",
+      "painted",
+      "ground",
+      "scratched",
+      "flat",
+      "floor",
+      "concrete",
+      "paint",
+      "green"
+    ],
+    "date_published": 1662422400,
+    "authors": {
+      "Dario Barresi": "Processing",
+      "Dimitrios Savva": "Photography"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.16,
+      0.24,
+      0.14
+    ],
+    "base_material": [
+      0.16,
+      0.24,
+      0.14
+    ]
+  },
+  "wall/painted_plaster_wall": {
+    "material_variant_id": "polyhaven_textures_0436_painted_plaster_wall",
+    "material_family": "polyhaven_wall",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0436_textures_painted_plaster_wall.jpg",
+    "sha256": "c19edbe300dc21b89672aee4c86479ed0b37fd08748b7e8e1e2aa7c1fa2f0ef4",
+    "bytes": 7069,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "painted_plaster_wall",
+    "asset_id": "painted_plaster_wall",
+    "label": "Painted Plaster Wall",
+    "source_url": "https://polyhaven.com/a/painted_plaster_wall",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "15ba8c1f63a5ab412b1eabe31728540a",
+    "source_bytes": 686726,
+    "categories": [
+      "wall",
+      "plaster-concrete",
+      "outdoor"
+    ],
+    "tags": [
+      "rough",
+      "weathered",
+      "worn",
+      "wall",
+      "discolored",
+      "plaster",
+      "plastered",
+      "damaged",
+      "old",
+      "stained",
+      "dirty",
+      "exterior",
+      "timeworn"
+    ],
+    "date_published": 1706140800,
+    "authors": {
+      "Amal Kumar": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      16384,
+      16384
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/plastered_wall_03": {
+    "material_variant_id": "polyhaven_textures_0489_plastered_wall_03",
+    "material_family": "polyhaven_wall",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0489_textures_plastered_wall_03.jpg",
+    "sha256": "35b1e8d2725b13f63d8e40b793e19963c146f02c7a15ee342235864aa06049d7",
+    "bytes": 9373,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "plastered_wall_03",
+    "asset_id": "plastered_wall_03",
+    "label": "Plastered Wall 03",
+    "source_url": "https://polyhaven.com/a/plastered_wall_03",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_03/plastered_wall_03_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "0113b3562589857b4eb11400b228b8d5",
+    "source_bytes": 555233,
+    "categories": [
+      "wall",
+      "plaster-concrete"
+    ],
+    "tags": [
+      "plaster",
+      "plastered",
+      "chipped",
+      "concrete",
+      "scuffed",
+      "discolored",
+      "scratched",
+      "plasterconcrete",
+      "rough",
+      "cement",
+      "timeworn",
+      "wall"
+    ],
+    "date_published": 1730160000,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      4000,
+      4000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/plastered_wall_05": {
+    "material_variant_id": "polyhaven_textures_0491_plastered_wall_05",
+    "material_family": "polyhaven_wall",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0491_textures_plastered_wall_05.jpg",
+    "sha256": "d1991e16da6d4e88581d68fc3ae6e06b3491bac524b9bad9d9c66eaefc534aeb",
+    "bytes": 2935,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "plastered_wall_05",
+    "asset_id": "plastered_wall_05",
+    "label": "Plastered Wall 05",
+    "source_url": "https://polyhaven.com/a/plastered_wall_05",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_05/plastered_wall_05_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "b3802ea845531b87adaa61ae23a0ed27",
+    "source_bytes": 557082,
+    "categories": [
+      "wall",
+      "man made",
+      "outdoor",
+      "plaster",
+      "plaster-concrete"
+    ],
+    "tags": [
+      "rough",
+      "scratched",
+      "gray",
+      "plaster",
+      "plastered",
+      "concrete",
+      "plasterconcrete",
+      "industrial",
+      "weathered",
+      "scuffed",
+      "wall",
+      "plastering",
+      "coarse",
+      "bumpy"
+    ],
+    "date_published": 1757376000,
+    "authors": {
+      "Charlotte Baglioni": "All"
+    },
+    "dimensions": [
+      2000,
+      2000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/white_plaster_02": {
+    "material_variant_id": "polyhaven_textures_0715_white_plaster_02",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0715_textures_white_plaster_02.jpg",
+    "sha256": "3e46456f81c8139a5b1c57d0607145c4d614cb83a62fb12e840e355c1f5ab786",
+    "bytes": 10789,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "white_plaster_02",
+    "asset_id": "white_plaster_02",
+    "label": "White Plaster 02",
+    "source_url": "https://polyhaven.com/a/white_plaster_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_plaster_02/white_plaster_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "7b10c2686bcfd76d1f309a20fd06b57e",
+    "source_bytes": 527219,
+    "categories": [
+      "plaster-concrete",
+      "wall",
+      "man made",
+      "outdoor",
+      "indoor",
+      "clean",
+      "floor"
+    ],
+    "tags": [
+      "smooth",
+      "flat",
+      "even"
+    ],
+    "date_published": 1531287574,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/white_plaster_rough_01": {
+    "material_variant_id": "polyhaven_textures_0716_white_plaster_rough_01",
+    "material_family": "polyhaven_floor",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0716_textures_white_plaster_rough_01.jpg",
+    "sha256": "d5918cfd54c0c5c6ded60d8d3bf8a50d7a848c253f0fea2522b3a783785bc68a",
+    "bytes": 14471,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "white_plaster_rough_01",
+    "asset_id": "white_plaster_rough_01",
+    "label": "White Plaster Rough 01",
+    "source_url": "https://polyhaven.com/a/white_plaster_rough_01",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_plaster_rough_01/white_plaster_rough_01_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "c0964b0628920619f0364f19f2d9973d",
+    "source_bytes": 628421,
+    "categories": [
+      "plaster-concrete",
+      "wall",
+      "floor",
+      "man made",
+      "outdoor"
+    ],
+    "tags": [
+      "moss",
+      "smooth",
+      "flat",
+      "even",
+      "patches"
+    ],
+    "date_published": 1529359200,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  },
+  "wall/white_plaster_rough_02": {
+    "material_variant_id": "polyhaven_textures_0717_white_plaster_rough_02",
+    "material_family": "polyhaven_wall",
+    "texture_variation": "image",
+    "texture_file": "downloaded_256/polyhaven_0717_textures_white_plaster_rough_02.jpg",
+    "sha256": "b15e5bd2b39185e554fd24e8364862af690ec812b4fc1afe9d67b00524bee04f",
+    "bytes": 19334,
+    "resolution": "256px resized from downloaded PolyHaven Diffuse map",
+    "format": "jpg",
+    "source_site": "Poly Haven",
+    "source_asset_type": "textures",
+    "source_asset_id": "white_plaster_rough_02",
+    "asset_id": "white_plaster_rough_02",
+    "label": "White Plaster Rough 02",
+    "source_url": "https://polyhaven.com/a/white_plaster_rough_02",
+    "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_plaster_rough_02/white_plaster_rough_02_diff_1k.jpg",
+    "license": "CC0",
+    "texture_kind": "Diffuse",
+    "source_map_type": "Diffuse",
+    "source_resolution": "1k",
+    "source_format": "jpg",
+    "source_md5": "72b5ae937f3d3d2bec8507eec60f1a53",
+    "source_bytes": 734866,
+    "categories": [
+      "plaster-concrete",
+      "wall",
+      "man made",
+      "outdoor",
+      "dirty"
+    ],
+    "tags": [
+      "rough",
+      "broken",
+      "cracked",
+      "moss",
+      "uneven",
+      "cement",
+      "damaged",
+      "old",
+      "sewer",
+      "tunnel"
+    ],
+    "date_published": 1529359200,
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions": [
+      1000,
+      1000
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "resize": {
+      "width": 256,
+      "height": 256,
+      "method": "PIL.Image.Resampling.LANCZOS"
+    },
+    "material": [
+      0.12,
+      0.36,
+      0.22
+    ],
+    "base_material": [
+      0.12,
+      0.36,
+      0.22
+    ]
+  }
+}

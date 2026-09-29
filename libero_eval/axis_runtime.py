@@ -57,6 +57,23 @@ def load_manifest(path: pathlib.Path = DEFAULT_MANIFEST, *, expected_name: str |
     return manifest
 
 
+def task_runtime(manifest: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    """Only observation settings may vary between tasks in a frozen release."""
+    overrides = spec.get("runtime_overrides", {})
+    if not isinstance(overrides, dict) or set(overrides) - {"camera", "wrist_camera", "image_width", "image_height"}:
+        raise ValueError("task runtime overrides may only select cameras and render dimensions")
+    return {**manifest["runtime"], **overrides}
+
+
+def task_trial_count(spec: dict[str, Any], requested: int) -> int:
+    enabled = spec.get("randomization_enabled")
+    if enabled is not None and type(enabled) is not bool:
+        raise ValueError("task randomization_enabled must be a boolean")
+    if enabled is False:
+        return 1
+    return requested
+
+
 def _load_yaml_manifest(path: pathlib.Path) -> dict[str, Any]:
     """Select tasks without duplicating their frozen scene/checker definitions."""
     import yaml
@@ -172,7 +189,7 @@ def verify_task_payload(payload: dict[str, Any], spec: dict[str, Any]) -> dict[s
         raise ValueError(f"AXIS task {task_id} runtime drifted from the frozen definition: {detail}")
     if not payload.get("mjcf_xml") or not payload.get("checker_config"):
         raise ValueError(f"AXIS task {task_id} has no executable MJCF/checker payload")
-    return {
+    verified = {
         "id": task_id,
         "name": payload["name"],
         "status": payload.get("status"),
@@ -181,6 +198,13 @@ def verify_task_payload(payload: dict[str, Any], spec: dict[str, Any]) -> dict[s
         "checker_config": payload["checker_config"],
         "initial_state": payload.get("initial_state"),
     }
+    official_hash = spec.get("official_randomization_sha256")
+    if official_hash is not None or "official_randomization" in payload:
+        config = payload.get("official_randomization")
+        if not isinstance(config, dict) or canonical_json_sha256(config) != official_hash:
+            raise ValueError(f"AXIS task {task_id} randomization is missing, unpinned or hash-mismatched")
+        verified["official_randomization"] = config
+    return verified
 
 
 @dataclass(frozen=True)
@@ -796,10 +820,46 @@ class AxisEnvironment:
             _named_id(mujoco, self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
             for name in runtime["observation_joint_order"]
         ]
-        self.renderer = mujoco.Renderer(
-            self.model,
-            height=int(runtime["image_size"]),
-            width=int(runtime["image_size"]),
+        self.render_width = int(runtime.get("image_width", runtime["image_size"]))
+        self.render_height = int(runtime.get("image_height", runtime["image_size"]))
+        self.axis_randomizer = None
+        self.axis_scene = None
+        self.reset_randomization: dict[str, Any] | None = None
+        if "official_randomization" in payload:
+            from axis_perturbations import AxisRandomizer
+
+            config = payload["official_randomization"]
+            visual = config.get("visual")
+            use_axis_scene = isinstance(visual, dict) and visual.get("mode") in {
+                "official_franka_v6",
+                "official_franka_components",
+                "official_franka_components_v2",
+            }
+            if use_axis_scene:
+                config = {**config, "visual": None}
+            self.axis_randomizer = AxisRandomizer(
+                self.model,
+                config,
+                asset_root=scene_path.parent.parent,
+                task_id=int(payload["id"]),
+                task_name=payload["name"],
+                width=self.render_width,
+                height=self.render_height,
+            )
+            if use_axis_scene:
+                from axis_scene import AxisSceneRenderer
+
+                self.axis_scene = AxisSceneRenderer(
+                    scene_path,
+                    payload,
+                    self.model,
+                    width=self.render_width,
+                    height=self.render_height,
+                )
+        self.renderer = (
+            self.axis_scene.renderer
+            if self.axis_scene is not None
+            else mujoco.Renderer(self.model, height=self.render_height, width=self.render_width)
         )
         self.runtime_initial: RuntimeState | None = None
 
@@ -809,10 +869,22 @@ class AxisEnvironment:
     def reset(self) -> None:
         self.mujoco.mj_resetData(self.model, self.data)
         _apply_initial_state(self.mujoco, self.model, self.data, self.payload.get("initial_state"))
+        if self.axis_randomizer is not None:
+            self.reset_randomization = self.axis_randomizer.apply(self.data, self.renderer)
         self.hold_current_pose()
         for _ in range(int(self.runtime["settle_control_steps"])):
             self.mujoco.mj_step(self.model, self.data, nstep=self.steps_per_control)
         self.runtime_initial = _runtime_state(self.mujoco, self.model, self.data)
+        if self.axis_randomizer is not None:
+            if not self.np.isfinite(self.data.qpos).all() or not self.np.isfinite(self.data.qvel).all():
+                raise ValueError("AXIS randomized reset produced a non-finite state")
+            if self.np.any(self.data.warning.number):
+                raise ValueError("AXIS randomized reset produced a MuJoCo warning")
+            passed, detail = self.success()
+            if passed:
+                raise ValueError(f"AXIS randomized reset already satisfies the checker: {detail}")
+        if self.axis_scene is not None:
+            self.reset_randomization["visual"] = self.axis_scene.reset(self.data)
 
     def hold_current_pose(self) -> None:
         for actuator_id, qpos_index in zip(self.actuator_ids, self.qpos_indices):
@@ -821,8 +893,13 @@ class AxisEnvironment:
     def observation_state(self) -> Any:
         return self.np.asarray([self.data.qpos[index] for index in self.qpos_indices], dtype=self.np.float32)
 
-    def render(self) -> Any:
-        self.renderer.update_scene(self.data, camera=str(self.runtime["camera"]))
+    def render(self, *, camera: str | None = None) -> Any:
+        if self.axis_scene is not None:
+            return self.axis_scene.render(
+                self.data,
+                str(camera if camera is not None else self.runtime["camera"]),
+            )
+        self.renderer.update_scene(self.data, camera=str(camera if camera is not None else self.runtime["camera"]))
         return self.renderer.render().copy()
 
     def step(self, action: Any) -> None:

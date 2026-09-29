@@ -151,6 +151,19 @@ class TestAxisAnalysis(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "matching randomization_seed"):
             analyze(summaries, manifest)
 
+    def test_numerical_runtime_cannot_be_mixed_with_legacy_or_other_runtime(self):
+        baseline = self._summary(set())
+        baseline["numerical_runtime"] = {"policy": "cache-independent-v1"}
+        other = self._summary(set(self.task_ids))
+        for legacy in (None, {"policy": "cached-v0"}):
+            other["numerical_runtime"] = legacy
+            for summaries in ([("a", baseline), ("b", other)], [("b", other), ("a", baseline)]):
+                with self.subTest(runtime=legacy), self.assertRaisesRegex(ValueError, "numerical_runtime"):
+                    analyze(summaries, self.manifest)
+        other["numerical_runtime"] = dict(baseline["numerical_runtime"])
+        report = analyze([("a", baseline), ("b", other)], self.manifest)
+        self.assertEqual(report["common_recorded_protocol"]["numerical_runtime"], baseline["numerical_runtime"])
+
     def test_incomplete_or_randomized_run_is_rejected(self):
         incomplete = self._summary(set())
         incomplete["tasks"].pop(str(self.task_ids[-1]))

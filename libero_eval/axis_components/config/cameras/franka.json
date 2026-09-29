@@ -1,0 +1,399 @@
+{
+  "embodiment_id": "franka",
+  "camera_count": 2,
+  "default_camera_names": [
+    "frontview",
+    "wrist"
+  ],
+  "camera_rig": {
+    "profile_id": "realsense_d405_exterior_plus_link8_zed_mini_v3",
+    "reference": "The single exterior frontview camera uses an Intel RealSense D405 RGB pinhole proxy at the existing user-specified pose. The wrist camera retains the DROID-informed link8 ZED Mini proxy with AXIS virtual stereo-center and gripper-visibility framing overrides.",
+    "configured_exterior_camera_count": 1,
+    "configured_wrist_camera_count": 1,
+    "exterior_rgb_stream": "left_imager_rgb_with_isp",
+    "wrist_rgb_stream": "virtual_stereo_center_rgb",
+    "native_capture_profiles": {
+      "frontview": {
+        "resolution": [1280, 720],
+        "fps": 30,
+        "maximum_rgb_fps": 90
+      },
+      "wrist": {
+        "resolution": [1280, 720],
+        "fps": 60
+      }
+    },
+    "dataset_resolution": [
+      320,
+      180
+    ],
+    "runtime_note": "MuJoCo renders each configured view as one distortion-free pinhole RGB proxy. Frontview uses the D405 product-level 58-degree nominal vertical FOV for its 1280x720 ISP RGB profile while preserving the existing pose; per-device fx/fy/ppx/ppy and distortion are not claimed. The wrist view remains an explicitly virtual stereo-center proxy with a render-validated +8 degree local pitch for increased Panda gripper visibility and a user-specified 52-degree nominal vertical FOV. Runtime rendering remains strictly limited to 16:9, such as 320x180 or 1280x720, and stored Robosuite data remains normalized to 15 Hz.",
+    "references": {
+      "realsense_d405_product": "https://www.realsenseai.com/products/stereo-depth-camera-d405/",
+      "realsense_d400_datasheet": "https://www.realsenseai.com/download/21345/",
+      "realsense_projection_and_intrinsics": "https://dev.realsenseai.com/docs/projection-texture-mapping-and-occlusion-with-intel-realsense-depth-cameras/",
+      "droid_hardware": "https://droid-dataset.github.io/droid/hardware-setup/assembly.html#mounting-hand-camera-on-robot",
+      "droid_capture": "https://github.com/droid-dataset/droid/blob/33ae6a67274f36d2e29525b86f23a56616ef43a7/droid/camera_utils/camera_readers/zed_camera.py",
+      "droid_sim_eval_cameras": "https://github.com/arhanjain/sim-evals/blob/3a6b0e8177f696947f49c082728f10ef5133ede1/src/sim_evals/environments/droid_environment.py",
+      "droid_sim_asset": "https://huggingface.co/datasets/owhan/DROID-sim-environments/blob/main/franka_robotiq_2f_85_flattened.usd"
+    }
+  },
+  "capture_multiplexing": {
+    "schema": "fixed_plus_randomized_camera_pairs_v1",
+    "enabled": true,
+    "fixed_replicas": 1,
+    "randomized_replicas": 4,
+    "pairing": "same_replica_index_frontview_and_wrist",
+    "dataset_layout": {
+      "fixed": "camera_fixed",
+      "randomized": "camera_randomized"
+    },
+    "semantics": "Replay each source state once, render one fixed plus four randomized frontview/wrist pairs, and write one fixed episode plus four randomized episodes with the standard third_person+wrist policy schema.",
+    "split_policy": "All five paired episodes share a source_trajectory_group_id and must remain in the same train/validation/test split."
+  },
+  "render_profile": {
+    "profile_id": "franka_kujiale_mujoco_visual_v6_wrist_framing",
+    "scene": {
+      "mode": "kujiale_procedural_library",
+      "library_file": "config/scenes/kujiale_mujoco_v2.json",
+      "library_sha256": "a4837522ea0bae2624832e22c0d65d69da0990f2e87c84b29e49a4f38705a110",
+      "selection": "stable_task_attempt_variant_mixed_radix_v2",
+      "table_geometry_policy": "four_leg_apron_visual_with_preserved_collision_surface",
+      "table_placement": {
+        "mode": "fixed_body_frame",
+        "reference_body": "franka/",
+        "center_offset_xy_in_reference_frame_m": [0.35, 0.0],
+        "full_size_m": [1.4, 1.2, 0.05],
+        "object_center_policy": "require_inside_fixed_footprint"
+      }
+    },
+    "randomization": {
+      "texture": {
+        "enabled": true,
+        "mode": "full_material_replacement",
+        "surfaces": ["table", "floor", "wall"]
+      },
+      "camera": {
+        "enabled": true
+      },
+      "lighting": {
+        "enabled": false
+      }
+    },
+    "surface_constraints": {
+      "table": {
+        "image_luminance_guard": {
+          "metric": "bt709_srgb_uint8_percentile",
+          "mode": "downscale_only",
+          "percentile": 95.0,
+          "max_value": 128.0
+        },
+        "material_caps": {
+          "max_reflectance": 0.2,
+          "max_specular": 0.3
+        }
+      }
+    },
+    "lighting": {
+      "mode": "reference_five_light_rig",
+      "source_style": "axis-training scripts/advanced/collect_demo.py PathTracing disk key plus four sphere fills, implemented as a shadow-stable raster approximation with five MuJoCo direct lights and all shadow maps disabled.",
+      "render_quality": {
+        "shadowsize": 4096,
+        "offsamples": 8,
+        "shadowclip": 3.0,
+        "shadowscale": 0.7,
+        "disable_headlight": true
+      },
+      "sources": [
+        {
+          "name": "ceiling_main",
+          "source_type": "disk_key_approximation",
+          "position_offset": [0.0, 0.0, 2.32],
+          "target_offset": [-0.18, 0.0, 0.0],
+          "ambient": [0.19, 0.18, 0.17],
+          "diffuse": [0.82, 0.78, 0.72],
+          "specular": [0.15, 0.14, 0.13],
+          "attenuation": [1.0, 0.045, 0.008],
+          "cutoff": 72.0,
+          "exponent": 2.0,
+          "directional": false,
+          "castshadow": false
+        },
+        {
+          "name": "ceiling_ne",
+          "source_type": "sphere_fill_approximation",
+          "position_offset": [1.0, 1.0, 2.02],
+          "target_offset": [0.0, 0.0, 0.0],
+          "ambient": [0.0, 0.0, 0.0],
+          "diffuse": [0.25, 0.245, 0.235],
+          "specular": [0.035, 0.034, 0.032],
+          "attenuation": [1.0, 0.05, 0.01],
+          "cutoff": 90.0,
+          "exponent": 1.0,
+          "directional": false,
+          "castshadow": false
+        },
+        {
+          "name": "ceiling_nw",
+          "source_type": "sphere_fill_approximation",
+          "position_offset": [-1.0, 1.0, 2.02],
+          "target_offset": [0.0, 0.0, 0.0],
+          "ambient": [0.0, 0.0, 0.0],
+          "diffuse": [0.33, 0.29, 0.25],
+          "specular": [0.04, 0.035, 0.03],
+          "attenuation": [1.0, 0.05, 0.01],
+          "cutoff": 90.0,
+          "exponent": 1.0,
+          "directional": false,
+          "castshadow": false
+        },
+        {
+          "name": "ceiling_sw",
+          "source_type": "sphere_fill_approximation",
+          "position_offset": [-1.0, -1.0, 2.02],
+          "target_offset": [0.0, 0.0, 0.0],
+          "ambient": [0.0, 0.0, 0.0],
+          "diffuse": [0.29, 0.235, 0.19],
+          "specular": [0.035, 0.029, 0.024],
+          "attenuation": [1.0, 0.05, 0.01],
+          "cutoff": 90.0,
+          "exponent": 1.0,
+          "directional": false,
+          "castshadow": false
+        },
+        {
+          "name": "ceiling_se",
+          "source_type": "sphere_fill_approximation",
+          "position_offset": [1.0, -1.0, 2.02],
+          "target_offset": [0.0, 0.0, 0.0],
+          "ambient": [0.0, 0.0, 0.0],
+          "diffuse": [0.25, 0.23, 0.21],
+          "specular": [0.035, 0.032, 0.029],
+          "attenuation": [1.0, 0.05, 0.01],
+          "cutoff": 90.0,
+          "exponent": 1.0,
+          "directional": false,
+          "castshadow": false
+        }
+      ]
+    }
+  },
+  "cameras": [
+    {
+      "name": "frontview",
+      "role": "third_person",
+      "mount": {
+        "type": "world"
+      },
+      "intrinsics": {
+        "model": "mujoco_pinhole_fovy",
+        "physical_model": "Intel RealSense Depth Camera D405",
+        "stream": "left_imager_rgb_with_isp",
+        "fovy": 58.0,
+        "native_resolution": [
+          1280,
+          720
+        ],
+        "native_fps": 30,
+        "maximum_rgb_fps": 90,
+        "sensor_technology": "global_shutter_left_imager_rgb_with_isp",
+        "published_rgb_fov_deg": {
+          "horizontal_product_page": 87.0,
+          "horizontal_d400_datasheet": 84.0,
+          "vertical": 58.0,
+          "note": "Official horizontal product-page and D400-datasheet values differ; vertical FOV is consistently 58 degrees and is the MuJoCo pinhole control used here."
+        },
+        "configured_pinhole_approximation": {
+          "vertical_fov_deg": 58.0,
+          "runtime_aspect_ratio": "16:9",
+          "implied_horizontal_fov_deg": 89.1595727725,
+          "principal_point": "runtime_image_center",
+          "distortion": "not_modeled"
+        },
+        "principal_point": "runtime_image_center",
+        "resolution": "runtime_cli_width_height",
+        "required_aspect_ratio": "16:9",
+        "source": "RealSense D405 product-level 1280x720 ISP RGB profile. The nominal vertical FOV is 58 degrees; exact fx/fy/ppx/ppy and distortion are device- and stream-profile-specific and must be read from the target D405 with the RealSense SDK for hardware calibration."
+      },
+      "extrinsics": {
+        "type": "body_frame_relative_lookat",
+        "reference_body": "franka/",
+        "reference_frame": "Franka base; +X is outward toward the workspace, +Z is upward.",
+        "distance_semantics": "position_offset.x is the requested 0.95 m horizontal outward distance, not a 3D slant range.",
+        "position_offset": [
+          0.95,
+          0.0,
+          0.95
+        ],
+        "target_offset": [
+          0.3,
+          0.0,
+          -0.09
+        ],
+        "source": "User-specified single exterior pose; position and target are transformed by the full Franka base SE(3)."
+      },
+      "randomization": {
+        "enabled": true,
+        "mode": "base_table_sector_lookat_v1",
+        "azimuth": {
+          "bounds": "reference_base_to_table_positive_x_edge_corners",
+          "distribution": "uniform_angle"
+        },
+        "table_edge_clearance_m": {
+          "minimum": 0.1,
+          "maximum": 0.25,
+          "distribution": "uniform"
+        },
+        "height_offset_in_reference_frame_m": {
+          "center": 0.95,
+          "half_range": 0.3,
+          "distribution": "uniform_symmetric"
+        },
+        "look_at": {
+          "center_offset_in_reference_frame_m": [0.3, 0.0, -0.09],
+          "disk_plane": "reference_xy",
+          "disk_diameter_m": 0.1,
+          "distribution": "uniform_area"
+        },
+        "fovy_deg": {
+          "center": 58.0,
+          "half_range": 4.0,
+          "distribution": "uniform_symmetric"
+        },
+        "visibility_gate": {
+          "max_attempts": 64,
+          "workspace_center_offset_in_reference_frame_m": [0.3, 0.0, 0.0],
+          "horizontal_radius_m": 0.25,
+          "height_range_in_reference_frame_m": [0.0, 0.55],
+          "azimuth_samples": 8,
+          "render_aspect_ratio": [16.0, 9.0]
+        }
+      }
+    },
+    {
+      "name": "wrist",
+      "role": "wrist",
+      "mount": {
+        "type": "body",
+        "body": "panda_link8",
+        "missing_body_frame_adapter": {
+          "type": "validated_identity_child",
+          "source_body": "panda_hand",
+          "expected_source_parent": "panda_link7",
+          "expected_source_local_pos": [
+            0.0,
+            0.0,
+            0.107
+          ],
+          "expected_source_local_quat_wxyz": [
+            0.9238795,
+            0.0,
+            0.0,
+            -0.3826834
+          ],
+          "validation_tolerance": 1e-06,
+          "reason": "AXIS task MJCF collapses the standard Franka panda_link8 frame into panda_hand at the exact panda_joint8 fixed transform. The renderer validates that transform and injects an identity panda_link8 body frame before mounting the camera."
+        },
+        "pos": [
+          -0.0739999881,
+          0.0,
+          0.0291740107
+        ],
+        "quat": [
+          0.1626657211,
+          0.6944975046,
+          -0.682754598,
+          -0.1583010998
+        ],
+        "optical_convention": "MuJoCo/OpenGL camera frame: -Z forward, +Y up; quaternion order is wxyz.",
+        "source": "Starts from the DROID sim-evals Robotiq 2F-85 left-eye wrist-pose proxy converted into panda_link8. AXIS renders a native Panda gripper instead of DROID's Robotiq geometry, so the requested Panda framing removes the sim-evals +0.0309999884 m lateral optical offset to form an explicitly virtual stereo-center view and postmultiplies a render-validated +8 degree pitch in the camera DR frame to expose more of both fingers. This is a measured render-composition choice, not a physical-width derivation or a published universal real-DROID hand-eye calibration."
+      },
+      "intrinsics": {
+        "model": "mujoco_pinhole_fovy",
+        "physical_model": "Stereolabs ZED Mini",
+        "stream": "virtual_stereo_center_rgb",
+        "fovy": 52.0,
+        "native_resolution": [
+          1280,
+          720
+        ],
+        "native_fps": 60,
+        "sim_evals_reference_pinhole": {
+          "fovy": 56.7380925866,
+          "focal_length_mm": 2.8,
+          "horizontal_aperture_mm": 5.376,
+          "vertical_aperture_mm": 3.024
+        },
+        "configured_effective_pinhole": {
+          "fovy": 52.0,
+          "vertical_aperture_mm": 3.024,
+          "effective_focal_length_mm": 3.100059408467896
+        },
+        "principal_point": "runtime_image_center",
+        "resolution": "runtime_cli_width_height",
+        "required_aspect_ratio": "16:9",
+        "source": "Resolution and hardware provenance follow the DROID sim-evals static ZED Mini proxy. The old 2.8 mm / 3.024 mm pinhole and its 56.7380925866-degree vertical FOV are isolated under sim_evals_reference_pinhole. The configured nominal vertical FOV is the requested 52 degrees, corresponding to the separately recorded 3.100059408467896 mm effective focal length for the same vertical aperture, and is randomized by +/-4 degrees. The rendered wrist stream is a virtual stereo-center view for Panda composition rather than a physical DROID left-eye stream; real DROID intrinsics are read per camera serial from the ZED SDK."
+      },
+      "extrinsics": {
+        "type": "body_local",
+        "mount_body": "panda_link8",
+        "pose_source_parent": "DROID sim-evals Robotiq_2F_85/base_link",
+        "pose_conversion": "T_link8_camera = T_link8_joint0 * inverse(T_gripper_joint1) * T_gripper_camera",
+        "physical_mount": "DROID custom ZED Mini bracket on Franka's final link8",
+        "sim_evals_link8_proxy_pose": {
+          "pos": [
+            -0.0739999881,
+            0.0309999884,
+            0.0291740107
+          ],
+          "quat_wxyz": [
+            0.1138237786,
+            0.7041527307,
+            -0.6921339686,
+            -0.1102889331
+          ]
+        },
+        "panda_gripper_virtual_stereo_center": {
+          "translation_in_link8": [
+            0.0,
+            -0.0309999884,
+            0.0
+          ],
+          "rotation_quat_wxyz": [
+            0.9975640503,
+            -0.0697564737,
+            0.0,
+            0.0
+          ],
+          "composition_pitch_deg": 8.0,
+          "composition": "camera_dr_positive_pitch_postmultiply_equivalent_to_mujoco_local_rx_negative",
+          "proxy_stream": "rectified_left_eye_rgb",
+          "rendered_stream": "virtual_stereo_center_rgb",
+          "reason": "The DROID sim proxy uses a laterally offset ZED Mini left eye with a Robotiq 2F-85, while AXIS renders native Panda geometry. The rendered pinhole is first moved to a virtual stereo-center proxy: in the validated reference replay pose, this moves the fingertip midpoint from u/W=0.680 to u/W=0.507. A subsequent +8 degree local pitch was selected from fixed-plus-four-randomized render comparisons because it exposes substantially more of both Panda fingers without introducing the broad palm occlusion seen in stronger translation-plus-rotation candidates. Camera position, depth, and FOV remain unchanged by the pitch override. This is not derived from gripper width and is not a claim that arbitrary distant workspace points remain centered across robot motion."
+        }
+      },
+      "randomization": {
+        "enabled": true,
+        "mode": "optical_pose_box_v1",
+        "position_half_ranges_m": {
+          "lateral": 0.015,
+          "vertical": 0.005,
+          "depth": 0.02,
+          "distribution": "independent_uniform_symmetric"
+        },
+        "orientation_half_ranges_deg": {
+          "roll": 8.0,
+          "pitch": 4.0,
+          "yaw": 4.0,
+          "distribution": "independent_uniform_symmetric",
+          "composition": "camera_dr_basis_rz_yaw_ry_pitch_rx_roll_postmultiply"
+        },
+        "fovy_deg": {
+          "center": 52.0,
+          "half_range": 4.0,
+          "distribution": "uniform_symmetric"
+        }
+      }
+    }
+  ]
+}

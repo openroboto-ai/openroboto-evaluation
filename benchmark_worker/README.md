@@ -27,6 +27,16 @@ Invalid checkpoints fail before GPU startup. GPU/runtime infrastructure failures
 are retried without charging partial scores to the submitted model. Progress,
 per-task results and model identities are preserved for resumption and audit.
 
+The current `axis_v2.0` queue profile loads the bundled combined randomization
+release, verifies its archive/cache, and requires a queue `seed` in `[0, 2**32)`.
+Missing or invalid seeds leave the task waiting; the worker never substitutes a
+local seed or a fixed scene. It passes the seed and frozen randomization manifest
+to the evaluator and checks every episode's selected instance and success counts
+before scoring. The submitted `init_seed` carries the same queue seed.
+Thirty tasks with twenty distinct instances each produce 600 episodes per model.
+The backend must select `axis_v2.0` and establish a baseline under that protocol;
+publishing this evaluator does not change competitions or promote a champion.
+
 Before downloading weights, the worker checks the exact HF commit's complete
 file-size manifest: `pi0.5` submissions may occupy at most **20 GB** and
 `lingbot-vla-2.0` at most **35 GB** (decimal GB). All repository files count,
@@ -49,6 +59,10 @@ A non-null rotation response specifies `benchmark`, `previous_benchmark`, `seed`
 versions atomically, retains older versions, and never rewrites an existing task
 set. Unsupported versions are skipped before score/progress submission. It does
 not publish competitions or choose a new baseline on the backend.
+
+This task-selection generator currently accepts base-scene pools. It does not
+extend the randomized V2.0 bundle; build and validate a new randomized release
+with the official release planner/builder before enabling a different task set.
 
 Use `--axis-benchmark-dir /path/to/versions` to select storage explicitly. Do not
 combine automatic preparation with a benchmark override. The backend owns timing,

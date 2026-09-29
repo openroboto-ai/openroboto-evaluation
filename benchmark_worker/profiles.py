@@ -20,6 +20,7 @@ from libero_eval.axis_runtime import (
     canonical_json_sha256,
     load_manifest,
 )
+from libero_eval.axis_release import AXIS_CURRENT_NAME, prepare_release
 
 
 PRO_BASE_SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
@@ -50,6 +51,8 @@ class EvaluationProfile:
     manifest_sha256: str | None = None
     expected_trials_per_task: int | None = None
     manifest_path: pathlib.Path | None = None
+    randomization_manifest_path: pathlib.Path | None = None
+    randomization_manifest_sha256: str | None = None
 
     def weight_for(self, target: ScoreTarget) -> float:
         return self.weights[self.targets.index(target)]
@@ -87,6 +90,7 @@ def _axis_config_profile(name: str = AXIS_V1_NAME, path: pathlib.Path | None = N
     if type(trials) is not int or trials < 1:
         raise ValueError("AXIS default_trials_per_task must be a positive integer")
     task_ids = tuple(task["task_id"] for task in manifest["tasks"])
+    randomization_path = path.with_name("randomization.json") if manifest["protocol"].get("randomization") else None
     return EvaluationProfile(
         name,
         name if name == AXIS_V1_NAME else "axis",
@@ -99,6 +103,8 @@ def _axis_config_profile(name: str = AXIS_V1_NAME, path: pathlib.Path | None = N
         canonical_json_sha256(manifest),
         trials,
         path.resolve(),
+        randomization_path,
+        canonical_json_sha256(json.loads(randomization_path.read_bytes())) if randomization_path else None,
     )
 
 
@@ -211,6 +217,8 @@ def refresh_axis_profiles() -> None:
 
 def get_profile(name: str) -> EvaluationProfile:
     with _profile_lock:
+        if name == AXIS_CURRENT_NAME and name not in PROFILES:
+            PROFILES[name] = _axis_config_profile(name, prepare_release())
         if is_axis_benchmark(name) and name not in _axis_dynamic:
             refresh_axis_profiles()
         if name in _axis_blocked or name in _axis_errors:

@@ -38,6 +38,7 @@ sys.path.insert(0, str(VALIDATOR_ROOT))
 
 from benchmark_worker.backend_client import BackendClient, BackendError, TaskInvalidatedError
 from benchmark_worker.axis_rotation import AxisRotation, default_rotation_directory
+from benchmark_worker.axis_randomization import queue_seed, verify_summary as verify_axis_randomized_summary
 from benchmark_worker.profiles import (
     BenchmarkNotReadyError,
     configure_axis_profiles,
@@ -244,6 +245,8 @@ def task_evaluation_args(task: dict, args):
     resolved = copy.copy(args)
     resolved.benchmark = select_benchmark(task, getattr(args, "benchmark", None))
     _apply_benchmark_options(resolved)
+    if get_profile(resolved.benchmark).randomization_manifest_path is not None:
+        resolved.axis_randomization_seed = queue_seed(task)
     return resolved
 
 
@@ -809,6 +812,13 @@ def run_evaluation(
         cmd += ["--config", args.eval_config]
     if profile.runtime_benchmark == "axis":
         cmd += ["--axis-manifest", str(profile.manifest_path)]
+    if profile.randomization_manifest_path is not None:
+        cmd += [
+            "--axis-randomization-manifest",
+            str(profile.randomization_manifest_path),
+            "--axis-randomization-seed",
+            str(args.axis_randomization_seed),
+        ]
     if profile.policy_seed is not None:
         cmd += ["--seed", str(profile.policy_seed)]
     if getattr(args, "lingbot_norm_stats", None):
@@ -939,6 +949,11 @@ def run_evaluation(
         raise EvalInfrastructureError(
             f"run_eval exited {proc.returncode} despite a complete-looking summary; refusing to score it"
         )
+    if profile.randomization_manifest_path is not None:
+        try:
+            verify_axis_randomized_summary(summary, profile, args.axis_randomization_seed)
+        except (ValueError, KeyError, TypeError, OSError) as exc:
+            raise EvalInfrastructureError(f"invalid AXIS randomization evidence: {exc}") from exc
     return summary, ""
 
 
@@ -1339,6 +1354,8 @@ def process_task(task: dict, client: BackendClient, store: StateStore, args) -> 
 
     # init states 随机化种子 = 队列条目自带的 seed(公开可验证,见 select_init_seed)。
     init_seed = None
+    if get_profile(selected_benchmark).randomization_manifest_path is not None:
+        init_seed = args.axis_randomization_seed
     if selected_benchmark in ("libero", "libero_pro", "libero_pro_custom_1") and not args.no_init_randomization:
         init_seed = select_init_seed(task)
 
@@ -1733,7 +1750,7 @@ def _apply_benchmark_options(args) -> None:
     if is_axis_benchmark(args.benchmark):
         trials = get_profile(args.benchmark).expected_trials_per_task or 1
         if args.num_trials != trials:
-            raise ValueError(f"{args.benchmark} base-scene protocol requires --num-trials {trials}")
+            raise ValueError(f"{args.benchmark} protocol requires --num-trials {trials}")
         if args.task_ids:
             raise ValueError(
                 f"benchmark_worker cannot score an {args.benchmark} --task-ids subset; use run_eval.py for development"

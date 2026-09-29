@@ -1,0 +1,411 @@
+{
+  "profile_id": "franka_kujiale_mujoco_visual_v6_wrist_framing",
+  "camera_profiles": {
+    "frontview": {
+      "enabled": true,
+      "mode": "base_table_sector_lookat_v1",
+      "azimuth": {
+        "bounds": "reference_base_to_table_positive_x_edge_corners",
+        "distribution": "uniform_angle"
+      },
+      "table_edge_clearance_m": {
+        "minimum": 0.1,
+        "maximum": 0.25,
+        "distribution": "uniform"
+      },
+      "height_offset_in_reference_frame_m": {
+        "center": 0.95,
+        "half_range": 0.3,
+        "distribution": "uniform_symmetric"
+      },
+      "look_at": {
+        "center_offset_in_reference_frame_m": [
+          0.3,
+          0.0,
+          -0.09
+        ],
+        "disk_plane": "reference_xy",
+        "disk_diameter_m": 0.1,
+        "distribution": "uniform_area"
+      },
+      "fovy_deg": {
+        "center": 58.0,
+        "half_range": 4.0,
+        "distribution": "uniform_symmetric"
+      },
+      "visibility_gate": {
+        "max_attempts": 64,
+        "workspace_center_offset_in_reference_frame_m": [
+          0.3,
+          0.0,
+          0.0
+        ],
+        "horizontal_radius_m": 0.25,
+        "height_range_in_reference_frame_m": [
+          0.0,
+          0.55
+        ],
+        "azimuth_samples": 8,
+        "render_aspect_ratio": [
+          16.0,
+          9.0
+        ]
+      }
+    },
+    "wrist": {
+      "enabled": true,
+      "mode": "optical_pose_box_v1",
+      "position_half_ranges_m": {
+        "lateral": 0.015,
+        "vertical": 0.005,
+        "depth": 0.02,
+        "distribution": "independent_uniform_symmetric"
+      },
+      "orientation_half_ranges_deg": {
+        "roll": 8.0,
+        "pitch": 4.0,
+        "yaw": 4.0,
+        "distribution": "independent_uniform_symmetric",
+        "composition": "camera_dr_basis_rz_yaw_ry_pitch_rx_roll_postmultiply"
+      },
+      "fovy_deg": {
+        "center": 52.0,
+        "half_range": 4.0,
+        "distribution": "uniform_symmetric"
+      },
+      "coordinate_convention": {
+        "camera_dr_basis": [
+          "depth_forward",
+          "lateral_camera_left",
+          "vertical_camera_up"
+        ],
+        "mujoco_camera_basis": [
+          "x_image_right",
+          "y_image_up",
+          "negative_z_forward"
+        ]
+      }
+    }
+  },
+  "materials": {
+    "table/plywood": {
+      "texture_file": "plywood_1k.jpg",
+      "texture_bank_id": "axis_curated_tabletop_1k_v1",
+      "sha256": "800905650fc6cab2fe7c77c41851f8ea89669f1287ad5ce67c48f435654c0af8",
+      "bytes": 882059,
+      "source_asset_id": "plywood",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plywood/plywood_diff_1k.jpg",
+      "source_md5": "8032b768029adffbbfb223dd890102de",
+      "source_bytes": 882059,
+      "resize": null,
+      "source_url": "https://polyhaven.com/a/plywood",
+      "license": "CC0",
+      "base_material": [
+        0.08,
+        0.32,
+        0.18
+      ]
+    },
+    "floor/marble_01": {
+      "texture_file": "downloaded_256/polyhaven_0363_textures_marble_01.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "b08893905fd97516a4691b7d90842d1c3c47b4336ee6b57a8bb3dc0f47da192d",
+      "bytes": 8539,
+      "source_asset_id": "marble_01",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/marble_01/marble_01_diff_1k.jpg",
+      "source_md5": "04325ced5018eb8a2e598a4ef69cb176",
+      "source_bytes": 305029,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/marble_01",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.36,
+        0.22
+      ]
+    },
+    "wall/white_plaster_rough_02": {
+      "texture_file": "downloaded_256/polyhaven_0717_textures_white_plaster_rough_02.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "b15e5bd2b39185e554fd24e8364862af690ec812b4fc1afe9d67b00524bee04f",
+      "bytes": 19334,
+      "source_asset_id": "white_plaster_rough_02",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_plaster_rough_02/white_plaster_rough_02_diff_1k.jpg",
+      "source_md5": "72b5ae937f3d3d2bec8507eec60f1a53",
+      "source_bytes": 734866,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/white_plaster_rough_02",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.36,
+        0.22
+      ]
+    },
+    "floor/terrazzo_tiles": {
+      "texture_file": "downloaded_256/polyhaven_0700_textures_terrazzo_tiles.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "b330e859e49d6502cb99f8ddcf55165db340f08bad58d672cb10abd63391c056",
+      "bytes": 19347,
+      "source_asset_id": "terrazzo_tiles",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/terrazzo_tiles/terrazzo_tiles_diff_1k.jpg",
+      "source_md5": "12c27a579c2ed49de854b8a86e33647b",
+      "source_bytes": 1166107,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/terrazzo_tiles",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.52,
+        0.3
+      ]
+    },
+    "floor/interior_tiles": {
+      "texture_file": "downloaded_256/polyhaven_0331_textures_interior_tiles.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "560dfeb7e53adf0d6e78fae502da06199ea2264ee28fcbeb6f565313f42dbd7d",
+      "bytes": 15680,
+      "source_asset_id": "interior_tiles",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/interior_tiles/interior_tiles_diff_1k.jpg",
+      "source_md5": "94ba3714450bb6bbe6a57c9a26e8dac5",
+      "source_bytes": 694562,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/interior_tiles",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.52,
+        0.3
+      ]
+    },
+    "table/stained_pine": {
+      "texture_file": "stained_pine_1k.jpg",
+      "texture_bank_id": "axis_curated_tabletop_1k_v1",
+      "sha256": "bab73315eb57f942a98e3201ef7f00515f3a4c5b74bb9aba9c00007a3029e594",
+      "bytes": 652040,
+      "source_asset_id": "stained_pine",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stained_pine/stained_pine_diff_1k.jpg",
+      "source_md5": "0f76353622e3183fd46bdd7d46c1d305",
+      "source_bytes": 652040,
+      "resize": null,
+      "source_url": "https://polyhaven.com/a/stained_pine",
+      "license": "CC0",
+      "base_material": [
+        0.08,
+        0.32,
+        0.18
+      ]
+    },
+    "floor/large_floor_tiles_02": {
+      "texture_file": "downloaded_256/polyhaven_0348_textures_large_floor_tiles_02.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "4cfb6e168510027a3bdc7f88930221a5a96bab30313a27c87050b9280d9888f2",
+      "bytes": 17296,
+      "source_asset_id": "large_floor_tiles_02",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_floor_tiles_02/large_floor_tiles_02_diff_1k.jpg",
+      "source_md5": "929f604bfe0f38041afdcf4676a9f777",
+      "source_bytes": 557814,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/large_floor_tiles_02",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.36,
+        0.22
+      ]
+    },
+    "wall/white_plaster_rough_01": {
+      "texture_file": "downloaded_256/polyhaven_0716_textures_white_plaster_rough_01.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "d5918cfd54c0c5c6ded60d8d3bf8a50d7a848c253f0fea2522b3a783785bc68a",
+      "bytes": 14471,
+      "source_asset_id": "white_plaster_rough_01",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_plaster_rough_01/white_plaster_rough_01_diff_1k.jpg",
+      "source_md5": "c0964b0628920619f0364f19f2d9973d",
+      "source_bytes": 628421,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/white_plaster_rough_01",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.36,
+        0.22
+      ]
+    },
+    "wall/painted_plaster_wall": {
+      "texture_file": "downloaded_256/polyhaven_0436_textures_painted_plaster_wall.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "c19edbe300dc21b89672aee4c86479ed0b37fd08748b7e8e1e2aa7c1fa2f0ef4",
+      "bytes": 7069,
+      "source_asset_id": "painted_plaster_wall",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_diff_1k.jpg",
+      "source_md5": "15ba8c1f63a5ab412b1eabe31728540a",
+      "source_bytes": 686726,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/painted_plaster_wall",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.36,
+        0.22
+      ]
+    },
+    "wall/white_plaster_02": {
+      "texture_file": "downloaded_256/polyhaven_0715_textures_white_plaster_02.jpg",
+      "texture_bank_id": "polyhaven_prepared_256_v1",
+      "sha256": "3e46456f81c8139a5b1c57d0607145c4d614cb83a62fb12e840e355c1f5ab786",
+      "bytes": 10789,
+      "source_asset_id": "white_plaster_02",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/white_plaster_02/white_plaster_02_diff_1k.jpg",
+      "source_md5": "7b10c2686bcfd76d1f309a20fd06b57e",
+      "source_bytes": 527219,
+      "resize": {
+        "width": 256,
+        "height": 256,
+        "method": "PIL.Image.Resampling.LANCZOS"
+      },
+      "source_url": "https://polyhaven.com/a/white_plaster_02",
+      "license": "CC0",
+      "base_material": [
+        0.12,
+        0.36,
+        0.22
+      ]
+    },
+    "table/fine_grained_wood": {
+      "texture_file": "fine_grained_wood_1k.jpg",
+      "texture_bank_id": "axis_curated_tabletop_1k_v1",
+      "sha256": "d171f45ef01bc6e239b00dfaa4961bcd27f7d8e93e3962da3bd3d0ce703d802c",
+      "bytes": 336305,
+      "source_asset_id": "fine_grained_wood",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_col_1k.jpg",
+      "source_md5": "3db9decdde678e087e67ff99d30c0a73",
+      "source_bytes": 336305,
+      "resize": null,
+      "source_url": "https://polyhaven.com/a/fine_grained_wood",
+      "license": "CC0",
+      "base_material": [
+        0.08,
+        0.32,
+        0.18
+      ]
+    },
+    "table/laminate_floor_03": {
+      "texture_file": "laminate_floor_03_1k.jpg",
+      "texture_bank_id": "axis_curated_tabletop_1k_v1",
+      "sha256": "ce2813cdc714fc5a2d816c9b79a0b4aece71c8d5bf56db52331cf413d950eae3",
+      "bytes": 701368,
+      "source_asset_id": "laminate_floor_03",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/laminate_floor_03/laminate_floor_03_diff_1k.jpg",
+      "source_md5": "9ad312ee93c5374713fcc14fa98e87e6",
+      "source_bytes": 701368,
+      "resize": null,
+      "source_url": "https://polyhaven.com/a/laminate_floor_03",
+      "license": "CC0",
+      "base_material": [
+        0.08,
+        0.32,
+        0.18
+      ]
+    },
+    "table/wood_table_001": {
+      "texture_file": "wood_table_001_1k.jpg",
+      "texture_bank_id": "axis_curated_tabletop_1k_v1",
+      "sha256": "460dd08d240f4a1f02982415048c3c5c200f385db212da18dc7e2df68bf4d0be",
+      "bytes": 215573,
+      "source_asset_id": "wood_table_001",
+      "direct_download_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_diff_1k.jpg",
+      "source_md5": "56652a7339b16a76afad20d3585f66ea",
+      "source_bytes": 215573,
+      "resize": null,
+      "source_url": "https://polyhaven.com/a/wood_table_001",
+      "license": "CC0",
+      "base_material": [
+        0.08,
+        0.32,
+        0.18
+      ]
+    }
+  },
+  "surface_asset_ids": {
+    "table": [
+      "fine_grained_wood",
+      "plywood",
+      "stained_pine",
+      "laminate_floor_03",
+      "wood_table_001"
+    ],
+    "floor": [
+      "marble_01",
+      "interior_tiles",
+      "large_floor_tiles_02",
+      "terrazzo_tiles"
+    ],
+    "wall": [
+      "white_plaster_02",
+      "white_plaster_rough_01",
+      "white_plaster_rough_02",
+      "painted_plaster_wall"
+    ]
+  },
+  "surface_constraints": {
+    "table": {
+      "image_luminance_guard": {
+        "metric": "bt709_srgb_uint8_percentile",
+        "mode": "downscale_only",
+        "percentile": 95.0,
+        "max_value": 128.0
+      },
+      "material_caps": {
+        "max_reflectance": 0.2,
+        "max_specular": 0.3
+      }
+    },
+    "floor": {},
+    "wall": {}
+  },
+  "lighting_randomization": false,
+  "provenance": {
+    "scope": "Surface palette of task 1952 attempt 1925874 only; other scene recipes use other palettes.",
+    "material_base_recovery": "Invert unmodified _jitter_material using recorded seeds, round base coefficients to 8 decimals, verify every forward sample exactly matches original records.",
+    "verified_material_samples": 158,
+    "source_jobs": [
+      {
+        "path": "AXIS-Render-Robosuite/data/fast100_recovery_axis4090_2_20260730/job_summary.json",
+        "task_id": 1952
+      },
+      {
+        "path": "AXIS-Render-Robosuite/data/franka500_axis4090_2_batch15_20260801/job_summary.json",
+        "task_id": 757
+      }
+    ]
+  }
+}

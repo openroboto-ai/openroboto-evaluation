@@ -149,6 +149,10 @@ def _common_recorded_protocol(named_summaries: list[tuple[str, dict[str, Any]]])
     ]
     if named_summaries[0][1]["randomization"]:
         fields.append("randomization_seed")
+    # Legacy-only reports stay readable, but cached and cache-independent JAX
+    # scores must not silently become one comparison population.
+    if any(summary.get("numerical_runtime") is not None for _, summary in named_summaries):
+        fields.append("numerical_runtime")
     baseline_label, baseline = named_summaries[0]
     for label, summary in named_summaries:
         for field in fields:

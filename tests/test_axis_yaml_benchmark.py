@@ -131,6 +131,7 @@ def test_invalid_yaml_fails_before_evaluation(editable_config, mutation, error):
     [
         (["--benchmark=axis_v1.0"], "axis_v1.0"),
         (["--axis_v1.0"], "axis_v1.0"),
+        (["--benchmark=axis_v2.0"], "axis_v2.0"),
     ],
 )
 def test_run_eval_cli_uses_yaml_defaults(selector, expected_name):

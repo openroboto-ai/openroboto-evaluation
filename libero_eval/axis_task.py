@@ -12,7 +12,16 @@ from dataclasses import dataclass
 from typing import Any
 
 from axis_randomization import build_trial_plan, load_randomization_plan
-from axis_runtime import DEFAULT_MANIFEST, AssetCache, AxisEnvironment, load_manifest, resolve_task_payload, task_specs
+from axis_runtime import (
+    DEFAULT_MANIFEST,
+    AssetCache,
+    AxisEnvironment,
+    load_manifest,
+    resolve_task_payload,
+    task_specs,
+    task_runtime,
+    task_trial_count,
+)
 
 
 def _policy_client(host: str, port: int) -> Any:
@@ -64,6 +73,8 @@ def _resolve_trial_payloads(
             / manifest.get("task_snapshot_root", f"{pathlib.Path(args.manifest).stem}-tasks"),
             refresh=args.refresh_task,
         )
+        if "official_randomization" in resolved.data:
+            raise ValueError("base-only AXIS manifests cannot run randomized payloads")
         return [
             TrialPayload(
                 data=resolved.data,
@@ -161,6 +172,11 @@ def _smoke_environment(
             "render_fps": round(args.smoke_render_frames / render_s, 2),
             "initial_checker_passed": initial_checker_passed,
             "initial_checker": initial_checker,
+            **(
+                {"official_randomization": environment.reset_randomization}
+                if getattr(environment, "reset_randomization", None) is not None
+                else {}
+            ),
         },
     }
 
@@ -172,7 +188,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.task_id not in specs:
         raise ValueError(f"task {args.task_id} is not part of {benchmark}; choose from {sorted(specs)}")
     spec = specs[args.task_id]
-    runtime = manifest["runtime"]
+    runtime = task_runtime(manifest, spec)
+    args.num_trials = task_trial_count(spec, args.num_trials)
     record_trials = getattr(args, "record_trials", 0)
     if record_trials < 0:
         raise ValueError("--record-trials must be non-negative")
@@ -193,12 +210,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     for trial in trials:
         unique_trials.setdefault(trial.canonical_sha256, trial)
     prepared: dict[str, tuple[pathlib.Path, dict[str, int]]] = {}
-    randomized = bool(manifest["protocol"]["randomization"])
+    protocol_randomized = bool(manifest["protocol"]["randomization"])
+    randomized = protocol_randomized and spec.get("randomization_enabled", True)
     for payload_sha256, trial in unique_trials.items():
+        if "official_randomization" in trial.data:
+            from axis_perturbations import install_randomization_assets
+
+            install_randomization_assets(trial.data["official_randomization"], asset_cache.root)
         prepared[payload_sha256] = asset_cache.prepare_scene(
             args.task_id,
             trial.data["mjcf_xml"],
-            scene_key=payload_sha256 if randomized else None,
+            scene_key=payload_sha256 if protocol_randomized else None,
         )
     prepare_s = time.perf_counter() - prepare_start
     asset_counts_by_payload = {payload_sha256: counts for payload_sha256, (_, counts) in sorted(prepared.items())}
@@ -283,6 +305,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                             "_axis_variant_id": trial_payload.randomization["variant_id"],
                             "_axis_randomization_seed": trial_payload.randomization.get("seed"),
                         }
+                        if runtime.get("wrist_camera") is not None:
+                            request["observation/wrist_image"] = _resize_image(
+                                environment.render(camera=runtime["wrist_camera"]), args.resize_size
+                            )
                         mark = time.perf_counter()
                         response = client.infer(request)
                         inference_s += time.perf_counter() - mark
@@ -340,6 +366,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             episodes.append({
                 "trial": trial,
                 "randomization": trial_payload.randomization,
+                **(
+                    {"official_randomization": environment.reset_randomization}
+                    if getattr(environment, "reset_randomization", None) is not None
+                    else {}
+                ),
                 "success": success,
                 "steps": steps,
                 "duration_s": round(time.perf_counter() - episode_start, 4),

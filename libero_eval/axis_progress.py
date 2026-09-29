@@ -11,7 +11,7 @@ import json
 import logging
 import pathlib
 import threading
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence, Mapping
 from typing import Any
 
 
@@ -24,7 +24,7 @@ def report_axis_progress(
     path: pathlib.Path | None,
     benchmark: str,
     task_ids: Sequence[int],
-    trials_per_task: int,
+    trials_per_task: int | Mapping[int, int],
     *,
     interval_s: float = PROGRESS_INTERVAL_S,
 ) -> Iterator[Callable[[int, dict[str, Any]], None]]:
@@ -47,7 +47,9 @@ def report_axis_progress(
         "tasks_total": len(task_ids),
         "tasks_failed": 0,
         "episodes_done": 0,
-        "episodes_total": len(task_ids) * trials_per_task,
+        "episodes_total": sum(trials_per_task[tid] for tid in task_ids)
+        if isinstance(trials_per_task, Mapping)
+        else len(task_ids) * trials_per_task,
     }
     lock = threading.Lock()
     stopped = threading.Event()

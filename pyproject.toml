@@ -10,6 +10,7 @@ dependencies = [
     # they cannot share one interpreter with this project.
     "huggingface_hub>=0.30",
     "pyyaml>=6.0",
+    "zstandard>=0.23",
 ]
 
 [dependency-groups]
@@ -46,4 +47,6 @@ lint.ignore = [
 target-version = "py38"
 extend-exclude = [
     "third_party",
+    # Source snapshots are verified byte-for-byte against SOURCES.json.
+    "libero_eval/axis_components",
 ]

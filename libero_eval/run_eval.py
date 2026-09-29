@@ -38,6 +38,7 @@ import time
 
 from backbones import BACKBONES, resolve_backbone
 from axis_backend import AXIS_BENCHMARKS, apply_manifest_defaults
+from axis_jax_runtime import configure_axis_jax_environment
 from axis_runtime import AXIS_V1_NAME
 from benchmarks import BENCHMARKS, get_benchmark
 from check_model import (
@@ -299,12 +300,13 @@ def start_servers(
     axis_sample_reduction: str = "mean",
 ) -> list[PolicyServer]:
     ports = _find_free_ports(base_port, len(gpus))
-    # Persistent XLA compilation cache: the pi0.5 sample_actions JIT takes ~20s
-    # and is identical across servers and across runs (same config/shapes), so
-    # after the first run every server skips it.
-    jax_cache_dir = VALIDATOR_ROOT / ".cache" / "jax_compilation"
-    jax_cache_dir.mkdir(parents=True, exist_ok=True)
     is_pytorch = model_family == "openpi" and (ckpt_dir / "model.safetensors").is_file()
+    axis_jax = benchmark in AXIS_BENCHMARKS and model_family == "openpi" and not is_pytorch
+    # AXIS JAX must not inherit disk-cached numerical choices. Other runtimes
+    # keep their existing shared compilation cache for faster startup.
+    jax_cache_dir = VALIDATOR_ROOT / ".cache" / "jax_compilation"
+    if not axis_jax:
+        jax_cache_dir.mkdir(parents=True, exist_ok=True)
     if is_pytorch:
         print(
             "[run_eval] PyTorch checkpoint detected (model.safetensors); "
@@ -317,8 +319,11 @@ def start_servers(
             **_base_env(),
             "CUDA_VISIBLE_DEVICES": str(gpu),
             "XLA_PYTHON_CLIENT_MEM_FRACTION": str(mem_fraction),
-            "JAX_COMPILATION_CACHE_DIR": str(jax_cache_dir),
         }
+        if axis_jax:
+            configure_axis_jax_environment(env)
+        else:
+            env["JAX_COMPILATION_CACHE_DIR"] = str(jax_cache_dir)
         if qwen3_vl_path is not None:
             env["QWEN3VL_PATH"] = str(qwen3_vl_path)
         if is_pytorch:
@@ -413,10 +418,10 @@ def start_servers(
                 raise ValueError(f"{benchmark} native OpenPI serving currently requires --server-impl upstream")
             if config != "pi05_axis_joint":
                 raise ValueError(f"{benchmark} native checkpoint requires --config pi05_axis_joint")
-            # Fixed diffusion noise alone is insufficient for reproducibility:
-            # XLA may otherwise select nondeterministic GPU kernels, and the
-            # resulting numerical differences can change an entire rollout.
-            env["XLA_FLAGS"] = "--xla_gpu_deterministic_ops=true --xla_gpu_exclude_nondeterministic_ops=true"
+            if is_pytorch:
+                # This branch uses JAX only on CPU; its PyTorch numerical
+                # behavior is not covered by the AXIS JAX runtime contract.
+                env["XLA_FLAGS"] = "--xla_gpu_deterministic_ops=true --xla_gpu_exclude_nondeterministic_ops=true"
             cmd = [
                 str(SERVER_VENV_PY),
                 str(pathlib.Path(__file__).resolve().parent / "serve_axis_openpi.py"),
@@ -1129,7 +1134,7 @@ def main():
         default="libero",
         choices=sorted((*BENCHMARKS, *AXIS_BENCHMARKS, "robodojo", "robotwin")),
         metavar="BENCHMARK",
-        help="Which benchmark to evaluate on; use axis_v1.0 for AXIS (default: libero)",
+        help="Which benchmark to evaluate on; use axis_v2.0 for current AXIS (default: libero)",
     )
     benchmark_group.add_argument(
         "--axis_v1.0",

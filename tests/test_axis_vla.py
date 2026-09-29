@@ -111,6 +111,17 @@ class TestAxisVlaArtifact(unittest.TestCase):
 
 
 class TestAxisOpenPiTransforms(unittest.TestCase):
+    def test_inputs_preserve_optional_official_wrist_view(self):
+        wrist = np.full((8, 6, 3), 123, dtype=np.uint8)
+        sample = AxisInputs()({
+            "observation/image": np.zeros((8, 6, 3), dtype=np.uint8),
+            "observation/wrist_image": wrist,
+            "observation/state": np.arange(9, dtype=np.float32),
+        })
+        np.testing.assert_array_equal(sample["image"]["left_wrist_0_rgb"], wrist)
+        self.assertTrue(sample["image_mask"]["left_wrist_0_rgb"])
+        self.assertFalse(sample["image_mask"]["right_wrist_0_rgb"])
+
     def test_inputs_mask_missing_wrist_views_and_preserve_native_contract(self):
         sample = AxisInputs()({
             "observation/image": np.zeros((3, 8, 6), dtype=np.uint8),

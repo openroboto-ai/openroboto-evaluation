@@ -5,6 +5,8 @@ Choose a model runtime with `--backbone` and a benchmark with `--benchmark`.
 
 [AXIS protocol](docs/axis.md) · [Queue worker](benchmark_worker/README.md)
 
+AXIS V2.0 uses [combined randomization](docs/axis_v2_randomization.md).
+
 ## Install
 
 ```bash
@@ -19,13 +21,14 @@ isolated under `third_party/`. Installation scripts pin their upstream revisions
 Optional runtimes have separate installers: `setup_lingbot.sh`, `setup_robotwin.sh`
 and `setup_robodojo.sh`. Hugging Face downloads use `hfd.sh` when available.
 
-## AXIS v1.0
+## AXIS V2.0
 
 ```bash
 uv run python libero_eval/run_eval.py \
   --model your-account/pi05-axis-checkpoint \
   --commit-id 0123456789abcdef0123456789abcdef01234567 \
-  --backbone pi0.5 --benchmark axis_v1.0 \
+  --backbone pi0.5 --benchmark axis_v2.0 \
+  --axis-randomization-seed 20260928 \
   --num-trials 20 --gpus 0 --workers-per-gpu 1
 ```
 
@@ -40,9 +43,14 @@ not required and cannot override inference. Full details and frozen definitions
 are in [the AXIS guide](docs/axis.md).
 The asset directory name belongs to the checkpoint format and is independent of the benchmark version.
 
-AXIS v1.0 uses fixed base scenes; scene randomization is disabled. Repeated trials
-are not new randomized scenes. Its score measures performance on this published
-finite task set, not performance on unseen tasks.
+Each task uses 20 distinct frozen instances, combining its supported
+camera, material, background and object-reset components. The queue supplies the
+seed; independent comparisons must use the same seed. Scores are equal averages
+over tasks. The published task set measures this finite benchmark, not unseen tasks.
+
+The [MuJoCo randomization adapter](docs/axis_v2_randomization.md)
+supports separately frozen releases with upstream task/scene bindings. It
+includes object resets, camera and material variation, and optional wrist input.
 
 To render training images from expert joint-target trajectories using this same
 runtime, see [Render training replays](docs/axis.md#render-training-replays).
@@ -96,10 +104,11 @@ file set counted. Local checkpoint format checks also enforce these limits.
 ```bash
 uv sync --locked
 uv run pytest -q
-uv run python tools/verify_axis_release.py \
-  --manifest configs/benchmarks/axis_v1.0.yaml
+uv run python -c 'from libero_eval.axis_release import prepare_release; print(prepare_release())'
 ```
 
 The repository contains evaluator code, task definitions, and generic tests.
 Internal training trajectories, experiment archives, checkpoints, and machine-specific
-service files are not included.
+service files are not included. The public release uses the same evaluator implementation, with host-specific
+provenance paths removed. The fixed V1.0 source bundle is
+retained for base-scene controls and task import/replay tooling.

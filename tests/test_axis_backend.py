@@ -40,7 +40,7 @@ class TestAxisBackend(unittest.TestCase):
         self.assertEqual(
             provenance, {"artifact_sha256": "abc", "eligible_for_scoring": False, "training_scope": "action-expert"}
         )
-        self.assertEqual(AXIS_BENCHMARKS, ("axis_v1.0", "axis"))
+        self.assertEqual(AXIS_BENCHMARKS, ("axis_v2.0", "axis_v1.0", "axis"))
 
     def test_custom_manifest_is_explicit_and_cannot_replace_named_releases(self):
         with self.assertRaisesRegex(ValueError, "requires --axis-manifest"):
@@ -235,7 +235,15 @@ class TestAxisBackend(unittest.TestCase):
             process = mock.Mock(pid=1234)
             with mock.patch("run_eval._find_free_ports", return_value=[9100]), mock.patch(
                 "run_eval.subprocess.Popen", return_value=process
-            ) as popen:
+            ) as popen, mock.patch(
+                "run_eval._base_env",
+                return_value={
+                    "JAX_COMPILATION_CACHE_DIR": "/old-cache",
+                    "JAX_ENABLE_COMPILATION_CACHE": "true",
+                    "JAX_PERSISTENT_CACHE_ENABLE_XLA_CACHES": "all",
+                    "XLA_FLAGS": "--xla_gpu_per_fusion_autotune_cache_dir=/old-tuning --xla_gpu_autotune_level=4",
+                },
+            ):
                 start_servers(
                     [0],
                     9100,
@@ -258,8 +266,12 @@ class TestAxisBackend(unittest.TestCase):
         self.assertEqual(popen.call_args.kwargs["cwd"], str(ROOT))
         self.assertEqual(
             popen.call_args.kwargs["env"]["XLA_FLAGS"],
-            "--xla_gpu_deterministic_ops=true --xla_gpu_exclude_nondeterministic_ops=true",
+            "--xla_gpu_deterministic_ops=true --xla_gpu_exclude_nondeterministic_ops=true --xla_gpu_autotune_level=0",
         )
+        environment = popen.call_args.kwargs["env"]
+        self.assertEqual(environment["JAX_ENABLE_COMPILATION_CACHE"], "false")
+        self.assertEqual(environment["JAX_PERSISTENT_CACHE_ENABLE_XLA_CACHES"], "none")
+        self.assertNotIn("JAX_COMPILATION_CACHE_DIR", environment)
 
 
 if __name__ == "__main__":

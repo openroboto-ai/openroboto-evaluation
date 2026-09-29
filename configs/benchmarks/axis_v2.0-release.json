@@ -1,0 +1,223 @@
+{
+  "archive": "axis_v2.0.tar.zst",
+  "bindings_canonical_sha256": "71cdcde6ca39f01bf44bdc185e43c86cffd8abb2af22a5b97a1cb4119d6d1170",
+  "bytes": 1087520,
+  "changed_image_pairs": 560,
+  "changed_image_task_ids": [
+    31,
+    33,
+    34,
+    35,
+    37,
+    40,
+    41,
+    42,
+    43,
+    44,
+    46,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    501,
+    502,
+    503,
+    504,
+    505,
+    506,
+    514
+  ],
+  "extracted_json_files_byte_equal": 604,
+  "fresh_native_instances": 600,
+  "invariants": {
+    "unchanged_camera_poses_and_material_samples": true,
+    "unchanged_instance_order": true,
+    "unchanged_physical_states": true,
+    "unchanged_task_payload_except_visual_mode": true
+  },
+  "manifest_canonical_sha256": "16a7cc400173e4200d0322e8508ff7fc3447c70fc699d4bfcc3e772e830419fc",
+  "name": "axis_v2.0",
+  "native_archive_replays": [
+    {
+      "exact_native_replay": true,
+      "task_id": 31
+    },
+    {
+      "exact_native_replay": true,
+      "task_id": 501
+    },
+    {
+      "exact_native_replay": true,
+      "task_id": 757
+    }
+  ],
+  "native_metadata_equal_to_archived_corrected_combined_diagnostic": true,
+  "parent_validation_canonical_sha256": "cd1bfeed6517fc46d5375833aba05addcbe1c1817ffb037474b9f5bd9aca6d4d",
+  "policy_evaluation": "No checkpoint evaluated in this build; native validation is not a policy score.",
+  "protocol_revision": "axis_v2.0_official_components_native_mujoco_v2",
+  "randomization_manifest_canonical_sha256": "a8bf44f83f75660d93951c9aa86151c134fdcd1d2561948113cba39d029c2b1d",
+  "sha256": "97fc4177d07209451b62abf42f05ee991d3d9682572de006470f681f6c1cf737",
+  "status": "runtime-ready",
+  "tasks": {
+    "22": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "31": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "33": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "34": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "35": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "37": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "40": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "41": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "42": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "43": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "44": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "46": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "48": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "49": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "50": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "501": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "502": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "503": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "504": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "505": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "506": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "51": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "514": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    },
+    "52": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "53": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "54": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "55": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "56": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "57": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 1,
+      "instances": 20
+    },
+    "757": {
+      "distinct_image_pairs": 20,
+      "distinct_physical_states": 20,
+      "instances": 20
+    }
+  },
+  "unchanged_path_reuse": null,
+  "validated_instances": 600,
+  "validation_canonical_sha256": "4a867c4292d5b1a4dfe694b27312925a1c73539db9e83676757079a4fc879056",
+  "public_export_note": "Removed host-specific provenance paths from validation evidence and archive owner metadata. All task payloads, randomization manifests, bindings and numeric validation results are unchanged."
+}
