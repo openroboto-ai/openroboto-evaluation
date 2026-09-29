@@ -28,6 +28,24 @@ ROOT = COMPONENT_ROOT
 CAMERA_CONFIG_SHA256 = "01f7f87dcc134ae3a485a7a297810e49c427b64e86291a1d303cd6cde2d5a417"
 
 
+def _scene_library_source_digest() -> str:
+    camera = json.loads((ROOT / "config/cameras/franka.json").read_bytes())
+    return camera["render_profile"]["scene"]["library_sha256"]
+
+
+def _camera_config_for_distributed_library() -> dict:
+    """franka.json declares the scene library's source digest, which frozen
+    payloads and validation evidence record. The distributed library has host
+    paths redacted from its provenance fields, so its bytes are checked against
+    the SOURCES.json digest (already verified by _verify_vendor); callers put
+    the source digest back into the resolved profile."""
+    camera = json.loads((ROOT / "config/cameras/franka.json").read_bytes())
+    scene = camera["render_profile"]["scene"]
+    files = json.loads((ROOT / "SOURCES.json").read_bytes())["files"]
+    scene["library_sha256"] = files[scene["library_file"]]
+    return camera
+
+
 def resolve_profile(visual: dict, task_id: int, task_name: str) -> tuple[dict, dict]:
     partial = visual.get("mode") in {"official_franka_components", "official_franka_components_v2"}
     _exact_keys(
@@ -62,7 +80,7 @@ def resolve_profile(visual: dict, task_id: int, task_name: str) -> tuple[dict, d
         raise ValueError("V6 has four randomized camera pairs: replica_id must be 0..3")
     _verify_vendor()
     config = visual_scene.resolve_visual_scene_profile(
-        json.loads((ROOT / "config/cameras/franka.json").read_bytes()),
+        _camera_config_for_distributed_library(),
         project_root=ROOT,
         global_seed=visual["global_seed"],
         task_id=task_id,
@@ -71,6 +89,7 @@ def resolve_profile(visual: dict, task_id: int, task_name: str) -> tuple[dict, d
         variant_id=visual["variant_id"],
     )
     render = config["render_profile"]
+    render["scene"]["library_sha256"] = _scene_library_source_digest()
     palette = render["randomization"]["texture"]["asset_ids_by_surface"]
     catalog = json.loads((ROOT / "manifests/scene_materials.json").read_bytes())
     profile = {

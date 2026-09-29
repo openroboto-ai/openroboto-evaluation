@@ -31,3 +31,30 @@ def test_sanitized_vendor_hashes_and_paths():
         raw = path.read_text()
         for prefix in ("/home/", "/Users/", "/data2/"):
             assert prefix not in raw, str(path.relative_to(COMPONENT_ROOT))
+
+
+def test_redacted_scene_library_resolves_with_its_source_digest():
+    pytest.importorskip("numpy")
+    from libero_eval import axis_scene
+
+    sources = json.loads((COMPONENT_ROOT / "SOURCES.json").read_bytes())
+    camera = json.loads((COMPONENT_ROOT / "config/cameras/franka.json").read_bytes())
+    library = camera["render_profile"]["scene"]
+    assert sources["files"][library["library_file"]] != library["library_sha256"]
+    visual = {
+        "mode": "official_franka_components_v2",
+        "camera_config_sha256": axis_scene.CAMERA_CONFIG_SHA256,
+        "components": {
+            "arena": True,
+            "background": True,
+            "front_camera": True,
+            "wrist_camera": False,
+            "surfaces": {"floor": [], "table": [], "wall": []},
+        },
+        "global_seed": 42,
+        "attempt_id": 0,
+        "variant_id": 3802,
+        "replica_id": 0,
+    }
+    config, _ = axis_scene.resolve_profile(visual, 22, "Grab Can")
+    assert config["render_profile"]["scene"]["library_sha256"] == library["library_sha256"]
